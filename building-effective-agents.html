@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Building Effective Agents — 학습 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --serif: var(--sans);
+    --display: var(--sans);
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ───────── HERO ───────── */
+  .hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem);
+    position: relative;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    top: 2rem;
+    left: clamp(1.5rem, 5vw, 4rem);
+    right: clamp(1.5rem, 5vw, 4rem);
+    height: 1px;
+    background: var(--ink);
+  }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 2.5rem;
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title {
+    font-size: clamp(3rem, 9vw, 7.5rem);
+    line-height: 0.92;
+    font-weight: 600;
+    margin-top: clamp(2rem, 5vw, 3.5rem);
+    letter-spacing: -0.04em;
+    color: var(--ink);
+  }
+  .hero-title em {
+    font-style: normal;
+    font-weight: 300;
+    color: var(--accent-deep);
+  }
+  .hero-sub {
+    margin-top: 1.5rem;
+    font-size: clamp(1.1rem, 2vw, 1.4rem);
+    color: var(--ink-soft);
+    max-width: 42rem;
+    line-height: 1.45;
+    font-weight: 300;
+  }
+  .hero-grid {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .hero-grid > div {
+    background: var(--paper);
+    padding: 1.25rem 1.5rem;
+  }
+  .hero-grid .k {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  .hero-grid .v {
+    font-size: 1.4rem;
+    color: var(--ink);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .hero-grid .v small {
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-left: 0.3rem;
+  }
+
+  /* ───────── SECTIONS ───────── */
+  .section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem);
+    position: relative;
+  }
+  .section + .section { border-top: 1px solid var(--rule); }
+
+  .section-head {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: baseline;
+    margin-bottom: clamp(2rem, 5vw, 3.5rem);
+  }
+  .section-num {
+    font-size: clamp(4rem, 10vw, 7rem);
+    line-height: 0.85;
+    color: var(--accent);
+    font-weight: 200;
+    letter-spacing: -0.04em;
+  }
+  .section-titles {
+    border-left: 1px solid var(--ink);
+    padding-left: clamp(1rem, 3vw, 2rem);
+    padding-top: 0.5rem;
+  }
+  .section-kicker {
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+  }
+  .section-title {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+
+  /* ───────── §1 TL;DR ───────── */
+  .tldr-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  @media (min-width: 720px) {
+    .tldr-grid { grid-template-columns: repeat(12, 1fr); }
+  }
+  .tldr-lead {
+    grid-column: 1 / -1;
+    font-size: clamp(1.4rem, 2.6vw, 2rem);
+    line-height: 1.4;
+    color: var(--ink);
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+  }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead::first-letter {
+    font-size: 4em;
+    float: left;
+    line-height: 0.9;
+    padding-right: 0.12em;
+    padding-top: 0.08em;
+    color: var(--accent-deep);
+    font-weight: 200;
+  }
+  .tldr-lead .hl {
+    background: linear-gradient(180deg, transparent 60%, var(--hl) 60%);
+    padding: 0 0.05em;
+  }
+  @media (min-width: 720px) {
+    .tldr-lead { grid-column: 2 / 12; }
+  }
+
+  .points { display: contents; }
+  .point {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 4ch 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (min-width: 720px) {
+    .point { grid-column: 2 / 12; grid-template-columns: 5ch 1fr; gap: 2rem; }
+  }
+  .point .n {
+    font-size: 1.4rem;
+    color: var(--accent);
+    line-height: 1;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .point h3 {
+    font-weight: 600;
+    font-size: clamp(1.15rem, 2vw, 1.4rem);
+    line-height: 1.3;
+    margin-bottom: 0.4rem;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+  }
+  .point p {
+    color: var(--ink-soft);
+    font-size: 0.97rem;
+    line-height: 1.6;
+  }
+  .point p strong { color: var(--ink); font-weight: 600; }
+
+  /* ───────── §2 다이어그램 ───────── */
+  .diagram-block {
+    margin-bottom: clamp(3rem, 6vw, 5rem);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  @media (min-width: 880px) {
+    .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; }
+  }
+  .db-text h4 {
+    font-size: clamp(1.15rem, 2vw, 1.5rem);
+    line-height: 1.3;
+    margin-bottom: 0.8rem;
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .db-text h4 .num {
+    display: inline-block;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    color: var(--accent-deep);
+    vertical-align: middle;
+    background: var(--accent-wash);
+    padding: 0.3rem 0.55rem;
+    border-radius: 999px;
+    margin-right: 0.7rem;
+    font-weight: 600;
+  }
+  .db-text p {
+    color: var(--ink-soft);
+    margin-bottom: 1rem;
+    line-height: 1.65;
+  }
+  .db-text .use-when {
+    margin-top: 1.2rem;
+    padding: 1rem 1.1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--paper-deep);
+  }
+  .db-text .use-when strong {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+  }
+  .db-text .use-when p { margin: 0; font-size: 0.93rem; color: var(--ink); }
+
+  /* diagram canvas */
+  .canvas {
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    position: relative;
+    min-height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .canvas::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 0.7rem;
+    left: 0.9rem;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+
+  /* Generic diagram pieces */
+  .box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.25;
+    min-width: 4.5rem;
+    position: relative;
+  }
+  .box.accent { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); }
+  .box.soft { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .box.dashed { border-style: dashed; }
+  .box small {
+    display: block;
+    font-size: 0.66rem;
+    font-weight: 400;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.2rem;
+  }
+
+  .arrow { display: inline-flex; align-items: center; color: var(--ink-soft); font-family: var(--mono); }
+  .arrow-h { width: 1.6rem; height: 1.5px; background: var(--ink-soft); position: relative; }
+  .arrow-h::after {
+    content: ""; position: absolute; right: -1px; top: 50%;
+    border: 4px solid transparent; border-left-color: var(--ink-soft); transform: translateY(-50%);
+  }
+
+  /* Augmented LLM diagram */
+  .d-augmented {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 1rem 1.2rem;
+    align-items: center;
+  }
+  .d-augmented .center {
+    grid-column: 2; grid-row: 2;
+    padding: 1.5rem 1.4rem;
+    background: var(--ink); color: var(--paper);
+    border: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-radius: 2px;
+  }
+  .d-augmented .sat {
+    padding: 0.7rem 1rem;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    font-size: 0.85rem;
+    text-align: center;
+    font-weight: 500;
+  }
+  .d-augmented .sat small {
+    display: block;
+    font-size: 0.64rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 0.15rem;
+    font-weight: 400;
+  }
+  .d-augmented .t { grid-column: 2; grid-row: 1; justify-self: center; }
+  .d-augmented .l { grid-column: 1; grid-row: 2; justify-self: end; }
+  .d-augmented .r { grid-column: 3; grid-row: 2; justify-self: start; }
+  .d-augmented .b { grid-column: 2; grid-row: 3; justify-self: center; }
+  .d-augmented svg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  /* Chaining */
+  .d-chain {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+  .d-chain .gate {
+    width: 0; height: 2.4rem;
+    border-left: 1.5px dashed var(--accent);
+    margin: 0 0.5rem;
+    position: relative;
+  }
+  .d-chain .gate::after {
+    content: "gate"; position: absolute; left: 50%; bottom: -1.2rem;
+    transform: translateX(-50%);
+    font-family: var(--mono); font-size: 0.6rem;
+    color: var(--accent-deep); letter-spacing: 0.08em;
+  }
+
+  /* Routing */
+  .d-route {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem 2rem;
+    align-items: center;
+  }
+  .d-route .router {
+    background: var(--accent);
+    color: var(--paper);
+    border-color: var(--accent-deep);
+    padding: 1.1rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .d-route .branches {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    position: relative;
+  }
+  .d-route .branches .br {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .d-route .branches .br::before {
+    content: ""; height: 1.5px; background: var(--ink-soft);
+    position: relative;
+  }
+  .d-route .branches .br::after {
+    content: ""; position: absolute; left: 2.4rem;
+    border: 4px solid transparent; border-left-color: var(--ink-soft);
+  }
+
+  /* Parallel */
+  .d-parallel {
+    display: grid;
+    grid-template-columns: auto 2rem 1fr 2rem auto;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .d-parallel .lanes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .d-parallel .lanes .box { width: 100%; }
+  .d-parallel .fan {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    align-items: stretch;
+    font-family: var(--mono);
+    color: var(--ink-soft);
+    font-size: 0.7rem;
+  }
+  .d-parallel .fan span { padding: 0.3rem 0; text-align: center; border-top: 1px dashed var(--rule); }
+  .d-parallel .fan span:first-child { border-top: none; }
+
+  /* Orchestrator */
+  .d-orch {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    justify-items: center;
+  }
+  .d-orch .hub {
+    background: var(--ink); color: var(--paper);
+    padding: 1.1rem 1.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    border: none;
+  }
+  .d-orch .spokes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.7rem;
+    width: 100%;
+    position: relative;
+  }
+  .d-orch .spokes::before {
+    content: "";
+    position: absolute;
+    top: -0.7rem;
+    left: 50%;
+    width: 1.5px;
+    height: 0.7rem;
+    background: var(--ink-soft);
+  }
+  .d-orch .synth {
+    border-style: dashed;
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    background: transparent;
+    padding: 0.7rem 1.2rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+  .d-orch .down-arrow {
+    width: 1.5px; height: 0.8rem; background: var(--ink-soft); position: relative;
+  }
+  .d-orch .down-arrow::after {
+    content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%);
+    border: 4px solid transparent; border-top-color: var(--ink-soft);
+  }
+
+  /* Eval-Optimize loop */
+  .d-eval {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.2rem 1rem;
+    align-items: center;
+    position: relative;
+  }
+  .d-eval .gen, .d-eval .judge {
+    padding: 1.2rem 1rem;
+    text-align: center;
+  }
+  .d-eval .gen {
+    background: var(--paper); border: 1.5px solid var(--ink);
+  }
+  .d-eval .judge {
+    background: var(--accent-wash); border: 1.5px solid var(--accent);
+    color: var(--accent-deep);
+  }
+  .d-eval .gen h5, .d-eval .judge h5 {
+    font-size: 0.95rem;
+    font-weight: 600; margin-bottom: 0.2rem;
+    letter-spacing: -0.01em;
+  }
+  .d-eval .gen small, .d-eval .judge small {
+    display: block; font-size: 0.7rem; color: var(--ink-faint);
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .d-eval .loop-label {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--accent-deep);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    position: relative;
+    padding-top: 0.5rem;
+  }
+  .d-eval .loop-label::before, .d-eval .loop-label::after {
+    content: ""; position: absolute; top: 50%; width: 30%; height: 1.5px;
+    background: var(--accent);
+  }
+  .d-eval .loop-label::before { left: 0; }
+  .d-eval .loop-label::after { right: 0; }
+
+  /* Agent loop */
+  .d-agent {
+    width: 100%;
+    max-width: 360px;
+    aspect-ratio: 1;
+    position: relative;
+    margin: 0 auto;
+  }
+  .d-agent svg { width: 100%; height: 100%; }
+  .d-agent .node {
+    position: absolute;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    padding: 0.45rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+  }
+  .d-agent .node.brain {
+    background: var(--ink); color: var(--paper);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.6rem 0.9rem;
+    letter-spacing: 0.02em;
+  }
+  .d-agent .node.env {
+    background: var(--accent); color: var(--paper);
+    border-color: var(--accent-deep);
+  }
+
+  /* Decision table */
+  .decision {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    border-top: 2px solid var(--ink);
+    padding-top: 2.5rem;
+  }
+  .decision h3 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    margin-bottom: 1.5rem;
+  }
+  .decision-table {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+  @media (min-width: 760px) {
+    .decision-table { grid-template-columns: 1fr 1fr; }
+  }
+  .decision-table > div {
+    background: var(--paper);
+    padding: 1.5rem;
+  }
+  .decision-table h4 {
+    font-size: 1.05rem;
+    margin-bottom: 0.8rem;
+    color: var(--accent-deep);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .decision-table ul {
+    list-style: none;
+    color: var(--ink-soft);
+  }
+  .decision-table li {
+    padding: 0.4rem 0;
+    padding-left: 1.2rem;
+    position: relative;
+    font-size: 0.93rem;
+  }
+  .decision-table li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-family: var(--mono);
+  }
+
+  /* ───────── §3 코드 ───────── */
+  .code-intro {
+    font-size: clamp(1.05rem, 1.8vw, 1.2rem);
+    color: var(--ink-soft);
+    max-width: 56ch;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+    font-weight: 300;
+  }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card {
+    margin-bottom: 2.5rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    overflow: hidden;
+  }
+  .code-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 1rem 1.4rem;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-deep);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .code-head h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .code-head .tag {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.65rem;
+    background: var(--accent);
+    color: var(--paper);
+    border-radius: 2px;
+  }
+  .code-card pre {
+    margin: 0;
+    padding: 1.5rem;
+    overflow-x: auto;
+    background: oklch(0.18 0.02 260);
+    color: oklch(0.92 0.015 75);
+    font-family: var(--mono);
+    font-size: 0.83rem;
+    line-height: 1.7;
+  }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note {
+    padding: 1rem 1.4rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    background: var(--paper-deep);
+  }
+  .code-card .note strong { color: var(--accent-deep); }
+
+  /* ───────── FOOTER ───────── */
+  footer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+  }
+  footer .lockup {
+    font-size: 1.1rem;
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* Marginalia note */
+  .margin-note {
+    color: var(--ink-soft);
+    font-size: 0.93rem;
+    line-height: 1.55;
+    padding: 1.1rem 1.3rem;
+    background: var(--paper-deep);
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    margin: 2rem 0;
+    font-weight: 300;
+  }
+  .margin-note::before {
+    content: "노트";
+    font-weight: 600;
+    color: var(--accent-deep);
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-right: 0.8rem;
+    display: inline-block;
+    padding-right: 0.7rem;
+    border-right: 1px solid var(--rule);
+  }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  /* ───────── HAMBURGER + TOC ───────── */
+  .menu-btn {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 60;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s ease;
+  }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span {
+    display: block;
+    width: 20px;
+    height: 1.5px;
+    background: var(--ink);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.2s ease,
+                background 0.2s ease;
+    transform-origin: center;
+  }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  .toc-backdrop {
+    position: fixed;
+    inset: 0;
+    background: oklch(0.18 0.015 260 / 0.35);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 50;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+
+  .toc-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(380px, 88vw);
+    height: 100vh;
+    background: var(--paper);
+    border-left: 1px solid var(--ink);
+    z-index: 55;
+    transform: translateX(100%);
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    overflow-y: auto;
+    padding: 6rem 2.5rem 3rem;
+  }
+  .toc-panel.open { transform: translateX(0); }
+
+  .toc-kicker {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+  }
+  .toc-title {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .toc-list {
+    list-style: none;
+    counter-reset: toc;
+  }
+  .toc-list > li {
+    padding: 0.9rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    align-items: baseline;
+    text-decoration: none;
+    color: var(--ink);
+    font-weight: 500;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+    transition: color 0.2s ease;
+  }
+  .toc-list > li > a::before {
+    counter-increment: toc;
+    content: counter(toc, decimal-leading-zero);
+    color: var(--accent);
+    font-weight: 300;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+  }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+
+  .toc-sub {
+    list-style: none;
+    margin-top: 0.6rem;
+    margin-left: 2.5rem;
+    padding-left: 0.9rem;
+    border-left: 1px solid var(--rule);
+  }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 400;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+  .toc-sub a span {
+    color: var(--ink-faint);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    min-width: 1.6rem;
+  }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-sub a:hover span { color: var(--accent); }
+
+  .toc-foot {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    line-height: 1.6;
+  }
+
+  body.menu-open { overflow: hidden; }
+
+  /* Subtle reveal */
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card {
+      animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+</style>
+</head>
+<body>
+
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+
+<div class="toc-backdrop" id="tocBackdrop"></div>
+
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+
+  <ol class="toc-list">
+    <li><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#patterns" data-close>패턴 도감</a>
+      <ul class="toc-sub">
+        <li><a href="#p-augmented" data-close><span>00</span>Augmented LLM</a></li>
+        <li><a href="#p-chaining" data-close><span>01</span>Prompt Chaining</a></li>
+        <li><a href="#p-routing" data-close><span>02</span>Routing</a></li>
+        <li><a href="#p-parallel" data-close><span>03</span>Parallelization</a></li>
+        <li><a href="#p-orchestrator" data-close><span>04</span>Orchestrator–Workers</a></li>
+        <li><a href="#p-evaluator" data-close><span>05</span>Evaluator–Optimizer</a></li>
+        <li><a href="#p-agent" data-close><span>06</span>Agent Loop</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+
+  <div class="toc-foot">
+    Building Effective Agents · Anthropic Research<br>학습 노트 · 2024.12
+  </div>
+</aside>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="meta-row">
+    <span>Anthropic · 2024.12</span>
+    <span>학습 노트 · 읽는 시간 12분</span>
+  </div>
+
+  <h1 class="hero-title">Building<br>Effective <em>Agents</em></h1>
+
+  <p class="hero-sub">
+    "성공한 팀들이 공통적으로 발견한 것은 — 복잡한 프레임워크가 아니라,
+    단순하고 조합 가능한 패턴이었다."
+  </p>
+
+  <div class="hero-grid">
+    <div>
+      <span class="k">저자</span>
+      <span class="v">Schluntz<small>· Zhang</small></span>
+    </div>
+    <div>
+      <span class="k">발행</span>
+      <span class="v">Dec <small>2024</small></span>
+    </div>
+    <div>
+      <span class="k">핵심 패턴</span>
+      <span class="v">5 + 1<small>workflows · agent</small></span>
+    </div>
+    <div>
+      <span class="k">교훈</span>
+      <span class="v">Keep it simple</span>
+    </div>
+  </div>
+</header>
+
+
+<!-- §1 TL;DR -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      복잡한 에이전트 프레임워크는 대부분 <span class="hl">필요 없다</span>.
+      성공한 LLM 시스템들은 단순한 빌딩 블록을 조합해서 만들었고,
+      가장 어려운 결정은 "에이전트를 쓸지 말지"가 아니라
+      "<em>어디까지 단순하게 둘 수 있는지</em>"였다.
+    </p>
+
+    <div class="points">
+      <article class="point">
+        <div class="n">i</div>
+        <div>
+          <h3>워크플로우 ≠ 에이전트</h3>
+          <p><strong>워크플로우</strong>는 코드가 LLM을 정해진 경로로 흘려보낸다. <strong>에이전트</strong>는 LLM이 스스로 다음 행동을 결정한다. 예측 가능성이 필요하면 워크플로우, 개방형 문제면 에이전트.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">ii</div>
+        <div>
+          <h3>모든 것의 출발점: Augmented LLM</h3>
+          <p>LLM에 <strong>검색 · 도구 · 메모리</strong>를 붙인 단위가 기본 블록. 이것 하나만 잘 다뤄도 80%의 use case는 해결된다. 추가 레이어는 필요할 때만 쌓아라.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iii</div>
+        <div>
+          <h3>다섯 가지 워크플로우 패턴</h3>
+          <p><strong>Prompt Chaining</strong> · <strong>Routing</strong> · <strong>Parallelization</strong> · <strong>Orchestrator-Workers</strong> · <strong>Evaluator-Optimizer</strong> — 대부분의 LLM 시스템은 이 다섯 가지 조합으로 표현된다.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iv</div>
+        <div>
+          <h3>에이전트는 비용을 정직하게 청구한다</h3>
+          <p>자율적인 만큼 <strong>토큰 비용 · 지연 · 실수의 누적</strong>이 따라온다. 잘못된 도구 호출 한 번이 전체 궤도를 망친다. 그래서 <em>믿을 만한 환경 + 검증된 도구 + 인간 체크포인트</em>가 필수.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">v</div>
+        <div>
+          <h3>관건은 ACI (Agent-Computer Interface)</h3>
+          <p>프롬프트 엔지니어링만큼 중요한 게 <strong>도구 설계</strong>다. 도구 이름, 파라미터 형식, 에러 메시지 — 사람에게 좋은 API가 모델에게도 좋은 API다. 도구 문서는 주니어 개발자에게 설명하듯 써라.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">vi</div>
+        <div>
+          <h3>단순함 → 투명성 → 신중한 ACI</h3>
+          <p>저자들이 꼽은 단 세 가지 원칙. <strong>단순하게 설계하고, 계획 단계를 노출하고, 도구를 정성껏 만들어라.</strong> 프레임워크는 디버깅을 어렵게 만든다 — 기본 API로 직접 호출하는 것을 권장.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- §2 다이어그램으로 이해 -->
+<section class="section" id="patterns">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">패턴 도감</div>
+      <h2 class="section-title">그림으로 보는 6가지 구조</h2>
+    </div>
+  </div>
+
+  <!-- 0. Augmented LLM -->
+  <div class="diagram-block" id="p-augmented">
+    <div class="db-text">
+      <h4><span class="num">00 · 빌딩블록</span>Augmented<br>LLM</h4>
+      <p>
+        모든 패턴의 원자 단위. LLM 호출에 세 가지 능력을 부착한다 —
+        외부 지식을 가져오는 <strong>retrieval</strong>,
+        세상에 작용하는 <strong>tools</strong>,
+        그리고 상태를 기억하는 <strong>memory</strong>.
+      </p>
+      <p>
+        이 한 덩어리를 견고하게 만드는 게 먼저다.
+        모델이 검색 쿼리를 잘 짜고, 도구를 적절히 고르고,
+        결과를 컨텍스트에 잘 녹이는가 — 여기서 무너지면 위층 패턴은 모두 무너진다.
+      </p>
+      <div class="use-when">
+        <strong>언제 쓰나</strong>
+        <p>거의 모든 LLM 앱의 출발점. 단일 턴 Q&A부터 복잡한 agent까지 이 블록을 반복·중첩한 형태다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Building Block · Augmented LLM">
+      <div class="d-augmented">
+        <div class="sat t">Retrieval<small>외부 지식</small></div>
+        <div class="sat l">Memory<small>상태 유지</small></div>
+        <div class="box center">LLM</div>
+        <div class="sat r">Tools<small>행동 실행</small></div>
+        <div class="sat b">Input / Output<small>I/O</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. Prompt Chaining -->
+  <div class="diagram-block" id="p-chaining">
+    <div class="db-text">
+      <h4><span class="num">01 · 워크플로우</span>Prompt<br>Chaining</h4>
+      <p>
+        하나의 작업을 <strong>순차적 단계</strong>로 쪼개고,
+        각 단계 사이에 <em>검증 게이트</em>를 넣는다.
+        앞 단계의 출력이 뒤 단계의 입력이 되는 직선형 파이프라인.
+      </p>
+      <p>
+        지연이 늘어나는 대신 단계별로 정확도가 올라간다.
+        실패 지점을 단계 단위로 격리할 수 있어 디버깅도 쉬워진다.
+      </p>
+      <div class="use-when">
+        <strong>언제 쓰나</strong>
+        <p>작업을 명확하고 고정된 하위 작업으로 분해할 수 있을 때. 예: 마케팅 카피 작성 → 번역, 문서 개요 → 검증 → 본문 작성.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Workflow · Prompt Chaining">
+      <div class="d-chain">
+        <div class="box">In</div>
+        <div class="arrow"><div class="arrow-h"></div></div>
+        <div class="box accent">LLM 1</div>
+        <div class="gate"></div>
+        <div class="box accent">LLM 2</div>
+        <div class="arrow"><div class="arrow-h"></div></div>
+        <div class="box accent">LLM 3</div>
+        <div class="arrow"><div class="arrow-h"></div></div>
+        <div class="box">Out</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Routing -->
+  <div class="diagram-block" id="p-routing">
+    <div class="db-text">
+      <h4><span class="num">02 · 워크플로우</span>Routing</h4>
+      <p>
+        입력을 먼저 <strong>분류</strong>해서 전문화된 후속 프롬프트로 보낸다.
+        모든 케이스를 하나의 거대한 프롬프트에 욱여넣지 않고,
+        분기마다 최적의 프롬프트·모델·도구를 쓴다.
+      </p>
+      <p>
+        간단한 질문은 작은 모델로, 복잡한 질문은 큰 모델로 — 라우팅만으로도
+        비용과 품질이 동시에 개선되는 경우가 많다.
+      </p>
+      <div class="use-when">
+        <strong>언제 쓰나</strong>
+        <p>입력이 뚜렷한 카테고리로 나뉘고, 카테고리별로 처리 방식이 다를 때. 예: 고객 지원 분기(환불/기술/일반), 쉬운 질문은 Haiku, 어려운 질문은 Opus.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Workflow · Routing">
+      <div class="d-route">
+        <div class="box router">Classifier<br>LLM</div>
+        <div class="branches">
+          <div class="br"><span></span><div class="box">전문화 LLM A<small>refund</small></div></div>
+          <div class="br"><span></span><div class="box">전문화 LLM B<small>technical</small></div></div>
+          <div class="br"><span></span><div class="box">전문화 LLM C<small>general</small></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Parallelization -->
+  <div class="diagram-block" id="p-parallel">
+    <div class="db-text">
+      <h4><span class="num">03 · 워크플로우</span>Parallelization</h4>
+      <p>
+        하나의 작업을 <strong>병렬 LLM 호출</strong>로 분해해 합친다.
+        두 가지 형태가 있다 —
+        <em>Sectioning</em> (독립된 부분을 동시에 처리)과
+        <em>Voting</em> (같은 작업을 여러 번 시켜 다양성/신뢰도 확보).
+      </p>
+      <p>
+        지연을 줄이거나, 다양한 관점이 필요할 때 효과적.
+        특히 voting은 가드레일/안전성 검사에서 false negative를 잡는 데 강하다.
+      </p>
+      <div class="use-when">
+        <strong>언제 쓰나</strong>
+        <p>하위 작업이 독립적일 때(Sectioning), 또는 한 답의 신뢰도가 낮아 다중 표본이 필요할 때(Voting). 예: 코드 보안 리뷰를 서로 다른 프롬프트로 3회 → 합집합.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Workflow · Parallelization">
+      <div class="d-parallel">
+        <div class="box">In</div>
+        <div class="fan"><span>fan-out</span></div>
+        <div class="lanes">
+          <div class="box accent">LLM · 시각 A</div>
+          <div class="box accent">LLM · 시각 B</div>
+          <div class="box accent">LLM · 시각 C</div>
+        </div>
+        <div class="fan"><span>aggregate</span></div>
+        <div class="box">Out</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Orchestrator-Workers -->
+  <div class="diagram-block" id="p-orchestrator">
+    <div class="db-text">
+      <h4><span class="num">04 · 워크플로우</span>Orchestrator —<br>Workers</h4>
+      <p>
+        중앙의 <strong>오케스트레이터 LLM</strong>이 작업을 <em>동적으로</em> 쪼개서
+        워커들에게 위임하고, 결과를 종합한다.
+        Parallelization과 닮았지만 결정적 차이는 — 하위 작업이 <strong>런타임에 결정된다</strong>는 점.
+      </p>
+      <p>
+        몇 단계로 나눌지, 무엇으로 나눌지를 코드가 아닌 LLM이 정한다.
+        그래서 더 유연하지만, 그만큼 검증과 비용 통제가 어렵다.
+      </p>
+      <div class="use-when">
+        <strong>언제 쓰나</strong>
+        <p>하위 작업이 미리 정해지지 않을 때. 예: 여러 파일에 걸친 코드 변경, 한 토픽에 대해 여러 소스를 수집·요약하는 리서치.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Workflow · Orchestrator-Workers">
+      <div class="d-orch">
+        <div class="box hub">Orchestrator</div>
+        <div class="spokes">
+          <div class="box">Worker · 1</div>
+          <div class="box">Worker · 2</div>
+          <div class="box">Worker · 3</div>
+        </div>
+        <div class="down-arrow"></div>
+        <div class="box synth">Synthesizer</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Evaluator-Optimizer -->
+  <div class="diagram-block" id="p-evaluator">
+    <div class="db-text">
+      <h4><span class="num">05 · 워크플로우</span>Evaluator —<br>Optimizer</h4>
+      <p>
+        한 LLM이 결과를 <strong>생성</strong>하고, 다른 LLM이 <strong>평가·피드백</strong>을 준다.
+        피드백을 받아 다시 생성 — 만족할 때까지 루프.
+        사람의 글쓰기 ↔ 편집자 관계의 LLM 버전.
+      </p>
+      <p>
+        평가 기준을 명확히 글로 쓸 수 있고, LLM이 그 기준을 일관되게 적용할 수 있을 때 효과가 크다.
+        반복마다 측정 가능한 개선이 보여야 한다 — 그렇지 않으면 루프가 의미 없다.
+      </p>
+      <div class="use-when">
+        <strong>언제 쓰나</strong>
+        <p>품질 기준이 명확하고 반복으로 개선 가능한 작업. 예: 문학 번역(뉘앙스), 다단계 검색 + 정보 종합.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Workflow · Evaluator-Optimizer">
+      <div class="d-eval">
+        <div class="gen">
+          <h5>Generator</h5>
+          <small>LLM · draft</small>
+        </div>
+        <div class="judge">
+          <h5>Evaluator</h5>
+          <small>LLM · critique</small>
+        </div>
+        <div class="loop-label">feedback loop until passes</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Agent -->
+  <div class="diagram-block" id="p-agent">
+    <div class="db-text">
+      <h4><span class="num">06 · 자율형</span>Agent</h4>
+      <p>
+        LLM이 <strong>스스로 계획하고, 도구를 호출하고, 결과를 보고, 다음 행동을 결정</strong>한다.
+        종료 조건이 만족될 때까지(또는 사람이 멈출 때까지) 반복.
+        워크플로우가 레일 위 기차라면, 에이전트는 지도를 보며 운전하는 차다.
+      </p>
+      <p>
+        강력하지만 비용·지연·실수의 누적이 모두 커진다.
+        그래서 <em>안전한 샌드박스 환경 · 명확한 종료 조건 · 인간 체크포인트</em>가 사실상 필수다.
+      </p>
+      <div class="use-when">
+        <strong>언제 쓰나</strong>
+        <p>단계 수와 경로를 미리 예측하기 어려운 개방형 문제, 모델의 판단을 신뢰할 수 있는 도메인. 예: SWE-bench 류 코딩 에이전트, 컴퓨터 사용 에이전트.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Autonomous · Agent Loop">
+      <div class="d-agent">
+        <svg viewBox="0 0 360 360" fill="none" stroke="oklch(0.38 0.022 260)" stroke-width="1.5">
+          <circle cx="180" cy="180" r="120" stroke-dasharray="4 5"/>
+          <path d="M 180 60 L 175 70 L 185 70 Z" fill="oklch(0.38 0.022 260)" stroke="none"/>
+          <path d="M 300 180 L 290 175 L 290 185 Z" fill="oklch(0.38 0.022 260)" stroke="none"/>
+          <path d="M 180 300 L 175 290 L 185 290 Z" fill="oklch(0.38 0.022 260)" stroke="none" transform="rotate(180 180 295)"/>
+          <path d="M 60 180 L 70 175 L 70 185 Z" fill="oklch(0.38 0.022 260)" stroke="none"/>
+        </svg>
+        <div class="node brain" style="top:50%; left:50%;">LLM</div>
+        <div class="node" style="top:8%; left:50%;">Plan</div>
+        <div class="node" style="top:50%; left:92%;">Act<small></small></div>
+        <div class="node env" style="top:92%; left:50%;">Observe</div>
+        <div class="node" style="top:50%; left:8%;">Reflect</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="margin-note">
+    프레임워크(LangGraph, AutoGen 등)는 학습 곡선을 낮춰주지만, 동시에 추상화 레이어 뒤에 동작을 숨겨 디버깅을 어렵게 만든다. 저자들은 <strong>"먼저 LLM API를 직접 호출해보고, 그래도 추상화가 필요할 때만 프레임워크로 옮기라"</strong>고 권한다.
+  </p>
+
+  <!-- Decision -->
+  <div class="decision">
+    <h3>그래서 — 언제 무엇을 고를까?</h3>
+    <div class="decision-table">
+      <div>
+        <h4>워크플로우를 골라라</h4>
+        <ul>
+          <li>작업이 잘 정의되어 있다</li>
+          <li>실행 경로가 예측 가능하다</li>
+          <li>지연·비용·정확도를 통제해야 한다</li>
+          <li>프로덕션 안정성이 최우선이다</li>
+          <li>대부분의 실제 비즈니스 use case</li>
+        </ul>
+      </div>
+      <div>
+        <h4>에이전트를 골라라</h4>
+        <ul>
+          <li>단계 수를 미리 예측할 수 없다</li>
+          <li>고정된 경로로 충분히 풀 수 없다</li>
+          <li>모델의 판단을 신뢰할 환경이 있다</li>
+          <li>실수를 회복하거나 사람이 개입할 수 있다</li>
+          <li>비용·지연 증가를 받아들일 수 있다</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- §3 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">실전 코드</div>
+      <h2 class="section-title">패턴별 Python 구현</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    Anthropic SDK 기준의 최소 구현. 프레임워크 없이 — <em>모든 흐름은 일반 Python 코드와 LLM 호출로 표현 가능</em>하다는 글의 핵심을 그대로 보여주는 형태로 정리했다.
+  </p>
+
+  <!-- A. Augmented LLM -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>00 · Augmented LLM</h4>
+      <span class="tag">building block</span>
+    </div>
+<pre><span class="kw">from</span> anthropic <span class="kw">import</span> Anthropic
+
+client = Anthropic()
+
+<span class="kw">def</span> <span class="fn">augmented_llm</span>(user_msg: <span class="kw">str</span>, tools: <span class="kw">list</span>, memory: <span class="kw">list</span>):
+    <span class="com"># memory: 이전 turns / tools: 함수 스키마 리스트</span>
+    response = client.messages.create(
+        model=<span class="str">"claude-sonnet-4-6"</span>,
+        max_tokens=<span class="str">1024</span>,
+        system=<span class="str">"You are a precise assistant. Use tools when helpful."</span>,
+        messages=memory + [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: user_msg}],
+        tools=tools,
+    )
+    <span class="kw">return</span> response
+</pre>
+    <div class="note"><strong>포인트.</strong> 이 한 함수가 다른 모든 패턴의 원자다. 도구·메모리·시스템 프롬프트를 깔끔하게 분리해 두면, 위층 패턴에서 그대로 조합할 수 있다.</div>
+  </article>
+
+  <!-- B. Prompt chaining -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>01 · Prompt Chaining</h4>
+      <span class="tag">workflow</span>
+    </div>
+<pre><span class="kw">def</span> <span class="fn">llm_call</span>(prompt: <span class="kw">str</span>, system: <span class="kw">str</span> = <span class="str">""</span>) -> <span class="kw">str</span>:
+    msg = client.messages.create(
+        model=<span class="str">"claude-sonnet-4-6"</span>,
+        max_tokens=<span class="str">1024</span>,
+        system=system,
+        messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: prompt}],
+    )
+    <span class="kw">return</span> msg.content[<span class="str">0</span>].text
+
+<span class="kw">def</span> <span class="fn">chain</span>(input_text: <span class="kw">str</span>, prompts: <span class="kw">list</span>[<span class="kw">str</span>]) -> <span class="kw">str</span>:
+    out = input_text
+    <span class="kw">for</span> i, p <span class="kw">in</span> <span class="fn">enumerate</span>(prompts):
+        out = <span class="fn">llm_call</span>(<span class="str">f"{p}\n\n&lt;input&gt;\n{out}\n&lt;/input&gt;"</span>)
+        <span class="com"># 검증 게이트: 형식이 깨졌으면 중단</span>
+        <span class="kw">if</span> <span class="str">"&lt;error&gt;"</span> <span class="kw">in</span> out.lower():
+            <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="str">f"Step {i} failed: {out}"</span>)
+    <span class="kw">return</span> out
+
+<span class="com"># 사용 예: 개요 → 검증 → 본문</span>
+result = <span class="fn">chain</span>(
+    <span class="str">"신년 마케팅 캠페인 주제: 친환경 패션"</span>,
+    prompts=[
+        <span class="str">"3문장 개요를 만든다."</span>,
+        <span class="str">"개요가 톤(미니멀, 진정성)에 맞는지 점검하고 다듬어라."</span>,
+        <span class="str">"개요를 200자 본문으로 확장하라."</span>,
+    ],
+)
+</pre>
+    <div class="note"><strong>포인트.</strong> 단계마다 <em>검증 게이트</em>가 핵심. 형식이 무너지면 즉시 끊어서 잘못된 출력이 다음 단계로 전염되는 걸 막는다.</div>
+  </article>
+
+  <!-- C. Routing -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>02 · Routing</h4>
+      <span class="tag">workflow</span>
+    </div>
+<pre><span class="kw">import</span> json
+
+<span class="kw">def</span> <span class="fn">classify</span>(query: <span class="kw">str</span>) -> <span class="kw">str</span>:
+    out = <span class="fn">llm_call</span>(
+        system=<span class="str">"분류기. 다음 중 하나로만 답: refund | technical | general"</span>,
+        prompt=<span class="str">f"고객 문의: {query}\n\n카테고리만 출력."</span>,
+    )
+    <span class="kw">return</span> out.strip().lower()
+
+ROUTES = {
+    <span class="str">"refund"</span>:    (<span class="str">"claude-haiku-4-5"</span>, <span class="str">"환불 정책에 따라 절차를 안내하라."</span>),
+    <span class="str">"technical"</span>: (<span class="str">"claude-sonnet-4-6"</span>, <span class="str">"기술 지원 엔지니어처럼 단계별로 진단하라."</span>),
+    <span class="str">"general"</span>:   (<span class="str">"claude-haiku-4-5"</span>, <span class="str">"친절하게 응답하라."</span>),
+}
+
+<span class="kw">def</span> <span class="fn">route</span>(query: <span class="kw">str</span>) -> <span class="kw">str</span>:
+    category = <span class="fn">classify</span>(query)
+    model, system = ROUTES.get(category, ROUTES[<span class="str">"general"</span>])
+    msg = client.messages.create(
+        model=model, max_tokens=<span class="str">1024</span>,
+        system=system,
+        messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: query}],
+    )
+    <span class="kw">return</span> msg.content[<span class="str">0</span>].text
+</pre>
+    <div class="note"><strong>포인트.</strong> 분기마다 모델·시스템 프롬프트를 다르게 가져가는 게 본질. 쉬운 케이스는 <em>Haiku</em>로 빠르고 싸게, 복잡한 케이스만 <em>Sonnet</em>으로 풀어 비용을 통제한다.</div>
+  </article>
+
+  <!-- D. Parallelization -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>03 · Parallelization</h4>
+      <span class="tag">workflow</span>
+    </div>
+<pre><span class="kw">import</span> asyncio
+<span class="kw">from</span> anthropic <span class="kw">import</span> AsyncAnthropic
+
+aclient = <span class="fn">AsyncAnthropic</span>()
+
+<span class="kw">async def</span> <span class="fn">acall</span>(prompt: <span class="kw">str</span>, system: <span class="kw">str</span>) -> <span class="kw">str</span>:
+    msg = <span class="kw">await</span> aclient.messages.create(
+        model=<span class="str">"claude-sonnet-4-6"</span>, max_tokens=<span class="str">512</span>,
+        system=system,
+        messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: prompt}],
+    )
+    <span class="kw">return</span> msg.content[<span class="str">0</span>].text
+
+<span class="kw">async def</span> <span class="fn">vote_safety_check</span>(code: <span class="kw">str</span>) -> <span class="kw">bool</span>:
+    <span class="com"># Voting: 같은 작업을 다른 프롬프트로 3번 → 하나라도 위험 판정이면 reject</span>
+    perspectives = [
+        <span class="str">"보안 엔지니어 관점에서 위험 식별"</span>,
+        <span class="str">"악의적 사용자 관점에서 악용 경로 식별"</span>,
+        <span class="str">"코드 리뷰어 관점에서 의심스러운 패턴 식별"</span>,
+    ]
+    results = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(*[
+        <span class="fn">acall</span>(<span class="str">f"코드:\n{code}\n\n'UNSAFE' 또는 'SAFE'만 답하라."</span>, p)
+        <span class="kw">for</span> p <span class="kw">in</span> perspectives
+    ])
+    <span class="kw">return all</span>(<span class="str">"SAFE"</span> <span class="kw">in</span> r.upper() <span class="kw">for</span> r <span class="kw">in</span> results)
+</pre>
+    <div class="note"><strong>포인트.</strong> <code>asyncio.gather</code> 한 줄로 지연을 N→1로 줄인다. Voting은 <em>false negative가 치명적인</em> 가드레일에서 특히 강하다.</div>
+  </article>
+
+  <!-- E. Orchestrator-Workers -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>04 · Orchestrator–Workers</h4>
+      <span class="tag">workflow</span>
+    </div>
+<pre><span class="kw">def</span> <span class="fn">orchestrate</span>(task: <span class="kw">str</span>) -> <span class="kw">str</span>:
+    <span class="com"># 1) 오케스트레이터가 하위 작업 목록을 동적으로 생성</span>
+    plan_json = <span class="fn">llm_call</span>(
+        system=<span class="str">"작업을 독립 하위 작업 JSON 배열로 분해. 각 원소: {id, goal}"</span>,
+        prompt=task,
+    )
+    subtasks = json.<span class="fn">loads</span>(plan_json)
+
+    <span class="com"># 2) 워커들이 하위 작업을 수행</span>
+    results = []
+    <span class="kw">for</span> st <span class="kw">in</span> subtasks:
+        out = <span class="fn">llm_call</span>(
+            system=<span class="str">"하위 작업을 정확히 수행하고 결과만 반환."</span>,
+            prompt=<span class="str">f"{st['goal']}"</span>,
+        )
+        results.<span class="fn">append</span>({<span class="str">"id"</span>: st[<span class="str">"id"</span>], <span class="str">"out"</span>: out})
+
+    <span class="com"># 3) 합성</span>
+    <span class="kw">return</span> <span class="fn">llm_call</span>(
+        system=<span class="str">"하위 결과를 일관된 최종 산출물로 통합."</span>,
+        prompt=json.<span class="fn">dumps</span>(results, ensure_ascii=<span class="kw">False</span>),
+    )
+</pre>
+    <div class="note"><strong>포인트.</strong> Parallelization과의 결정적 차이 — <em>하위 작업 자체가 LLM에 의해 런타임에 결정된다</em>. 그래서 더 강력하지만, 비용·예측 불가능성이 함께 늘어난다.</div>
+  </article>
+
+  <!-- F. Evaluator-Optimizer -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>05 · Evaluator–Optimizer</h4>
+      <span class="tag">workflow</span>
+    </div>
+<pre><span class="kw">def</span> <span class="fn">eval_optimize</span>(task: <span class="kw">str</span>, max_iters: <span class="kw">int</span> = <span class="str">3</span>) -> <span class="kw">str</span>:
+    draft = <span class="fn">llm_call</span>(system=<span class="str">"초안을 작성."</span>, prompt=task)
+
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(max_iters):
+        critique = <span class="fn">llm_call</span>(
+            system=(<span class="str">"엄격한 평가자. 기준: 명료성, 사실성, 톤. "</span>
+                    <span class="str">"마지막 줄에 PASS 또는 REVISE만 출력."</span>),
+            prompt=<span class="str">f"&lt;task&gt;{task}&lt;/task&gt;\n&lt;draft&gt;{draft}&lt;/draft&gt;"</span>,
+        )
+        <span class="kw">if</span> critique.strip().<span class="fn">splitlines</span>()[-<span class="str">1</span>].strip() == <span class="str">"PASS"</span>:
+            <span class="kw">return</span> draft
+
+        draft = <span class="fn">llm_call</span>(
+            system=<span class="str">"피드백을 반영해 다시 작성."</span>,
+            prompt=<span class="str">f"&lt;draft&gt;{draft}&lt;/draft&gt;\n&lt;critique&gt;{critique}&lt;/critique&gt;"</span>,
+        )
+    <span class="kw">return</span> draft  <span class="com"># 한도 도달: 마지막 draft 반환</span>
+</pre>
+    <div class="note"><strong>포인트.</strong> 평가 기준은 <em>구체적이고 글로 쓸 수 있어야</em> 의미가 있다. "더 좋게 만들어"는 루프를 무의미하게 만든다.</div>
+  </article>
+
+  <!-- G. Agent loop -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>06 · Agent Loop</h4>
+      <span class="tag">autonomous</span>
+    </div>
+<pre>TOOLS = [
+    {
+        <span class="str">"name"</span>: <span class="str">"read_file"</span>,
+        <span class="str">"description"</span>: <span class="str">"파일 내용을 읽는다. 주니어 개발자에게 설명하듯 명확히."</span>,
+        <span class="str">"input_schema"</span>: {
+            <span class="str">"type"</span>: <span class="str">"object"</span>,
+            <span class="str">"properties"</span>: {<span class="str">"path"</span>: {<span class="str">"type"</span>: <span class="str">"string"</span>}},
+            <span class="str">"required"</span>: [<span class="str">"path"</span>],
+        },
+    },
+    <span class="com"># ... 다른 도구들</span>
+]
+
+<span class="kw">def</span> <span class="fn">run_tool</span>(name: <span class="kw">str</span>, args: <span class="kw">dict</span>) -> <span class="kw">str</span>:
+    <span class="kw">if</span> name == <span class="str">"read_file"</span>:
+        <span class="kw">with</span> <span class="fn">open</span>(args[<span class="str">"path"</span>]) <span class="kw">as</span> f:
+            <span class="kw">return</span> f.<span class="fn">read</span>()
+    <span class="kw">raise</span> <span class="fn">ValueError</span>(<span class="str">f"unknown tool: {name}"</span>)
+
+<span class="kw">def</span> <span class="fn">agent</span>(goal: <span class="kw">str</span>, max_steps: <span class="kw">int</span> = <span class="str">10</span>):
+    messages = [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: goal}]
+
+    <span class="kw">for</span> step <span class="kw">in</span> <span class="fn">range</span>(max_steps):
+        resp = client.messages.create(
+            model=<span class="str">"claude-sonnet-4-6"</span>,
+            max_tokens=<span class="str">1024</span>,
+            tools=TOOLS,
+            messages=messages,
+        )
+
+        <span class="kw">if</span> resp.stop_reason == <span class="str">"end_turn"</span>:
+            <span class="kw">return</span> resp.content[<span class="str">0</span>].text
+
+        <span class="com"># 도구 호출 처리</span>
+        messages.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: resp.content})
+        tool_results = []
+        <span class="kw">for</span> block <span class="kw">in</span> resp.content:
+            <span class="kw">if</span> block.type == <span class="str">"tool_use"</span>:
+                result = <span class="fn">run_tool</span>(block.name, block.input)
+                tool_results.<span class="fn">append</span>({
+                    <span class="str">"type"</span>: <span class="str">"tool_result"</span>,
+                    <span class="str">"tool_use_id"</span>: block.id,
+                    <span class="str">"content"</span>: result,
+                })
+        messages.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: tool_results})
+
+    <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="str">"max_steps reached without completion"</span>)
+</pre>
+    <div class="note"><strong>포인트.</strong> 에이전트의 90%는 <em>루프 + 도구 사용 + 종료 조건</em>이다. <strong>max_steps</strong>는 비용 폭주 방지의 안전핀. 도구의 <code>description</code>·<code>input_schema</code> 품질이 곧 에이전트 품질이다.</div>
+  </article>
+
+  <p class="margin-note">
+    프로덕션에서는 여기에 <strong>관측(로깅·트레이싱) · 가드레일(입출력 필터링) · 휴먼 인 더 루프(중요 행동 전 승인)</strong>를 더해야 한다. 패턴 자체보다 이 주변 인프라가 시스템 신뢰도를 결정한다.
+  </p>
+</section>
+
+
+<footer>
+  <div>
+    원문 · <a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">anthropic.com/research/building-effective-agents</a>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    const btn = document.getElementById('menuBtn');
+    const panel = document.getElementById('tocPanel');
+    const backdrop = document.getElementById('tocBackdrop');
+    const body = document.body;
+
+    function setOpen(open) {
+      btn.classList.toggle('open', open);
+      panel.classList.toggle('open', open);
+      backdrop.classList.toggle('open', open);
+      body.classList.toggle('menu-open', open);
+      btn.setAttribute('aria-expanded', String(open));
+      panel.setAttribute('aria-hidden', String(!open));
+      btn.setAttribute('aria-label', open ? '목차 닫기' : '목차 열기');
+    }
+
+    btn.addEventListener('click', () => setOpen(!panel.classList.contains('open')));
+    backdrop.addEventListener('click', () => setOpen(false));
+
+    document.querySelectorAll('[data-close]').forEach(a => {
+      a.addEventListener('click', () => setOpen(false));
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && panel.classList.contains('open')) setOpen(false);
+    });
+  })();
+</script>
+
+</body>
+</html>

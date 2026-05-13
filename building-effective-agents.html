@@ -297,12 +297,13 @@
   .canvas {
     background: var(--paper-deep);
     border: 1px solid var(--rule);
-    padding: clamp(1.5rem, 4vw, 2.5rem);
+    padding: clamp(1.25rem, 3vw, 2rem);
     position: relative;
-    min-height: 280px;
+    min-height: 260px;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
   }
   .canvas::before {
     content: attr(data-label);
@@ -322,29 +323,33 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 0.85rem;
     border: 1.5px solid var(--ink);
     background: var(--paper);
     font-family: var(--sans);
-    font-size: 0.82rem;
+    font-size: 0.76rem;
     font-weight: 500;
     color: var(--ink);
-    line-height: 1.25;
-    min-width: 4.5rem;
+    line-height: 1.3;
+    min-width: 4rem;
+    max-width: 100%;
     position: relative;
+    word-break: keep-all;
+    flex-direction: column;
   }
   .box.accent { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); }
   .box.soft { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
   .box.dashed { border-style: dashed; }
   .box small {
     display: block;
-    font-size: 0.66rem;
+    font-size: 0.6rem;
     font-weight: 400;
     color: var(--ink-faint);
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    margin-top: 0.2rem;
+    margin-top: 0.18rem;
   }
+  .box.accent small { color: var(--accent-wash); opacity: 0.85; }
 
   .arrow { display: inline-flex; align-items: center; color: var(--ink-soft); font-family: var(--mono); }
   .arrow-h { width: 1.6rem; height: 1.5px; background: var(--ink-soft); position: relative; }
@@ -423,51 +428,63 @@
   .d-route {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 1rem 2rem;
+    gap: 0.8rem 1.4rem;
     align-items: center;
+    width: 100%;
+    min-width: 0;
   }
   .d-route .router {
     background: var(--accent);
     color: var(--paper);
     border-color: var(--accent-deep);
-    padding: 1.1rem 1rem;
-    font-size: 0.95rem;
+    padding: 0.9rem 0.85rem;
+    font-size: 0.82rem;
     font-weight: 600;
   }
   .d-route .branches {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
-    position: relative;
+    gap: 0.5rem;
+    min-width: 0;
   }
   .d-route .branches .br {
     display: grid;
-    grid-template-columns: 2.5rem 1fr;
+    grid-template-columns: 1.6rem 1fr;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
+    min-width: 0;
   }
   .d-route .branches .br::before {
     content: ""; height: 1.5px; background: var(--ink-soft);
     position: relative;
   }
-  .d-route .branches .br::after {
-    content: ""; position: absolute; left: 2.4rem;
-    border: 4px solid transparent; border-left-color: var(--ink-soft);
+  .d-route .branches .box {
+    width: 100%;
+    min-width: 0;
+    padding: 0.55rem 0.7rem;
   }
 
   /* Parallel */
   .d-parallel {
     display: grid;
-    grid-template-columns: auto 2rem 1fr 2rem auto;
+    grid-template-columns: auto 1.4rem minmax(0, 1fr) 1.4rem auto;
     align-items: center;
     gap: 0.4rem;
+    width: 100%;
+    min-width: 0;
   }
   .d-parallel .lanes {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 0.5rem;
+    min-width: 0;
   }
-  .d-parallel .lanes .box { width: 100%; }
+  .d-parallel .lanes .box {
+    width: 100%;
+    min-width: 0;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.74rem;
+  }
   .d-parallel .fan {
     display: flex;
     flex-direction: column;
@@ -484,23 +501,31 @@
   .d-orch {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 0.8rem;
     justify-items: center;
+    width: 100%;
+    min-width: 0;
   }
   .d-orch .hub {
     background: var(--ink); color: var(--paper);
-    padding: 1.1rem 1.4rem;
-    font-size: 1rem;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.88rem;
     font-weight: 600;
     letter-spacing: 0.01em;
     border: none;
   }
   .d-orch .spokes {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.7rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
     width: 100%;
     position: relative;
+  }
+  .d-orch .spokes .box {
+    width: 100%;
+    min-width: 0;
+    padding: 0.55rem 0.5rem;
+    font-size: 0.72rem;
   }
   .d-orch .spokes::before {
     content: "";
@@ -1089,7 +1114,7 @@
   <!-- 0. Augmented LLM -->
   <div class="diagram-block" id="p-augmented">
     <div class="db-text">
-      <h4><span class="num">00 · 빌딩블록</span>Augmented<br>LLM</h4>
+      <h4><span class="num">00 · 빌딩블록</span>Augmented LLM</h4>
       <p>
         모든 패턴의 원자 단위. LLM 호출에 세 가지 능력을 부착한다 —
         외부 지식을 가져오는 <strong>retrieval</strong>,
@@ -1120,7 +1145,7 @@
   <!-- 1. Prompt Chaining -->
   <div class="diagram-block" id="p-chaining">
     <div class="db-text">
-      <h4><span class="num">01 · 워크플로우</span>Prompt<br>Chaining</h4>
+      <h4><span class="num">01 · 워크플로우</span>Prompt Chaining</h4>
       <p>
         하나의 작업을 <strong>순차적 단계</strong>로 쪼개고,
         각 단계 사이에 <em>검증 게이트</em>를 넣는다.
@@ -1217,7 +1242,7 @@
   <!-- 4. Orchestrator-Workers -->
   <div class="diagram-block" id="p-orchestrator">
     <div class="db-text">
-      <h4><span class="num">04 · 워크플로우</span>Orchestrator —<br>Workers</h4>
+      <h4><span class="num">04 · 워크플로우</span>Orchestrator — Workers</h4>
       <p>
         중앙의 <strong>오케스트레이터 LLM</strong>이 작업을 <em>동적으로</em> 쪼개서
         워커들에게 위임하고, 결과를 종합한다.
@@ -1249,7 +1274,7 @@
   <!-- 5. Evaluator-Optimizer -->
   <div class="diagram-block" id="p-evaluator">
     <div class="db-text">
-      <h4><span class="num">05 · 워크플로우</span>Evaluator —<br>Optimizer</h4>
+      <h4><span class="num">05 · 워크플로우</span>Evaluator — Optimizer</h4>
       <p>
         한 LLM이 결과를 <strong>생성</strong>하고, 다른 LLM이 <strong>평가·피드백</strong>을 준다.
         피드백을 받아 다시 생성 — 만족할 때까지 루프.

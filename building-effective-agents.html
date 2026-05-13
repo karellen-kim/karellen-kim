@@ -429,41 +429,62 @@
   /* Routing */
   .d-route {
     display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0.8rem 1.4rem;
+    grid-template-columns: auto 1.4rem minmax(0, 1fr);
     align-items: center;
     width: 100%;
     min-width: 0;
+    row-gap: 0.55rem;
   }
   .d-route .router {
+    grid-column: 1;
+    grid-row: 1 / span 3;
     background: var(--accent);
     color: var(--paper);
     border-color: var(--accent-deep);
-    padding: 0.9rem 0.85rem;
-    font-size: 0.82rem;
+    padding: 1rem 0.95rem;
+    font-size: 0.88rem;
     font-weight: 600;
+    align-self: center;
   }
-  .d-route .branches {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    min-width: 0;
-  }
-  .d-route .branches .br {
-    display: grid;
-    grid-template-columns: 1.6rem 1fr;
-    align-items: center;
-    gap: 0.4rem;
-    min-width: 0;
-  }
-  .d-route .branches .br::before {
-    content: ""; height: 1.5px; background: var(--ink-soft);
+  .d-route .connect {
+    grid-column: 2;
+    height: 1.5px;
+    background: var(--ink-soft);
     position: relative;
   }
-  .d-route .branches .box {
-    width: 100%;
+  .d-route .connect::after {
+    content: "";
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    border: 4px solid transparent;
+    border-left-color: var(--ink-soft);
+    transform: translateY(-50%);
+  }
+  .d-route .leaf {
+    grid-column: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    padding: 0.7rem 0.95rem;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.3;
     min-width: 0;
-    padding: 0.55rem 0.7rem;
+    text-align: center;
+  }
+  .d-route .leaf small {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.22rem;
   }
 
   /* Parallel */
@@ -1198,11 +1219,12 @@
     <div class="canvas" data-label="Workflow · Routing">
       <div class="d-route">
         <div class="box router">Classifier<br>LLM</div>
-        <div class="branches">
-          <div class="br"><span></span><div class="box">전문화 LLM A<small>refund</small></div></div>
-          <div class="br"><span></span><div class="box">전문화 LLM B<small>technical</small></div></div>
-          <div class="br"><span></span><div class="box">전문화 LLM C<small>general</small></div></div>
-        </div>
+        <span class="connect"></span>
+        <div class="leaf">전문화 LLM A<small>refund</small></div>
+        <span class="connect"></span>
+        <div class="leaf">전문화 LLM B<small>technical</small></div>
+        <span class="connect"></span>
+        <div class="leaf">전문화 LLM C<small>general</small></div>
       </div>
     </div>
   </div>

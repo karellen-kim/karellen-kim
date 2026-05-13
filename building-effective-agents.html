@@ -771,6 +771,242 @@
   }
   .code-card .note strong { color: var(--accent-deep); }
 
+  /* ───────── §4 ADOPTION ───────── */
+  .adopt-lead {
+    font-size: clamp(1.05rem, 1.7vw, 1.25rem);
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 56ch;
+    font-weight: 300;
+    margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  }
+  .adopt-lead strong { color: var(--ink); font-weight: 600; }
+
+  .tier {
+    margin-bottom: clamp(2rem, 4vw, 3.5rem);
+  }
+  .tier-head {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: 1.2rem;
+    padding: 0.7rem 0;
+    border-top: 2px solid var(--ink);
+    margin-bottom: 1.5rem;
+  }
+  .tier-rank {
+    font-size: 0.78rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+  .tier-title {
+    font-size: clamp(1.1rem, 1.8vw, 1.35rem);
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+  }
+  .tier-meta {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .tier-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (min-width: 760px) {
+    .tier-grid { grid-template-columns: 1fr 1fr; gap: 1px; background: var(--rule); }
+  }
+
+  .adopt {
+    background: var(--paper);
+    padding: 1.3rem 1.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (min-width: 760px) {
+    .adopt { border-bottom: none; }
+  }
+  .adopt:last-child { border-bottom: none; }
+
+  .adopt-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8rem;
+    margin-bottom: 0.7rem;
+    flex-wrap: wrap;
+  }
+  .adopt-head h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.018em;
+  }
+  .adopt-head .why {
+    font-size: 0.78rem;
+    color: var(--accent-deep);
+    font-weight: 500;
+    padding: 0.15rem 0.55rem;
+    background: var(--accent-wash);
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  .adopt .desc {
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    margin-bottom: 0.9rem;
+  }
+  .adopt ul {
+    list-style: none;
+  }
+  .adopt li {
+    color: var(--ink);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    padding: 0.35rem 0;
+    padding-left: 1.3rem;
+    position: relative;
+    border-top: 1px dashed var(--rule);
+  }
+  .adopt li:first-child { border-top: none; }
+  .adopt li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    top: 0.4rem;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+  }
+  .adopt li b {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  /* Roadmap */
+  .roadmap {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    padding-top: 2.5rem;
+    border-top: 2px solid var(--ink);
+  }
+  .roadmap-head {
+    margin-bottom: 1.8rem;
+  }
+  .roadmap-head h3 {
+    font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.025em;
+    margin-bottom: 0.4rem;
+  }
+  .roadmap-head p {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    max-width: 52ch;
+  }
+  .steps {
+    counter-reset: step;
+    list-style: none;
+  }
+  .steps li {
+    display: grid;
+    grid-template-columns: 3rem 1fr;
+    gap: 1rem;
+    padding: 1.1rem 0;
+    border-bottom: 1px solid var(--rule);
+    align-items: baseline;
+  }
+  .steps li::before {
+    counter-increment: step;
+    content: counter(step, decimal-leading-zero);
+    font-family: var(--mono);
+    color: var(--accent);
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .steps h5 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.012em;
+  }
+  .steps p {
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+  .steps p code {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    padding: 0.05rem 0.35rem;
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    color: var(--accent-deep);
+  }
+
+  /* Antipattern */
+  .antipattern {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    padding: clamp(1.5rem, 3vw, 2rem);
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+  }
+  .antipattern h3 {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.018em;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .antipattern h3 .label {
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    background: var(--paper);
+    padding: 0.25rem 0.55rem;
+    border-radius: 2px;
+  }
+  .antipattern ul { list-style: none; }
+  .antipattern li {
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    padding: 0.45rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+    border-top: 1px dashed var(--rule);
+  }
+  .antipattern li:first-child { border-top: none; }
+  .antipattern li::before {
+    content: "×";
+    position: absolute;
+    left: 0;
+    top: 0.35rem;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-weight: 600;
+  }
+  .antipattern li b { color: var(--ink); font-weight: 600; }
+
   /* ───────── FOOTER ───────── */
   footer {
     max-width: 1200px;
@@ -997,7 +1233,7 @@
   <div class="toc-title">목차</div>
 
   <ol class="toc-list">
-    <li><a href="#top" data-close>서문</a></li>
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
     <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
     <li>
       <a href="#patterns" data-close>패턴 도감</a>
@@ -1012,6 +1248,7 @@
       </ul>
     </li>
     <li><a href="#code" data-close>실전 코드</a></li>
+    <li><a href="#adoption" data-close>실무 도입 가이드</a></li>
   </ol>
 
   <div class="toc-foot">
@@ -1660,6 +1897,217 @@ aclient = <span class="fn">AsyncAnthropic</span>()
   <p class="margin-note">
     프로덕션에서는 여기에 <strong>관측(로깅·트레이싱) · 가드레일(입출력 필터링) · 휴먼 인 더 루프(중요 행동 전 승인)</strong>를 더해야 한다. 패턴 자체보다 이 주변 인프라가 시스템 신뢰도를 결정한다.
   </p>
+</section>
+
+
+<!-- §4 실무 도입 -->
+<section class="section" id="adoption">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Practical Adoption</div>
+      <h2 class="section-title">실무 도입 가이드</h2>
+    </div>
+  </div>
+
+  <p class="adopt-lead">
+    7가지 패턴 중 <strong>어디부터 도입할지</strong>는 ROI 순서로 결정한다.
+    비용 절감 효과가 즉시 나타나는 단순 패턴부터 시작하고, 자율성이 큰 패턴은 가장 마지막에. 같은 작업도 패턴 선택에 따라 비용·지연·정확도가 크게 달라진다.
+  </p>
+
+  <!-- Tier 1 -->
+  <div class="tier">
+    <div class="tier-head">
+      <span class="tier-rank">Tier 1</span>
+      <span class="tier-title">비용 대비 효과가 가장 큰 두 가지</span>
+      <span class="tier-meta">시작점 · 1~2일 작업</span>
+    </div>
+
+    <div class="tier-grid">
+      <article class="adopt">
+        <div class="adopt-head">
+          <h4>Routing</h4>
+          <span class="why">비용 즉시 절감</span>
+        </div>
+        <p class="desc">쉬운 질문은 Haiku, 어려운 것만 Sonnet/Opus. 분류기 한 번 추가만으로 LLM 비용 30~70% 절감.</p>
+        <ul>
+          <li><b>고객 지원 챗봇</b> — 환불 / 기술 / 일반 분기</li>
+          <li><b>사내 봇</b> — 코드 질문 / 문서 검색 / 운영 가이드 자동 분기</li>
+          <li><b>데이터 파이프라인</b> — 입력 포맷(JSON·CSV·PDF·이미지)별 다른 처리기</li>
+          <li><b>비용 캡</b> — 토큰 길이 임계치 기반 모델 다운그레이드</li>
+        </ul>
+      </article>
+
+      <article class="adopt">
+        <div class="adopt-head">
+          <h4>Prompt Chaining</h4>
+          <span class="why">정확도 개선</span>
+        </div>
+        <p class="desc">하나의 거대 프롬프트를 단계로 쪼개고 게이트 추가. 디버깅 가능 + 단계별 모델 선택 가능.</p>
+        <ul>
+          <li><b>PR 리뷰</b> — 변경 요약 → 영향 범위 → 리스크 평가 → 코멘트</li>
+          <li><b>회의록</b> — 발화 정리 → 결정사항 → 액션 → Jira/Linear 티켓 초안</li>
+          <li><b>장애 회고서</b> — 타임라인 → 근본 원인 → 재발 방지 액션</li>
+          <li><b>다국어 처리</b> — 번역 → 톤 검수 → 용어 통일</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+
+  <!-- Tier 2 -->
+  <div class="tier">
+    <div class="tier-head">
+      <span class="tier-rank">Tier 2</span>
+      <span class="tier-title">품질이 중요한 작업</span>
+      <span class="tier-meta">중간 투자 · 1~2주</span>
+    </div>
+
+    <div class="tier-grid">
+      <article class="adopt">
+        <div class="adopt-head">
+          <h4>Parallelization · Voting</h4>
+          <span class="why">신뢰도 강화</span>
+        </div>
+        <p class="desc">False negative 비용이 큰 가드레일에서 강력. 서로 다른 관점으로 N회 호출 → 만장일치만 통과.</p>
+        <ul>
+          <li><b>보안 리뷰</b> — 보안 엔지니어 / 공격자 / 규정 준수 3개 관점 병렬</li>
+          <li><b>컨텐츠 모더레이션</b> — 한 번이라도 위험 판정이면 reject</li>
+          <li><b>면접 답변 평가</b> — 다양한 평가자 시뮬레이션 후 합의</li>
+        </ul>
+      </article>
+
+      <article class="adopt">
+        <div class="adopt-head">
+          <h4>Parallelization · Sectioning</h4>
+          <span class="why">지연 단축</span>
+        </div>
+        <p class="desc">독립적 하위 작업을 동시 호출. 직렬 처리 5초 → 병렬 0.8초 수준 단축이 흔하다.</p>
+        <ul>
+          <li><b>장문 요약</b> — 50쪽 문서를 청크별 병렬 요약 → 통합</li>
+          <li><b>로그 분석</b> — 시간대별 병렬 파싱 후 머지</li>
+          <li><b>멀티모달</b> — 이미지 / OCR / 메타데이터 추출 동시</li>
+        </ul>
+      </article>
+
+      <article class="adopt">
+        <div class="adopt-head">
+          <h4>Evaluator–Optimizer</h4>
+          <span class="why">반복 개선</span>
+        </div>
+        <p class="desc">평가 기준이 글로 쓸 수 있고 측정 가능할 때만 의미. "더 좋게" 같은 모호한 기준이면 루프만 돈다.</p>
+        <ul>
+          <li><b>글쓰기</b> — 작가 ↔ 편집자 사이클 (톤 · 명료성 · 사실성)</li>
+          <li><b>SQL 최적화</b> — 생성 → EXPLAIN 평가 → 인덱스 힌트 개선</li>
+          <li><b>번역 품질</b> — 뉘앙스 검수 → 재번역</li>
+          <li><b>메타 사용</b> — 프롬프트 자체 최적화</li>
+        </ul>
+      </article>
+
+      <article class="adopt">
+        <div class="adopt-head">
+          <h4>—</h4>
+          <span class="why">선택지</span>
+        </div>
+        <p class="desc">Tier 2는 한 번에 다 도입하지 말고, 가장 통증 큰 곳 하나만 골라 PoC 후 확장하라. 다음 분기 KPI 한 줄에 매핑되는 패턴부터.</p>
+        <ul>
+          <li>품질 문제 → <b>Voting</b></li>
+          <li>지연 문제 → <b>Sectioning</b></li>
+          <li>창작·반복 개선 → <b>Evaluator</b></li>
+        </ul>
+      </article>
+    </div>
+  </div>
+
+  <!-- Tier 3 -->
+  <div class="tier">
+    <div class="tier-head">
+      <span class="tier-rank">Tier 3</span>
+      <span class="tier-title">정교한 설계가 필요</span>
+      <span class="tier-meta">고비용 · 1개월+</span>
+    </div>
+
+    <div class="tier-grid">
+      <article class="adopt">
+        <div class="adopt-head">
+          <h4>Orchestrator–Workers</h4>
+          <span class="why">동적 분해</span>
+        </div>
+        <p class="desc">하위 작업이 런타임에 정해질 때만 의미. 비용·예측 불가능성이 동시에 증가하므로 max_tokens · max_workers 가드 필수.</p>
+        <ul>
+          <li><b>다중 파일 리팩토링</b> — 어디까지 변경될지 미리 모름</li>
+          <li><b>리서치 작업</b> — "이 회사의 기술 스택과 채용 동향 분석"</li>
+          <li><b>마이그레이션 플랜</b> — 스키마 진단 → 단계 자동 생성</li>
+        </ul>
+      </article>
+
+      <article class="adopt">
+        <div class="adopt-head">
+          <h4>Agent Loop</h4>
+          <span class="why">진짜 자율 실행</span>
+        </div>
+        <p class="desc">샌드박스 + 명확한 종료 조건 + 인간 체크포인트 없이는 운영하지 마라. 한 번의 잘못된 도구 호출이 전체 궤도를 망친다.</p>
+        <ul>
+          <li><b>코딩 에이전트</b> — Claude Code가 그 예</li>
+          <li><b>데이터 분석</b> — 질문 → 쿼리 → 해석 → 다음 질문</li>
+          <li><b>옵스 트리아지</b> — 알람 → 로그 수집 → 가설 검증 → 자동 복구 시도</li>
+          <li><b>QA 자동화</b> — 명세 → 테스트 케이스 생성 → 실행 → 회귀 보고</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+
+  <!-- Roadmap -->
+  <div class="roadmap">
+    <div class="roadmap-head">
+      <h3>도입 권장 순서</h3>
+      <p>전체를 한꺼번에 적용하지 말고, 단계별 ROI를 확인하면서 다음 단계로 넘어간다.</p>
+    </div>
+
+    <ol class="steps">
+      <li>
+        <div>
+          <h5>Routing 부터 시작</h5>
+          <p>코드 한두 시간, 비용 즉시 30~70% 절감. 분류기 + 모델 라우팅 테이블만 있으면 된다.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h5>Chaining 으로 정확도 개선</h5>
+          <p>기존 단일 프롬프트 작업을 단계로 쪼개고 검증 게이트 추가. 단계별로 다른 모델·온도 사용 가능.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h5>Voting 을 가드레일에 추가</h5>
+          <p>보안·규정·모더레이션처럼 false negative 비용이 큰 영역. 3중 검사 → 만장일치 게이트.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h5>Evaluator–Optimizer 는 측정 가능한 곳만</h5>
+          <p>평가 기준을 글로 쓸 수 없으면 의미 없음. 반드시 <code>max_iters</code>로 무한 루프 차단.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h5>Agent 는 가장 마지막</h5>
+          <p>비용·지연·실수가 누적되므로 sandbox 환경 + <code>max_steps</code> + 사람 체크포인트는 협상 불가.</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+
+  <!-- Antipattern -->
+  <div class="antipattern">
+    <h3>안티패턴 — 쓰지 말아야 할 곳<span class="label">caution</span></h3>
+    <ul>
+      <li><b>단순 분류 작업에 Agent 쓰기</b> — Routing이면 충분하다. Agent는 토큰을 10배 쓰면서 같은 결과를 낸다.</li>
+      <li><b>결과를 검증할 수 없는데 Evaluator 쓰기</b> — 루프만 돌고 비용만 든다. 평가 기준이 글로 쓸 수 있어야 한다.</li>
+      <li><b>실시간 응답 요구에 Orchestrator 쓰기</b> — 동적 분해는 지연을 누적시킨다. SLA가 짧으면 미리 정의된 워크플로우로.</li>
+      <li><b>단일 LLM 호출로 충분한데 Chaining 만들기</b> — 단계 늘리면 지연만 증가. 정확도 개선이 측정되지 않으면 합치는 게 낫다.</li>
+    </ul>
+  </div>
+
 </section>
 
 

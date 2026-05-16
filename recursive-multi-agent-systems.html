@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recursive Multi-Agent Systems — 학습 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* HERO */
+  .hero { max-width: 1200px; margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); position: relative; }
+  .hero::before { content: ""; position: absolute; top: 2rem; left: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); height: 1px; background: var(--ink); }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.5rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.95; font-weight: 600; margin-top: clamp(2rem, 5vw, 3rem); letter-spacing: -0.035em; color: var(--ink); }
+  .hero-title em { font-style: normal; font-weight: 300; color: var(--accent-deep); }
+  .hero-sub { margin-top: 1.4rem; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: var(--ink-soft); max-width: 42rem; line-height: 1.5; font-weight: 300; }
+  .hero-grid { margin-top: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .hero-grid > div { background: var(--paper); padding: 1.25rem 1.5rem; }
+  .hero-grid .k { display: block; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 0.4rem; }
+  .hero-grid .v { font-size: 1.2rem; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .hero-grid .v small { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; font-weight: 400; }
+
+  /* SECTIONS */
+  .section { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem); position: relative; }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head { display: grid; grid-template-columns: auto 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: baseline; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .section-num { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.85; color: var(--accent); font-weight: 200; letter-spacing: -0.04em; }
+  .section-titles { border-left: 1px solid var(--ink); padding-left: clamp(1rem, 3vw, 2rem); padding-top: 0.5rem; }
+  .section-kicker { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .section-title { font-size: clamp(1.65rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.028em; }
+
+  /* §1 TL;DR */
+  .tldr-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
+  @media (min-width: 720px) { .tldr-grid { grid-template-columns: repeat(12, 1fr); } }
+  .tldr-lead { grid-column: 1 / -1; font-size: clamp(1.2rem, 2.1vw, 1.6rem); line-height: 1.45; color: var(--ink); padding-bottom: 2rem; border-bottom: 1px solid var(--rule); margin-bottom: 2.5rem; font-weight: 300; letter-spacing: -0.012em; }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  .tldr-lead::first-letter { font-size: 3.4em; float: left; line-height: 0.9; padding-right: 0.12em; padding-top: 0.08em; color: var(--accent-deep); font-weight: 200; }
+  @media (min-width: 720px) { .tldr-lead { grid-column: 2 / 12; } }
+  .points { display: contents; }
+  .point { grid-column: 1 / -1; display: grid; grid-template-columns: 4ch 1fr; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 720px) { .point { grid-column: 2 / 12; grid-template-columns: 5ch 1fr; gap: 2rem; } }
+  .point .n { font-size: 1.25rem; color: var(--accent); line-height: 1; font-weight: 300; letter-spacing: 0.05em; text-transform: uppercase; }
+  .point h3 { font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.3; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.015em; }
+  .point p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
+  .point p strong { color: var(--ink); font-weight: 600; }
+
+  /* §2 다이어그램 */
+  .diagram-block { margin-bottom: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .db-text h4 { font-size: clamp(1.3rem, 2.3vw, 1.75rem); line-height: 1.25; margin-bottom: 0.8rem; color: var(--ink); font-weight: 600; letter-spacing: -0.022em; }
+  .db-text h4 .num { display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em; color: var(--accent-deep); vertical-align: middle; background: var(--accent-wash); padding: 0.28rem 0.55rem; border-radius: 999px; margin-right: 0.65rem; font-weight: 600; position: relative; top: -0.15em; }
+  .db-text p { color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.65; font-size: 0.95rem; }
+  .db-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .db-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas { background: var(--paper-deep); border: 1px solid var(--rule); padding: clamp(1.25rem, 3vw, 2rem); position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .canvas::before { content: attr(data-label); position: absolute; top: 0.7rem; left: 0.9rem; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; }
+
+  .box { display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 0.6rem 0.85rem; border: 1.5px solid var(--ink); background: var(--paper); font-family: var(--sans); font-size: 0.76rem; font-weight: 500; color: var(--ink); line-height: 1.3; min-width: 4rem; max-width: 100%; position: relative; word-break: keep-all; flex-direction: column; }
+  .box.accent { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); }
+  .box.soft { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .box.dashed { border-style: dashed; }
+  .box small { display: block; font-size: 0.6rem; font-weight: 400; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.18rem; }
+  .box.accent small { color: var(--accent-wash); opacity: 0.85; }
+
+  /* Comm comparison */
+  .d-comm { display: grid; grid-template-columns: 1fr; gap: 1rem; width: 100%; min-width: 0; }
+  @media (min-width: 520px) { .d-comm { grid-template-columns: 1fr 1fr; gap: 0.9rem; } }
+  .d-comm .pane {
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 0;
+    position: relative;
+  }
+  .d-comm .pane .pane-label {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 0.25rem;
+  }
+  .d-comm .pane.cur .pane-label { color: var(--ink-faint); }
+  .d-comm .pane.new { border-color: var(--accent); background: var(--accent-wash); }
+  .d-comm .pane.new .pane-label { color: var(--accent-deep); }
+  .d-comm .row { display: flex; align-items: center; gap: 0.4rem; }
+  .d-comm .row .agent {
+    padding: 0.4rem 0.55rem;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    font-size: 0.7rem;
+    font-weight: 600;
+    min-width: 2.2rem;
+    text-align: center;
+  }
+  .d-comm .row .msg {
+    flex: 1; min-width: 0;
+    padding: 0.4rem 0.55rem;
+    background: var(--paper-deep);
+    border: 1px dashed var(--rule);
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .d-comm .pane.new .row .msg {
+    background: var(--paper);
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+  .d-comm .footer {
+    margin-top: auto;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--rule);
+    font-size: 0.7rem;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .d-comm .pane.new .footer { border-color: var(--accent); color: var(--accent-deep); }
+
+  /* RecursiveMAS architecture */
+  .d-arch { display: grid; grid-template-columns: 1fr; gap: 0.7rem; width: 100%; min-width: 0; justify-items: center; }
+  .d-arch .ring {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    width: 100%;
+  }
+  .d-arch .ring .box {
+    width: 100%; min-width: 0;
+    padding: 0.55rem 0.4rem;
+    font-size: 0.72rem;
+  }
+  .d-arch .link-label {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    padding: 0.4rem 0.8rem;
+    background: var(--accent-wash);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+  }
+  .d-arch .recur {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+  }
+  .d-arch .recur .arrow-loop {
+    width: 1.4rem; height: 0.85rem;
+    border: 1.5px solid var(--accent);
+    border-bottom: none;
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    position: relative;
+  }
+  .d-arch .recur .arrow-loop::after {
+    content: ""; position: absolute; right: -2px; top: 60%;
+    border: 4px solid transparent; border-top-color: var(--accent);
+  }
+
+  /* Inner-outer loop */
+  .d-loop { display: grid; grid-template-columns: 1fr; gap: 0.6rem; width: 100%; min-width: 0; }
+  .d-loop .level {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr);
+    gap: 0.7rem;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    align-items: center;
+  }
+  .d-loop .level.outer { border-color: var(--ink); border-width: 1.5px; }
+  .d-loop .level .lvl-tag {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+  .d-loop .level.outer .lvl-tag { color: var(--ink); }
+  .d-loop .level .lvl-body {
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    line-height: 1.4;
+  }
+  .d-loop .level .lvl-body b { color: var(--ink); font-weight: 600; }
+  .d-loop .arrow-down {
+    justify-self: center;
+    width: 1.5px; height: 0.7rem;
+    background: var(--ink-soft);
+    position: relative;
+  }
+  .d-loop .arrow-down::after {
+    content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%);
+    border: 4px solid transparent; border-top-color: var(--ink-soft);
+  }
+
+  /* Benchmark */
+  .d-bench { display: flex; flex-direction: column; gap: 0.7rem; width: 100%; min-width: 0; }
+  .d-bench .row {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.78rem;
+  }
+  .d-bench .row .label { color: var(--ink); font-weight: 500; }
+  .d-bench .row .bar {
+    height: 1.1rem;
+    background: var(--rule);
+    position: relative;
+    overflow: hidden;
+  }
+  .d-bench .row .bar > span {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+  }
+  .d-bench .row .bar > span.alt { background: var(--accent-deep); }
+  .d-bench .row .bar > span.dim { background: var(--ink-faint); }
+  .d-bench .row .val {
+    font-family: var(--mono);
+    color: var(--ink-soft);
+    font-size: 0.76rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .d-bench .legend {
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed var(--rule);
+    font-size: 0.7rem;
+    color: var(--ink-faint);
+    font-family: var(--mono);
+    letter-spacing: 0.06em;
+  }
+
+  /* Decision table */
+  .decision { margin-top: clamp(3rem, 6vw, 5rem); border-top: 2px solid var(--ink); padding-top: 2.5rem; }
+  .decision h3 { font-size: clamp(1.35rem, 2.4vw, 1.75rem); font-weight: 600; letter-spacing: -0.025em; margin-bottom: 1.4rem; }
+  .decision-table { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  @media (min-width: 760px) { .decision-table { grid-template-columns: 1fr 1fr; } }
+  .decision-table > div { background: var(--paper); padding: 1.5rem; }
+  .decision-table h4 { font-size: 1.1rem; margin-bottom: 0.7rem; color: var(--accent-deep); font-weight: 600; letter-spacing: -0.015em; }
+  .decision-table ul { list-style: none; color: var(--ink-soft); }
+  .decision-table li { padding: 0.35rem 0; padding-left: 1.1rem; position: relative; font-size: 0.92rem; }
+  .decision-table li::before { content: "→"; position: absolute; left: 0; color: var(--accent); font-family: var(--mono); }
+
+  /* §3 코드 */
+  .code-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card { margin-bottom: 2.5rem; border: 1px solid var(--rule); background: var(--paper); overflow: hidden; }
+  .code-head { display: flex; align-items: baseline; justify-content: space-between; padding: 1rem 1.4rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; gap: 0.5rem; }
+  .code-head h4 { font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .code-head .tag { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--accent); color: var(--paper); border-radius: 2px; }
+  .code-head .head-right { display: flex; align-items: center; gap: 0.5rem; }
+  .copy-btn {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.22rem 0.6rem;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    font-weight: 600;
+  }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .copy-btn.failed { background: var(--paper-deep); color: var(--accent-deep); border-color: var(--accent); }
+  .code-card pre { margin: 0; padding: 1.35rem 1.5rem; overflow-x: auto; background: oklch(0.18 0.02 260); color: oklch(0.92 0.015 75); font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note { padding: 1rem 1.4rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper-deep); line-height: 1.6; }
+  .code-card .note strong { color: var(--accent-deep); }
+
+  .margin-note { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; padding: 1.1rem 1.3rem; background: var(--paper-deep); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); margin: 2rem 0; font-weight: 300; }
+  .margin-note::before { content: "노트"; font-weight: 600; color: var(--accent-deep); font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-right: 0.8rem; display: inline-block; padding-right: 0.7rem; border-right: 1px solid var(--rule); }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  /* FOOTER */
+  footer { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: var(--ink-faint); }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* HAMBURGER + TOC */
+  .menu-btn { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; transition: background 0.2s ease; }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span { display: block; width: 20px; height: 1.5px; background: var(--ink); transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, background 0.2s ease; transform-origin: center; }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+  .toc-backdrop { position: fixed; inset: 0; background: oklch(0.18 0.015 260 / 0.35); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+  .toc-panel { position: fixed; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--ink); z-index: 55; transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); overflow-y: auto; padding: 6rem 2.5rem 3rem; }
+  .toc-panel.open { transform: translateX(0); }
+  .toc-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .toc-title { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.03em; color: var(--ink); margin-bottom: 2.2rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule); }
+  .toc-list { list-style: none; counter-reset: toc; }
+  .toc-list > li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a { display: grid; grid-template-columns: 2.5rem 1fr; align-items: baseline; text-decoration: none; color: var(--ink); font-weight: 500; font-size: 1.05rem; letter-spacing: -0.012em; transition: color 0.2s ease; }
+  .toc-list > li > a::before { counter-increment: toc; content: counter(toc, decimal-leading-zero); color: var(--accent); font-weight: 300; font-size: 0.85rem; letter-spacing: 0.05em; }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+  .toc-sub { list-style: none; margin-top: 0.6rem; margin-left: 2.5rem; padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a { color: var(--ink-soft); text-decoration: none; font-size: 0.88rem; font-weight: 400; transition: color 0.2s ease; display: flex; align-items: baseline; gap: 0.6rem; }
+  .toc-sub a span { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; min-width: 1.6rem; }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-sub a:hover span { color: var(--accent); }
+  .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); line-height: 1.6; }
+  body.menu-open { overflow: hidden; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card { animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  }
+</style>
+</head>
+<body>
+
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+<div class="toc-backdrop" id="tocBackdrop"></div>
+
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#diagrams" data-close>그림으로 보는 구조</a>
+      <ul class="toc-sub">
+        <li><a href="#d-comm" data-close><span>01</span>Text vs Latent 통신</a></li>
+        <li><a href="#d-arch" data-close><span>02</span>RecursiveMAS 아키텍처</a></li>
+        <li><a href="#d-loop" data-close><span>03</span>Inner–Outer Loop 학습</a></li>
+        <li><a href="#d-bench" data-close><span>04</span>벤치마크 결과</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+
+  <div class="toc-foot">
+    Recursive Multi-Agent Systems · arXiv 2604.25917<br>학습 노트 · 2026.05
+  </div>
+</aside>
+
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="meta-row">
+    <span>arXiv · 2026.04</span>
+    <span>학습 노트 · 읽는 시간 11분</span>
+  </div>
+
+  <h1 class="hero-title">Recursive<br><em>Multi-Agent Systems</em></h1>
+
+  <p class="hero-sub">
+    "표준 멀티 에이전트의 가장 큰 병목은 에이전트끼리 주고받는 텍스트 메시지였다.
+    그 통신을 latent vector로 바꾸자 — 토큰은 최대 75% 줄고 정확도는 8% 올랐다."
+  </p>
+
+  <div class="hero-grid">
+    <div>
+      <span class="k">저자</span>
+      <span class="v">Yang et al<small>· 13명</small></span>
+    </div>
+    <div>
+      <span class="k">발행</span>
+      <span class="v">arXiv<small>2604.25917</small></span>
+    </div>
+    <div>
+      <span class="k">토큰 절감</span>
+      <span class="v">−75.6%<small>max</small></span>
+    </div>
+    <div>
+      <span class="k">정확도</span>
+      <span class="v">+8.3%<small>avg</small></span>
+    </div>
+    <div>
+      <span class="k">작성</span>
+      <span class="v">2026<small>.05.17</small></span>
+    </div>
+  </div>
+</header>
+
+
+<!-- §1 TL;DR -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      Standard 멀티 에이전트는 <span class="hl">에이전트끼리 자연어 텍스트로 대화</span>한다 —
+      그게 가장 큰 토큰 비용이자 지연 원인이었다.
+      RecursiveMAS는 그 통신을 <em>latent vector</em>로 바꾸고, 협업 자체를 <em>recursion</em>으로 모델링해서
+      9개 벤치마크에서 토큰 -75%, 속도 2.4x, 정확도 +8.3%를 동시에 달성했다.
+    </p>
+
+    <div class="points">
+      <article class="point">
+        <div class="n">i</div>
+        <div>
+          <h3>핵심 통찰 — 통신을 latent space로</h3>
+          <p>표준 MAS의 비효율은 <strong>"agent 출력 → 텍스트화 → 다음 agent 입력"</strong> 사이클에서 온다. 자연어로 바꿀 때 정보가 손실되고 토큰도 폭주. RecursiveMAS는 이 변환 자체를 <em>제거</em> — agent 간 latent state를 직접 전달.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">ii</div>
+        <div>
+          <h3>RecursiveMAS 프레임워크</h3>
+          <p>멀티 에이전트 시스템을 <strong>단일 통합 latent-space recursive computation</strong>으로 캐스팅. 각 agent는 재귀 함수의 한 step. 라운드를 거듭할수록 latent state가 정제되는 구조.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iii</div>
+        <div>
+          <h3>RecursiveLink 모듈</h3>
+          <p>이종(heterogeneous) agent들을 잇는 <strong>lightweight 연결 모듈</strong>. agent 출력의 latent representation을 다음 agent의 입력 공간으로 매핑. 텍스트로 떨어뜨리지 않고 <em>"latent thought"</em>를 그대로 전달.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iv</div>
+        <div>
+          <h3>Inner–Outer Loop 학습</h3>
+          <p><strong>Inner</strong>: 각 agent 내부 step의 forward/backward. <strong>Outer</strong>: 시스템 전체에 걸친 gradient-based credit assignment. 한 agent의 실수가 어디서 발생했는지 전체 recursion 라운드에 거꾸로 전파되어 co-optimize.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">v</div>
+        <div>
+          <h3>측정 결과 — 효율과 품질 동시 개선</h3>
+          <p><strong>9개 벤치마크</strong> (math · science · medicine · search · code 등)에서 <strong>정확도 평균 +8.3%</strong>, <strong>추론 속도 1.2~2.4x</strong>, <strong>토큰 사용 −34.6~−75.6%</strong>. 토큰 ↓ 정확도 ↑ 동시 달성이 핵심.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">vi</div>
+        <div>
+          <h3>트레이드오프 — 디버깅과 학습 비용</h3>
+          <p>장점만 있는 건 아님. <strong>end-to-end 학습이 필수</strong> (사전학습 LLM만 조립해서는 불가). 그리고 통신이 latent라 <em>중간 trace를 사람이 읽을 수 없음</em> — 디버깅·해석 비용이 크게 늘어난다.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- §2 다이어그램 -->
+<section class="section" id="diagrams">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Architecture & Results</div>
+      <h2 class="section-title">그림으로 보는 구조</h2>
+    </div>
+  </div>
+
+  <!-- 1. Text vs Latent -->
+  <div class="diagram-block" id="d-comm">
+    <div class="db-text">
+      <h4><span class="num">01 · 핵심 차이</span>Text vs Latent 통신</h4>
+      <p>
+        표준 MAS에서는 agent A의 출력이 <strong>토큰 시퀀스</strong>로 디코딩된 뒤 agent B의 프롬프트에 다시 인코딩된다.
+        이 왕복에서 정보가 평탄화되고, 매 turn마다 system prompt · tool 정의가 반복 전송된다.
+      </p>
+      <p>
+        RecursiveMAS는 디코딩을 건너뛰고 <strong>hidden state(latent vector)를 직접 전달</strong>한다.
+        토큰 수는 통신 차원만큼만, 정보 손실은 사실상 없음.
+      </p>
+      <div class="use-when">
+        <strong>핵심 결정</strong>
+        <p>"agent 간 통신 자체가 토큰 비용의 주범"이라는 진단. 통신을 latent로 보내면 비용·지연 동시 해결.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Communication · text vs latent">
+      <div class="d-comm">
+        <div class="pane cur">
+          <span class="pane-label">Standard MAS</span>
+          <div class="row">
+            <span class="agent">A</span>
+            <span class="msg">"분석 결과: 1) ... 2) ... 3) ..."</span>
+          </div>
+          <div class="row">
+            <span class="agent">B</span>
+            <span class="msg">"위 내용을 토대로 ..."</span>
+          </div>
+          <div class="row">
+            <span class="agent">C</span>
+            <span class="msg">"종합하면 ..."</span>
+          </div>
+          <div class="footer">tokens: ~3,200</div>
+        </div>
+        <div class="pane new">
+          <span class="pane-label">RecursiveMAS</span>
+          <div class="row">
+            <span class="agent">A</span>
+            <span class="msg">z₁ ∈ ℝᵈ</span>
+          </div>
+          <div class="row">
+            <span class="agent">B</span>
+            <span class="msg">z₂ ∈ ℝᵈ</span>
+          </div>
+          <div class="row">
+            <span class="agent">C</span>
+            <span class="msg">z₃ ∈ ℝᵈ</span>
+          </div>
+          <div class="footer">tokens: ~780 · −76%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Architecture -->
+  <div class="diagram-block" id="d-arch">
+    <div class="db-text">
+      <h4><span class="num">02 · 아키텍처</span>RecursiveMAS 구조</h4>
+      <p>
+        N개의 이종 agent들이 <strong>RecursiveLink 모듈</strong>로 연결된다.
+        한 라운드에서 각 agent는 입력 latent state를 받아 처리한 뒤,
+        다음 agent로 전달할 latent을 출력 — 모든 출력이 다시 입력으로 돌아오는 <em>recursion</em>.
+      </p>
+      <p>
+        라운드 수는 작업 복잡도에 따라 적응적으로 결정.
+        깊을수록 latent state가 정제되지만 비용도 증가.
+      </p>
+      <div class="use-when">
+        <strong>핵심 모듈</strong>
+        <p>RecursiveLink는 latent representation을 다음 agent의 입력 차원으로 projection. lightweight (작은 MLP 수준)이라 추가 비용 미미.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Architecture · Recursive composition">
+      <div class="d-arch">
+        <div class="ring">
+          <div class="box accent">Agent 1<small>encoder</small></div>
+          <div class="box accent">Agent 2<small>reasoner</small></div>
+          <div class="box accent">Agent N<small>decoder</small></div>
+        </div>
+        <div class="link-label">RecursiveLink · latent transfer</div>
+        <div class="recur">
+          <span>round k</span>
+          <div class="arrow-loop"></div>
+          <span>round k+1</span>
+        </div>
+        <div class="box dashed" style="margin-top:0.3rem">
+          z<sub>k+1</sub> = f(z<sub>k</sub>) · 적응적 라운드 수
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Inner-Outer Loop -->
+  <div class="diagram-block" id="d-loop">
+    <div class="db-text">
+      <h4><span class="num">03 · 학습</span>Inner–Outer Loop</h4>
+      <p>
+        agent 각각을 따로 학습하면 시스템 차원의 최적화가 되지 않는다.
+        RecursiveMAS는 <strong>두 단계 gradient propagation</strong>으로 이를 해결.
+      </p>
+      <p>
+        Inner는 한 step 안에서 agent 출력 손실에 대한 local gradient,
+        Outer는 모든 라운드에 걸친 시스템 출력 손실의 <strong>shared credit assignment</strong>.
+        한 agent가 잘못한 결과가 어디서 시작됐는지 전체 recursion에 거꾸로 전파된다.
+      </p>
+      <div class="use-when">
+        <strong>안정성</strong>
+        <p>저자들은 학습 stability에 대한 이론 분석도 제시. 일반 RNN처럼 unrolled gradient가 폭주하지 않게 normalization 적용.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Training · gradient flow">
+      <div class="d-loop">
+        <div class="level outer">
+          <span class="lvl-tag">Outer Loop</span>
+          <span class="lvl-body">시스템 출력 손실 → <b>shared gradient</b> → 모든 라운드 · agent에 credit assignment</span>
+        </div>
+        <div class="arrow-down"></div>
+        <div class="level">
+          <span class="lvl-tag">Round k</span>
+          <span class="lvl-body">각 agent forward → latent z<sub>k</sub> 갱신 → 다음 agent</span>
+        </div>
+        <div class="arrow-down"></div>
+        <div class="level">
+          <span class="lvl-tag">Inner Loop</span>
+          <span class="lvl-body">agent 내부 local loss → <b>local gradient</b> (forward/backward)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Benchmark -->
+  <div class="diagram-block" id="d-bench">
+    <div class="db-text">
+      <h4><span class="num">04 · 결과</span>벤치마크 — 효율과 품질</h4>
+      <p>
+        대부분의 efficiency 논문은 <em>품질 약간 손실하고 비용 크게 줄이는</em> 트레이드오프를 보여준다.
+        RecursiveMAS는 그 패턴을 깬다 — <strong>토큰을 줄이면서 정확도가 함께 올라간다</strong>.
+      </p>
+      <p>
+        9개 벤치마크 (수학 · 과학 · 의료 · 검색 · 코드 생성) 전반에서 일관된 개선.
+        특히 토큰 절감 폭이 크다 (최저 -34.6%, 최고 -75.6%).
+      </p>
+      <div class="use-when">
+        <strong>해석</strong>
+        <p>"통신 토큰이 본질적으로 낭비였다"는 가설을 지지하는 증거. agent들이 자연어로 서로 설명할 필요가 없는 영역이었던 셈.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Benchmark · 9 tasks">
+      <div class="d-bench">
+        <div class="row">
+          <span class="label">정확도</span>
+          <div class="bar"><span style="width: 60%"></span></div>
+          <span class="val">+8.3%</span>
+        </div>
+        <div class="row">
+          <span class="label">속도</span>
+          <div class="bar"><span class="alt" style="width: 70%"></span></div>
+          <span class="val">1.2~2.4x</span>
+        </div>
+        <div class="row">
+          <span class="label">토큰</span>
+          <div class="bar"><span class="dim" style="width: 88%"></span></div>
+          <span class="val">−34.6~−75.6%</span>
+        </div>
+        <div class="legend">9 benchmarks · math · science · medicine · search · code</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="margin-note">
+    가장 반직관적인 주장 — <strong>"agent들이 자연어로 서로에게 설명할 필요가 없다"</strong>. 사람이 이해할 수 있게 만들기 위해 그동안 모든 통신을 텍스트로 강제해왔지만, agent 입장에서는 latent로 충분했고 오히려 정보 손실이 줄어 정확도까지 올랐다는 발견.
+  </p>
+
+  <div class="decision">
+    <h3>그래서 — 언제 RecursiveMAS가 적합한가?</h3>
+    <div class="decision-table">
+      <div>
+        <h4>적합한 시나리오</h4>
+        <ul>
+          <li>End-to-end 학습 가능한 환경 (모델 weights 접근)</li>
+          <li>고정된 multi-agent pipeline 반복 실행 (math · reasoning · code)</li>
+          <li>토큰 비용이 제품 ROI의 결정 요인</li>
+          <li>agent 간 통신이 자연어로 사람에게 노출될 필요 없음</li>
+        </ul>
+      </div>
+      <div>
+        <h4>적합하지 않은 경우</h4>
+        <ul>
+          <li>외부 API LLM만 사용 (weights 접근 불가, 학습 불가)</li>
+          <li>사용자가 agent 통신을 직접 봐야 함 (UX 투명성)</li>
+          <li>매번 다른 agent topology가 필요한 ad-hoc 작업</li>
+          <li>중간 trace 분석으로 안전성 검증해야 하는 도메인 (의료 의사결정 등)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- §3 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Reference Implementation</div>
+      <h2 class="section-title">실전 코드</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    논문의 핵심 아이디어를 PyTorch 스타일로 재구성한 <em>참고 구현</em>. 실제 논문 코드와 다를 수 있고, 단순화한 의사 코드에 가깝다. 핵심은 — <em>RecursiveLink로 latent 전달 + inner-outer gradient propagation</em>.
+  </p>
+
+  <!-- 1. Agent with latent state -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>01 · Agent — latent state 입출력</h4>
+      <span class="tag">core</span>
+    </div>
+<pre><span class="kw">import</span> torch
+<span class="kw">import</span> torch.nn <span class="kw">as</span> nn
+
+<span class="kw">class</span> <span class="fn">LatentAgent</span>(nn.Module):
+    <span class="str">"""각 agent는 latent state z를 입력받아 새 z를 출력.
+    텍스트 디코딩 없이 다음 agent로 그대로 전달된다."""</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, d_in: <span class="kw">int</span>, d_hidden: <span class="kw">int</span>, d_out: <span class="kw">int</span>):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        self.backbone = <span class="fn">build_transformer</span>(d_in, d_hidden)  <span class="com"># 사전학습 LM</span>
+        self.out_proj = nn.<span class="fn">Linear</span>(d_hidden, d_out)
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, z: torch.Tensor) -> torch.Tensor:
+        <span class="com"># z: (batch, seq_len, d_in) — 텍스트 대신 latent로 입력</span>
+        h = self.<span class="fn">backbone</span>(z)             <span class="com"># latent space 안에서 reasoning</span>
+        <span class="kw">return</span> self.<span class="fn">out_proj</span>(h)        <span class="com"># 다음 agent로 보낼 z'</span>
+</pre>
+    <div class="note"><strong>포인트.</strong> 표준 LLM agent는 <code>encode → reason → decode_text</code> 사이클. 여기서는 <em>decode_text를 생략</em>하고 hidden state를 그대로 다음 agent로 흘려보낸다. 사전학습 backbone은 그대로 쓰되 입출력 인터페이스만 바꾼 것.</div>
+  </article>
+
+  <!-- 2. RecursiveLink -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>02 · RecursiveLink — agent 간 latent projection</h4>
+      <span class="tag">link</span>
+    </div>
+<pre><span class="kw">class</span> <span class="fn">RecursiveLink</span>(nn.Module):
+    <span class="str">"""agent A의 출력 latent을 agent B의 입력 공간으로 매핑.
+    이종(heterogeneous) backbone 간 차원 차이를 흡수한다."""</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, d_from: <span class="kw">int</span>, d_to: <span class="kw">int</span>):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        self.proj = nn.<span class="fn">Sequential</span>(
+            nn.<span class="fn">Linear</span>(d_from, d_to),
+            nn.<span class="fn">LayerNorm</span>(d_to),
+            nn.<span class="fn">GELU</span>(),
+            nn.<span class="fn">Linear</span>(d_to, d_to),
+        )
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, z: torch.Tensor) -> torch.Tensor:
+        <span class="kw">return</span> self.<span class="fn">proj</span>(z)
+</pre>
+    <div class="note"><strong>포인트.</strong> 핵심은 <em>가벼움</em> — 단순 MLP 두 층. agent 자체보다 훨씬 작아 통신 추가 비용은 거의 0. 이종 모델을 조립할 때 차원만 맞춰주면 됨.</div>
+  </article>
+
+  <!-- 3. Recursive composition -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>03 · 재귀 합성 — N agents × K rounds</h4>
+      <span class="tag">composition</span>
+    </div>
+<pre><span class="kw">class</span> <span class="fn">RecursiveMAS</span>(nn.Module):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, agents: <span class="kw">list</span>[LatentAgent], links: <span class="kw">list</span>[RecursiveLink],
+                 max_rounds: <span class="kw">int</span> = <span class="str">4</span>):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        self.agents = nn.<span class="fn">ModuleList</span>(agents)
+        self.links  = nn.<span class="fn">ModuleList</span>(links)   <span class="com"># len = len(agents)</span>
+        self.max_rounds = max_rounds
+        self.halt = nn.<span class="fn">Linear</span>(agents[<span class="str">0</span>].d_in, <span class="str">1</span>)  <span class="com"># 라운드 정지 신호</span>
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, z_init: torch.Tensor) -> torch.Tensor:
+        z = z_init
+        <span class="kw">for</span> k <span class="kw">in</span> <span class="fn">range</span>(self.max_rounds):
+            <span class="com"># 한 라운드: 모든 agent를 순환 통과</span>
+            <span class="kw">for</span> agent, link <span class="kw">in</span> <span class="fn">zip</span>(self.agents, self.links):
+                z = <span class="fn">agent</span>(z)
+                z = <span class="fn">link</span>(z)
+            <span class="com"># 적응적 halt — 더 정제할 필요 없으면 종료</span>
+            <span class="kw">if</span> torch.<span class="fn">sigmoid</span>(self.<span class="fn">halt</span>(z.<span class="fn">mean</span>(dim=<span class="str">1</span>))).<span class="fn">mean</span>() &gt; <span class="str">0.9</span>:
+                <span class="kw">break</span>
+        <span class="kw">return</span> z
+</pre>
+    <div class="note"><strong>포인트.</strong> 같은 agent들을 K번 재귀적으로 통과 — 라운드마다 latent state가 정제. <em>halt head</em>가 더 이상 개선 여지가 없다고 판단하면 조기 종료해서 비용 통제. 표준 transformer의 layer-stack과 닮았지만 layer가 곧 agent라는 점이 다름.</div>
+  </article>
+
+  <!-- 4. Inner-outer training -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>04 · Inner–Outer 학습 루프</h4>
+      <span class="tag">training</span>
+    </div>
+<pre><span class="kw">def</span> <span class="fn">train_step</span>(model: RecursiveMAS, batch, criterion, optimizer):
+    z_init, target = batch
+    optimizer.<span class="fn">zero_grad</span>()
+
+    <span class="com"># Outer: 전체 시스템 forward — 모든 agent · 모든 라운드</span>
+    z_final = <span class="fn">model</span>(z_init)
+    outer_loss = <span class="fn">criterion</span>(z_final, target)
+
+    <span class="com"># 핵심: backward가 모든 라운드에 걸쳐 흐른다.</span>
+    <span class="com"># 한 agent의 출력 오류가 어느 round · 어느 agent에서 시작됐는지</span>
+    <span class="com"># gradient-based credit assignment으로 자동 추적.</span>
+    outer_loss.<span class="fn">backward</span>()
+
+    <span class="com"># gradient clipping — recursion으로 인한 폭주 방지</span>
+    nn.utils.<span class="fn">clip_grad_norm_</span>(model.<span class="fn">parameters</span>(), max_norm=<span class="str">1.0</span>)
+
+    optimizer.<span class="fn">step</span>()
+    <span class="kw">return</span> outer_loss.<span class="fn">item</span>()
+</pre>
+    <div class="note"><strong>포인트.</strong> 명시적 inner/outer 분리 없이 PyTorch의 autograd가 자동으로 처리 — 모든 라운드를 unroll한 거대한 computational graph 위에서 backprop. <em>gradient clipping</em>이 학습 안정성의 핵심 (RNN/transformer-with-loop 학습할 때와 동일한 trick).</div>
+  </article>
+
+  <!-- 5. Inference -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>05 · Inference + 텍스트 입출력 interface</h4>
+      <span class="tag">i/o</span>
+    </div>
+<pre><span class="kw">class</span> <span class="fn">RecursiveMASPipeline</span>:
+    <span class="str">"""사용자는 텍스트로 input/output하지만, 내부에서는 latent로 작동."""</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, model: RecursiveMAS, tokenizer, encoder, decoder):
+        self.model = model
+        self.tok = tokenizer
+        self.enc = encoder   <span class="com"># 텍스트 → latent</span>
+        self.dec = decoder   <span class="com"># latent → 텍스트</span>
+
+    <span class="kw">def</span> <span class="fn">__call__</span>(self, prompt: <span class="kw">str</span>) -> <span class="kw">str</span>:
+        <span class="com"># 1) 진입: 텍스트를 latent로 한 번만 인코딩</span>
+        tokens = self.tok(prompt, return_tensors=<span class="str">"pt"</span>)
+        z = self.<span class="fn">enc</span>(tokens.input_ids)
+
+        <span class="com"># 2) 내부 협업: 전부 latent space에서. 디코딩 없음.</span>
+        z_out = self.<span class="fn">model</span>(z)
+
+        <span class="com"># 3) 최종 출구에서만 텍스트로 디코딩</span>
+        ids = self.<span class="fn">dec</span>(z_out)
+        <span class="kw">return</span> self.tok.<span class="fn">decode</span>(ids[<span class="str">0</span>], skip_special_tokens=<span class="kw">True</span>)
+</pre>
+    <div class="note"><strong>포인트.</strong> 사용자 인터페이스(텍스트)는 그대로 유지 — encode 1회 / decode 1회만 발생하고, 내부 agent 통신은 모두 latent. <em>토큰 절감의 정량적 근거</em>가 바로 여기 있다 (intermediate decode/encode가 사라진 비용).</div>
+  </article>
+
+  <p class="margin-note">
+    위 코드는 <strong>아이디어를 보이기 위한 단순화</strong>다. 논문 본문에는 RecursiveLink의 더 정교한 구조 · halt mechanism · gradient stability proof · 9개 벤치마크별 ablation이 자세히 다뤄진다. 실제 구현은 저자들이 공개할 코드를 기다리는 게 좋다.
+  </p>
+</section>
+
+
+<footer>
+  <div>
+    원문 · <a href="https://arxiv.org/abs/2604.25917" target="_blank" rel="noopener">arxiv.org/abs/2604.25917</a>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    const btn = document.getElementById('menuBtn');
+    const panel = document.getElementById('tocPanel');
+    const backdrop = document.getElementById('tocBackdrop');
+    const body = document.body;
+
+    function setOpen(open) {
+      btn.classList.toggle('open', open);
+      panel.classList.toggle('open', open);
+      backdrop.classList.toggle('open', open);
+      body.classList.toggle('menu-open', open);
+      btn.setAttribute('aria-expanded', String(open));
+      panel.setAttribute('aria-hidden', String(!open));
+      btn.setAttribute('aria-label', open ? '목차 닫기' : '목차 열기');
+    }
+
+    btn.addEventListener('click', () => setOpen(!panel.classList.contains('open')));
+    backdrop.addEventListener('click', () => setOpen(false));
+    document.querySelectorAll('[data-close]').forEach(a => a.addEventListener('click', () => setOpen(false)));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && panel.classList.contains('open')) setOpen(false);
+    });
+  })();
+
+  // Inject copy buttons into every code card
+  (function () {
+    document.querySelectorAll('.code-card').forEach(card => {
+      const head = card.querySelector('.code-head');
+      const pre  = card.querySelector('pre');
+      if (!head || !pre) return;
+
+      const tag = head.querySelector('.tag');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy-btn';
+      btn.textContent = 'copy';
+      btn.setAttribute('aria-label', '코드 복사');
+
+      const reset = () => { btn.textContent = 'copy'; btn.classList.remove('copied', 'failed'); };
+
+      btn.addEventListener('click', async () => {
+        const code = pre.textContent;
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(code);
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = code;
+            ta.style.position = 'fixed'; ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          btn.textContent = 'copied';
+          btn.classList.add('copied');
+          setTimeout(reset, 1500);
+        } catch (e) {
+          btn.textContent = 'failed';
+          btn.classList.add('failed');
+          setTimeout(reset, 2000);
+        }
+      });
+
+      if (tag) {
+        const wrap = document.createElement('div');
+        wrap.className = 'head-right';
+        tag.replaceWith(wrap);
+        wrap.appendChild(tag);
+        wrap.appendChild(btn);
+      } else {
+        head.appendChild(btn);
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>

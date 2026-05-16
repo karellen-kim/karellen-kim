@@ -85,7 +85,16 @@
 - 섹션 사이에 한두 개. 본문에서 빠진 미묘한 디테일 / 원문 저자의 부연 / 안티패턴 경고
 - 좌측 액센트 라벨 "노트", 회색 톤 배경
 
-### 9. index.html 갱신
+### 9. 작성일 표기 — 필수
+
+모든 노트는 작성일을 명시한다:
+
+- **노트 페이지의 hero-grid**에 "작성" 셀을 항상 포함 — `<span class="v">YYYY<small>.MM.DD</small></span>` 형식
+- **index.html의 note meta**에 `<span>작성 · YYYY.MM.DD</span>` 추가 (tag와 읽는 시간 사이)
+- 날짜는 노트 작성 당일 (오늘 날짜)을 사용
+- 기존 노트의 작성일은 `git log --diff-filter=A --format="%ad" --date=short -- <file>`로 확인
+
+### 10. index.html 갱신
 
 새 노트 추가 시 항상:
 - `index.html`의 `.notes` 영역에 새 `<a class="note">` 항목 추가 (가장 위)
@@ -93,7 +102,7 @@
 - hero-grid의 "노트 N개" 카운트 업데이트
 - meta-row의 "last updated" 월 갱신
 
-### 10. 푸터
+### 11. 푸터
 
 - "— end of notes —" 같은 장식 라인 추가 금지
 - 우측에 "원문 · <원문 URL>" 링크만

@@ -700,6 +700,110 @@
     margin: 2rem 0;
     font-weight: 300;
   }
+
+  /* Glossary / reference box */
+  .gloss {
+    margin: clamp(2rem, 4vw, 3rem) 0;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    overflow: hidden;
+  }
+  .gloss-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    padding: 0.95rem 1.3rem;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-deep);
+    flex-wrap: wrap;
+  }
+  .gloss-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--accent);
+    padding: 0.22rem 0.55rem;
+    font-weight: 600;
+    border-radius: 2px;
+  }
+  .gloss-head h5 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.018em;
+  }
+  .gloss-pron {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+    margin-left: auto;
+  }
+  .gloss-body {
+    padding: 1.1rem 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .gloss-body p {
+    font-size: 0.92rem;
+    line-height: 1.65;
+    color: var(--ink-soft);
+  }
+  .gloss-body p strong {
+    color: var(--accent-deep);
+    font-weight: 600;
+    margin-right: 0.35rem;
+  }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    padding: 0.05rem 0.35rem;
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    color: var(--accent-deep);
+  }
+  .gloss-related {
+    padding: 1rem 1.3rem;
+    border-top: 1px solid var(--rule);
+    background: var(--paper-deep);
+  }
+  .gloss-related-label {
+    display: block;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    margin-bottom: 0.7rem;
+  }
+  .gloss-related ul {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  @media (min-width: 720px) {
+    .gloss-related ul { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+  }
+  .gloss-related li {
+    font-size: 0.84rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+  }
+  .gloss-related li b {
+    display: block;
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 0.88rem;
+    margin-bottom: 0.2rem;
+  }
   .margin-note::before {
     content: "노트";
     font-weight: 600;
@@ -1256,6 +1360,50 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- 참고 1: Rainbow Deployment -->
+  <div class="gloss">
+    <div class="gloss-head">
+      <span class="gloss-label">참고</span>
+      <h5>Rainbow Deployment</h5>
+      <span class="gloss-pron">"레인보우 디플로이먼트"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>유래.</strong> Blue-Green Deployment의 확장. 단 두 색(blue·green)이 아니라 <b>여러 색(버전)이 동시에 살아 운영</b>되는 배포 전략이라 무지개라는 이름이 붙었다.</p>
+      <p><strong>뜻.</strong> 신버전을 띄운 뒤에도 <b>구버전 인스턴스가 in-flight 작업을 끝까지 마칠 때까지 살려둔다</b>. 구버전은 새 요청을 받지 않고 자연 소멸 대기, 그동안 신버전이 새 요청을 처리. 배포 주기가 평균 작업 수명보다 짧으면 여러 색이 누적되어 무지개처럼 공존.</p>
+      <p><strong>왜 멀티 에이전트에 필요한가.</strong> 일반 웹 서비스는 응답이 ms 단위라 구버전을 즉시 종료해도 무방. 그러나 에이전트는 long-running stateful — 한 요청 처리에 수십 초~수 분. 배포 중 강제 종료하면 사용자 작업이 통째로 손실된다.</p>
+    </div>
+    <div class="gloss-related">
+      <span class="gloss-related-label">관련 용어</span>
+      <ul>
+        <li><b>Blue-Green</b>두 환경 사이 원자적 스왑. 단순·빠름. in-flight 작업 보장은 불가.</li>
+        <li><b>Canary Release</b>신버전에 트래픽 일부(N%)만 흘려보내며 점진적 확대.</li>
+        <li><b>Rolling Update</b>인스턴스를 하나씩 교체. 가장 흔하지만 stateful 서비스에는 위험.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 참고 2: Heisenbug -->
+  <div class="gloss">
+    <div class="gloss-head">
+      <span class="gloss-label">참고</span>
+      <h5>Heisenbug</h5>
+      <span class="gloss-pron">/ˈhaɪzənbʌɡ/ · "하이젠버그"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>유래.</strong> 양자역학의 <b>베르너 하이젠베르크 불확정성 원리</b>에서. "관측하려는 행위 자체가 대상을 바꿔버린다"는 원리를 버그에 빗댄 농담.</p>
+      <p><strong>뜻.</strong> 디버깅하려고 하면 사라지거나 동작이 바뀌는 버그. 디버거를 붙이면 사라짐 · <code>print()</code> 한 줄 추가하면 사라짐 · 프로덕션에서만 발생 · 같은 입력으로 1000번 돌려도 17번째에서만 발생.</p>
+      <p><strong>왜 멀티 에이전트에서 문제인가.</strong> LLM 호출은 본질적으로 비결정적(temperature, sampling). 거기에 도구 호출 순서가 매번 다르고 Subagent가 매번 다른 가지를 탐색 → 같은 input → 다른 output. <b>"한 번 더 돌려봐"가 의미 없다.</b> 모든 step의 trace 보존이 곧 유일한 진실.</p>
+    </div>
+    <div class="gloss-related">
+      <span class="gloss-related-label">친척들</span>
+      <ul>
+        <li><b>Bohrbug</b>결정적이고 재현 가능. 정상적인 버그 (Niels Bohr).</li>
+        <li><b>Mandelbug</b>너무 복잡한 인과로 카오스처럼 보이는 버그 (Mandelbrot fractal).</li>
+        <li><b>Schrödinbug</b>코드 보고 "어 이거 동작하면 안 되는데?" 깨달은 순간 진짜로 안 됨.</li>
+      </ul>
     </div>
   </div>
 

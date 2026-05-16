@@ -833,6 +833,34 @@
   }
   footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
 
+  /* ───────── HOME LINK ───────── */
+  .home-link {
+    position: fixed;
+    top: 1.5rem;
+    left: 1.5rem;
+    z-index: 60;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.95rem;
+    height: 48px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
   /* ───────── HAMBURGER + TOC ───────── */
   .menu-btn {
     position: fixed;
@@ -998,6 +1026,10 @@
 </style>
 </head>
 <body>
+
+<a class="home-link" href="./index.html" aria-label="홈으로 돌아가기">
+  <span class="arrow">←</span><span>notebook</span>
+</a>
 
 <button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false">
   <span></span><span></span><span></span>

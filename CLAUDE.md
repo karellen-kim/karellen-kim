@@ -29,6 +29,14 @@
 - "서문"은 `.no-num` 클래스로 — 카운터가 §01부터 01로 시작해야 본문 번호와 일치
 - 백드롭 클릭 / ESC / 링크 클릭 시 자동 닫힘
 
+### 3-bis. 홈 링크 — 필수 (index.html 제외)
+
+- **좌측 상단 고정 홈 링크** — 햄버거와 시각적 짝이 되게 동일한 48px 높이 · 잉크 보더 · 호버시 잉크-페이퍼 반전
+- 마크업: `<a class="home-link" href="./index.html"><span class="arrow">←</span><span>notebook</span></a>`
+- 호버 시 화살표가 `translateX(-3px)`로 슬쩍 이동
+- `position: fixed; top: 1.5rem; left: 1.5rem; z-index: 60;`
+- index.html에는 추가하지 않음 (그 자체가 홈)
+
 ### 4. 디자인 시스템 — 변경 금지
 
 ```css

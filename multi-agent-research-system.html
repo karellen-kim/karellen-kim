@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How we built our Multi-Agent Research System — 학습 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ───────── HERO ───────── */
+  .hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem);
+    position: relative;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    top: 2rem;
+    left: clamp(1.5rem, 5vw, 4rem);
+    right: clamp(1.5rem, 5vw, 4rem);
+    height: 1px;
+    background: var(--ink);
+  }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 2.5rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title {
+    font-size: clamp(2.6rem, 7vw, 5.8rem);
+    line-height: 0.95;
+    font-weight: 600;
+    margin-top: clamp(2rem, 5vw, 3rem);
+    letter-spacing: -0.035em;
+    color: var(--ink);
+  }
+  .hero-title em {
+    font-style: normal;
+    font-weight: 300;
+    color: var(--accent-deep);
+  }
+  .hero-sub {
+    margin-top: 1.4rem;
+    font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+    color: var(--ink-soft);
+    max-width: 42rem;
+    line-height: 1.5;
+    font-weight: 300;
+  }
+  .hero-grid {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .hero-grid > div {
+    background: var(--paper);
+    padding: 1.25rem 1.5rem;
+  }
+  .hero-grid .k {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  .hero-grid .v {
+    font-size: 1.2rem;
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .hero-grid .v small {
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    margin-left: 0.25rem;
+    font-weight: 400;
+  }
+
+  /* ───────── SECTIONS ───────── */
+  .section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem);
+    position: relative;
+  }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: baseline;
+    margin-bottom: clamp(2rem, 5vw, 3.5rem);
+  }
+  .section-num {
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    line-height: 0.85;
+    color: var(--accent);
+    font-weight: 200;
+    letter-spacing: -0.04em;
+  }
+  .section-titles {
+    border-left: 1px solid var(--ink);
+    padding-left: clamp(1rem, 3vw, 2rem);
+    padding-top: 0.5rem;
+  }
+  .section-kicker {
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+  }
+  .section-title {
+    font-size: clamp(1.65rem, 3.2vw, 2.3rem);
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: -0.028em;
+  }
+
+  /* ───────── §1 TL;DR ───────── */
+  .tldr-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  @media (min-width: 720px) {
+    .tldr-grid { grid-template-columns: repeat(12, 1fr); }
+  }
+  .tldr-lead {
+    grid-column: 1 / -1;
+    font-size: clamp(1.2rem, 2.1vw, 1.6rem);
+    line-height: 1.45;
+    color: var(--ink);
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+    letter-spacing: -0.012em;
+  }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  .tldr-lead::first-letter {
+    font-size: 3.4em;
+    float: left;
+    line-height: 0.9;
+    padding-right: 0.12em;
+    padding-top: 0.08em;
+    color: var(--accent-deep);
+    font-weight: 200;
+  }
+  @media (min-width: 720px) {
+    .tldr-lead { grid-column: 2 / 12; }
+  }
+
+  .points { display: contents; }
+  .point {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 4ch 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (min-width: 720px) {
+    .point { grid-column: 2 / 12; grid-template-columns: 5ch 1fr; gap: 2rem; }
+  }
+  .point .n {
+    font-size: 1.25rem;
+    color: var(--accent);
+    line-height: 1;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .point h3 {
+    font-weight: 600;
+    font-size: clamp(1.15rem, 1.9vw, 1.35rem);
+    line-height: 1.3;
+    margin-bottom: 0.4rem;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+  }
+  .point p {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .point p strong { color: var(--ink); font-weight: 600; }
+
+  /* ───────── §2 다이어그램 ───────── */
+  .diagram-block {
+    margin-bottom: clamp(3rem, 6vw, 5rem);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  @media (min-width: 880px) {
+    .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; }
+  }
+  .db-text h4 {
+    font-size: clamp(1.3rem, 2.3vw, 1.75rem);
+    line-height: 1.25;
+    margin-bottom: 0.8rem;
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: -0.022em;
+  }
+  .db-text h4 .num {
+    display: inline-block;
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    color: var(--accent-deep);
+    vertical-align: middle;
+    background: var(--accent-wash);
+    padding: 0.28rem 0.55rem;
+    border-radius: 999px;
+    margin-right: 0.65rem;
+    font-weight: 600;
+    position: relative;
+    top: -0.15em;
+  }
+  .db-text p {
+    color: var(--ink-soft);
+    margin-bottom: 1rem;
+    line-height: 1.65;
+    font-size: 0.95rem;
+  }
+  .db-text .use-when {
+    margin-top: 1.2rem;
+    padding: 1rem 1.1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--paper-deep);
+  }
+  .db-text .use-when strong {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+  }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas {
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    padding: clamp(1.25rem, 3vw, 2rem);
+    position: relative;
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .canvas::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 0.7rem;
+    left: 0.9rem;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+
+  .box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.6rem 0.85rem;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    font-family: var(--sans);
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.3;
+    min-width: 4rem;
+    max-width: 100%;
+    position: relative;
+    word-break: keep-all;
+    flex-direction: column;
+  }
+  .box.accent { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); }
+  .box.soft { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .box.dashed { border-style: dashed; }
+  .box small {
+    display: block;
+    font-size: 0.6rem;
+    font-weight: 400;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.18rem;
+  }
+  .box.accent small { color: var(--accent-wash); opacity: 0.85; }
+
+  /* Lead-Subagent fan-out */
+  .d-fanout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+    justify-items: center;
+    width: 100%;
+    min-width: 0;
+  }
+  .d-fanout .lead {
+    background: var(--ink); color: var(--paper);
+    padding: 0.95rem 1.2rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+  }
+  .d-fanout .down {
+    width: 1.5px; height: 0.9rem; background: var(--ink-soft);
+    position: relative;
+  }
+  .d-fanout .down::after {
+    content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%);
+    border: 4px solid transparent; border-top-color: var(--ink-soft);
+  }
+  .d-fanout .subs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+    width: 100%;
+    position: relative;
+  }
+  .d-fanout .subs::before {
+    content: ""; position: absolute; top: -0.7rem; left: 12.5%; right: 12.5%;
+    height: 1px; background: var(--ink-soft);
+  }
+  .d-fanout .subs .box {
+    width: 100%; min-width: 0;
+    padding: 0.55rem 0.4rem;
+    font-size: 0.72rem;
+  }
+  .d-fanout .synth {
+    border-style: dashed;
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    background: transparent;
+    padding: 0.7rem 1.1rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+  .d-fanout .cite {
+    background: var(--accent-wash);
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    padding: 0.55rem 0.95rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  /* Bar chart */
+  .d-tokens {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    width: 100%;
+    min-width: 0;
+  }
+  .d-tokens .row {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 0.8rem;
+  }
+  .d-tokens .row .label { color: var(--ink); font-weight: 500; }
+  .d-tokens .row .bar {
+    height: 1.2rem;
+    background: var(--rule);
+    position: relative;
+    overflow: hidden;
+  }
+  .d-tokens .row .bar > span {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+  }
+  .d-tokens .row.base .bar > span { background: var(--ink-faint); }
+  .d-tokens .row.single .bar > span { background: var(--accent-deep); }
+  .d-tokens .row .mult {
+    font-family: var(--mono);
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+
+  /* Scaling stairs */
+  .d-scale {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.7rem;
+    width: 100%;
+  }
+  .d-scale .lvl {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+  }
+  .d-scale .lvl .kind {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .d-scale .lvl .vis {
+    display: flex; align-items: center; gap: 0.25rem;
+    flex-wrap: wrap;
+  }
+  .d-scale .lvl .vis i {
+    width: 0.85rem; height: 0.85rem;
+    background: var(--accent);
+    display: inline-block;
+    border-radius: 1px;
+  }
+  .d-scale .lvl .vis i.lead { background: var(--ink); }
+  .d-scale .lvl .count {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  /* Eval loop */
+  .d-eval {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem 1rem;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+  }
+  .d-eval .blk {
+    padding: 1rem;
+    text-align: center;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    min-width: 0;
+  }
+  .d-eval .blk.judge {
+    background: var(--accent-wash);
+    border-color: var(--accent);
+    color: var(--accent-deep);
+  }
+  .d-eval .blk h5 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+    letter-spacing: -0.01em;
+  }
+  .d-eval .blk small {
+    display: block;
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .d-eval .loop-label {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--accent-deep);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    position: relative;
+    padding-top: 0.5rem;
+  }
+  .d-eval .loop-label::before, .d-eval .loop-label::after {
+    content: ""; position: absolute; top: 50%; width: 28%; height: 1.5px;
+    background: var(--accent);
+  }
+  .d-eval .loop-label::before { left: 0; }
+  .d-eval .loop-label::after { right: 0; }
+
+  /* Production lifecycle list */
+  .d-prod {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+    width: 100%;
+    min-width: 0;
+  }
+  .d-prod .item {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: 0.7rem;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    align-items: baseline;
+  }
+  .d-prod .item .icon {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .d-prod .item .label { font-size: 0.85rem; font-weight: 500; color: var(--ink); }
+  .d-prod .item .desc { font-size: 0.72rem; color: var(--ink-faint); margin-top: 0.15rem; line-height: 1.4; }
+
+  /* Decision table */
+  .decision {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    border-top: 2px solid var(--ink);
+    padding-top: 2.5rem;
+  }
+  .decision h3 {
+    font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    margin-bottom: 1.4rem;
+  }
+  .decision-table {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+  @media (min-width: 760px) {
+    .decision-table { grid-template-columns: 1fr 1fr; }
+  }
+  .decision-table > div { background: var(--paper); padding: 1.5rem; }
+  .decision-table h4 {
+    font-size: 1.1rem;
+    margin-bottom: 0.7rem;
+    color: var(--accent-deep);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .decision-table ul { list-style: none; color: var(--ink-soft); }
+  .decision-table li {
+    padding: 0.35rem 0;
+    padding-left: 1.1rem;
+    position: relative;
+    font-size: 0.92rem;
+  }
+  .decision-table li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-family: var(--mono);
+  }
+
+  /* ───────── §3 코드 ───────── */
+  .code-intro {
+    font-size: clamp(1.05rem, 1.65vw, 1.2rem);
+    color: var(--ink-soft);
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+  }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card {
+    margin-bottom: 2.5rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    overflow: hidden;
+  }
+  .code-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 1rem 1.4rem;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-deep);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .code-head h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+  }
+  .code-head .tag {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.22rem 0.6rem;
+    background: var(--accent);
+    color: var(--paper);
+    border-radius: 2px;
+  }
+  .code-card pre {
+    margin: 0;
+    padding: 1.35rem 1.5rem;
+    overflow-x: auto;
+    background: oklch(0.18 0.02 260);
+    color: oklch(0.92 0.015 75);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.7;
+  }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note {
+    padding: 1rem 1.4rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    background: var(--paper-deep);
+    line-height: 1.6;
+  }
+  .code-card .note strong { color: var(--accent-deep); }
+
+  .margin-note {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    padding: 1.1rem 1.3rem;
+    background: var(--paper-deep);
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    margin: 2rem 0;
+    font-weight: 300;
+  }
+  .margin-note::before {
+    content: "노트";
+    font-weight: 600;
+    color: var(--accent-deep);
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-right: 0.8rem;
+    display: inline-block;
+    padding-right: 0.7rem;
+    border-right: 1px solid var(--rule);
+  }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  /* ───────── FOOTER ───────── */
+  footer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+  }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ───────── HAMBURGER + TOC ───────── */
+  .menu-btn {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 60;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s ease;
+  }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span {
+    display: block;
+    width: 20px;
+    height: 1.5px;
+    background: var(--ink);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.2s ease,
+                background 0.2s ease;
+    transform-origin: center;
+  }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  .toc-backdrop {
+    position: fixed;
+    inset: 0;
+    background: oklch(0.18 0.015 260 / 0.35);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 50;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+
+  .toc-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(380px, 88vw);
+    height: 100vh;
+    background: var(--paper);
+    border-left: 1px solid var(--ink);
+    z-index: 55;
+    transform: translateX(100%);
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    overflow-y: auto;
+    padding: 6rem 2.5rem 3rem;
+  }
+  .toc-panel.open { transform: translateX(0); }
+
+  .toc-kicker {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+  }
+  .toc-title {
+    font-size: 1.85rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    margin-bottom: 2.2rem;
+    padding-bottom: 1.3rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .toc-list {
+    list-style: none;
+    counter-reset: toc;
+  }
+  .toc-list > li {
+    padding: 0.9rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    align-items: baseline;
+    text-decoration: none;
+    color: var(--ink);
+    font-weight: 500;
+    font-size: 1.05rem;
+    letter-spacing: -0.012em;
+    transition: color 0.2s ease;
+  }
+  .toc-list > li > a::before {
+    counter-increment: toc;
+    content: counter(toc, decimal-leading-zero);
+    color: var(--accent);
+    font-weight: 300;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+  }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+
+  .toc-sub {
+    list-style: none;
+    margin-top: 0.6rem;
+    margin-left: 2.5rem;
+    padding-left: 0.9rem;
+    border-left: 1px solid var(--rule);
+  }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 400;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+  .toc-sub a span {
+    color: var(--ink-faint);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    min-width: 1.6rem;
+  }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-sub a:hover span { color: var(--accent); }
+
+  .toc-foot {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    line-height: 1.6;
+  }
+  body.menu-open { overflow: hidden; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card {
+      animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+</style>
+</head>
+<body>
+
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+<div class="toc-backdrop" id="tocBackdrop"></div>
+
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#diagrams" data-close>그림으로 보는 구조</a>
+      <ul class="toc-sub">
+        <li><a href="#d-arch" data-close><span>01</span>Lead–Subagent 아키텍처</a></li>
+        <li><a href="#d-tokens" data-close><span>02</span>토큰 경제학</a></li>
+        <li><a href="#d-scale" data-close><span>03</span>Effort Scaling</a></li>
+        <li><a href="#d-eval" data-close><span>04</span>평가 방식</a></li>
+        <li><a href="#d-prod" data-close><span>05</span>프로덕션 도전과제</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+
+  <div class="toc-foot">
+    Multi-Agent Research System · Anthropic Engineering<br>학습 노트 · 2025.06
+  </div>
+</aside>
+
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="meta-row">
+    <span>Anthropic · 2025.06</span>
+    <span>학습 노트 · 읽는 시간 14분</span>
+  </div>
+
+  <h1 class="hero-title">Multi-Agent<br><em>Research System</em></h1>
+
+  <p class="hero-sub">
+    "Claude의 Research 기능은 단일 에이전트가 아니라 — Lead 한 명과 여러 Subagent의 협업이다.
+    그리고 그 협업이 만들어내는 토큰 비용은 우리가 처음 예상한 것의 15배였다."
+  </p>
+
+  <div class="hero-grid">
+    <div>
+      <span class="k">제품</span>
+      <span class="v">Claude.ai<small>· Research</small></span>
+    </div>
+    <div>
+      <span class="k">아키텍처</span>
+      <span class="v">Orch–Worker</span>
+    </div>
+    <div>
+      <span class="k">토큰 비용</span>
+      <span class="v">~15x<small>vs chat</small></span>
+    </div>
+    <div>
+      <span class="k">교훈</span>
+      <span class="v">Prompts &gt; Models</span>
+    </div>
+  </div>
+</header>
+
+
+<!-- §1 TL;DR -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      리서치는 본질적으로 <span class="hl">breadth-first 탐색</span>이다.
+      하나의 에이전트가 thread 하나씩 순차적으로 따라가는 것보다,
+      Lead 한 명이 plan을 세우고 여러 Subagent를 <em>병렬로</em> 보내 각자 다른 가지를 탐색하게 하는 게
+      훨씬 빠르고 깊다 — 단, 토큰 비용은 정직하게 청구된다.
+    </p>
+
+    <div class="points">
+      <article class="point">
+        <div class="n">i</div>
+        <div>
+          <h3>왜 멀티 에이전트인가</h3>
+          <p>리서치는 <strong>여러 가설을 동시에 탐색</strong>해야 하는 작업. 직렬 탐색은 비효율적. Subagent들이 독립 context로 서로 다른 쿼리·소스를 동시에 처리 → 시간을 N배 단축, 발견의 폭은 더 넓어진다.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">ii</div>
+        <div>
+          <h3>핵심 아키텍처: Orchestrator–Worker</h3>
+          <p><strong>Lead Agent</strong>가 질문을 받아 plan을 세우고 <strong>3~10개의 Subagent</strong>를 dispatch. 각 Subagent는 자신의 context · 도구 · scope로 작업 후 압축된 findings 리턴. Lead가 synthesize하고 <strong>Citation Agent</strong>가 인용을 붙인다.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iii</div>
+        <div>
+          <h3>토큰 경제학 — 15x의 비용</h3>
+          <p>단일 챗 대비 <strong>~15배</strong>, 단일 에이전트 대비 <strong>~4배</strong> 토큰 사용. ROI는 답의 가치가 토큰 비용을 정당화할 때만 양수. <em>높은 가치 · breadth-first · 병렬화 가능</em>한 작업에만 적용해야 한다.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iv</div>
+        <div>
+          <h3>프롬프트가 모델 업그레이드보다 중요했다</h3>
+          <p>도구 선택 규칙을 명확히 쓰는 것 · Subagent에 scope를 정확히 전달하는 것 · 출력 포맷을 강제하는 것 — 이 셋이 모델 버전 업그레이드보다 큰 성능 향상을 가져왔다. <strong>Better prompts &gt; Better models</strong>.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">v</div>
+        <div>
+          <h3>평가는 어렵다 — LLM judge로 풀어라</h3>
+          <p>멀티 에이전트는 long-horizon + 비결정적 → 단위 테스트 불가. <strong>End-state 평가</strong>를 LLM judge로. 작은 평가셋(n=20)도 의미 있다 — early signal이 완벽한 셋보다 낫다.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">vi</div>
+        <div>
+          <h3>프로덕션 운영은 새로운 게임이다</h3>
+          <p>에이전트는 stateful → 핫리스타트 불가, <strong>Rainbow deployment</strong> 필요. 비결정성으로 인한 <em>heisenbug</em>는 reproduce 불가능 → 모든 step을 trace에 남겨야 한다. 모니터링·관측이 곧 안정성.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- §2 다이어그램 -->
+<section class="section" id="diagrams">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Architecture & Numbers</div>
+      <h2 class="section-title">그림으로 보는 구조</h2>
+    </div>
+  </div>
+
+  <!-- 1. Architecture -->
+  <div class="diagram-block" id="d-arch">
+    <div class="db-text">
+      <h4><span class="num">01 · 아키텍처</span>Lead–Subagent Fan-out</h4>
+      <p>
+        Lead Agent는 사용자 질문을 받아 <strong>plan</strong>을 세우고,
+        독립 context를 가진 Subagent들을 <strong>병렬로 dispatch</strong>한다.
+        각 Subagent는 자신만의 도구 · scope · 메모리로 작업하고
+        압축된 findings(쿼리 결과 + 소스 링크)를 Lead에게 리턴한다.
+      </p>
+      <p>
+        Lead는 모든 findings를 모아 synthesize하고,
+        마지막에 <strong>Citation Agent</strong>가 주장 옆에 출처를 매핑한다.
+        이 분리(인용 ≠ 본문 작성)가 hallucination을 크게 줄였다.
+      </p>
+      <div class="use-when">
+        <strong>핵심 결정</strong>
+        <p>Subagent 수는 LLM 자체가 결정 (보통 3~5, 복잡한 질문은 10+). 너무 많으면 context 폭주 + 비용 폭주, 너무 적으면 직렬 작업과 차이 없음.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Architecture · Fan-out + Synthesis">
+      <div class="d-fanout">
+        <div class="box lead">Lead Agent<small>plan · delegate · synth</small></div>
+        <div class="down"></div>
+        <div class="subs">
+          <div class="box">Sub 1<small>tool A</small></div>
+          <div class="box">Sub 2<small>tool B</small></div>
+          <div class="box">Sub 3<small>tool C</small></div>
+          <div class="box">Sub N<small>tool …</small></div>
+        </div>
+        <div class="down"></div>
+        <div class="box synth">Synthesis</div>
+        <div class="down"></div>
+        <div class="box cite">Citation Agent</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Token Economics -->
+  <div class="diagram-block" id="d-tokens">
+    <div class="db-text">
+      <h4><span class="num">02 · 비용</span>토큰 경제학</h4>
+      <p>
+        Anthropic 내부 측정 기준 — 단일 채팅 대비 멀티 에이전트는 약 <strong>15배 토큰</strong> 사용,
+        단일 에이전트(예: research-with-tools)와 비교해도 <strong>~4배</strong>다.
+        각 Subagent가 독립 context를 가지므로 system prompt · tool 정의가 N번 반복되고,
+        Lead가 모든 findings를 다시 읽어 synthesize하기 때문.
+      </p>
+      <p>
+        그러므로 멀티 에이전트는 <em>답 하나의 가치가 충분히 큰</em> 작업에만 적용한다.
+        FAQ 챗봇에 쓰면 ROI가 절대 안 나온다.
+      </p>
+      <div class="use-when">
+        <strong>역치</strong>
+        <p>답이 사람의 30분~수시간을 절감하는 작업 → ROI 양수. 답이 1분짜리면 적용 금지.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Cost · Multiples vs Chat">
+      <div class="d-tokens">
+        <div class="row base">
+          <span class="label">Chat (baseline)</span>
+          <div class="bar"><span style="width: 6%"></span></div>
+          <span class="mult">1x</span>
+        </div>
+        <div class="row single">
+          <span class="label">Single Agent</span>
+          <div class="bar"><span style="width: 26%"></span></div>
+          <span class="mult">~4x</span>
+        </div>
+        <div class="row">
+          <span class="label">Multi-Agent</span>
+          <div class="bar"><span style="width: 100%"></span></div>
+          <span class="mult">~15x</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Effort Scaling -->
+  <div class="diagram-block" id="d-scale">
+    <div class="db-text">
+      <h4><span class="num">03 · 스케일링</span>Effort Scaling</h4>
+      <p>
+        질문의 복잡도에 따라 동원되는 에이전트 수가 달라진다.
+        간단한 fact-finding은 도구 몇 번 호출하는 단일 에이전트로 충분하지만,
+        "X 회사의 경쟁사 5곳을 비교하라" 같은 작업은 Subagent들에게 각자 다른 회사를 할당해 병렬 처리.
+      </p>
+      <p>
+        가장 복잡한 작업(<strong>10+ Subagent, 다중 레벨</strong>)에서는
+        Subagent가 자신의 Sub-subagent를 또 만든다 — 깊이가 늘수록 trace · 디버깅 복잡도가 기하급수적.
+      </p>
+      <div class="use-when">
+        <strong>휴리스틱</strong>
+        <p>"이 질문에 답하려면 독립적으로 탐색할 수 있는 가지가 몇 개인가?" → 그게 Subagent 수의 하한.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Scaling · Query → Agents">
+      <div class="d-scale">
+        <div class="lvl">
+          <span class="kind">단순 fact</span>
+          <div class="vis">
+            <i class="lead"></i>
+          </div>
+          <span class="count">1 agent · 3~10 tool calls</span>
+        </div>
+        <div class="lvl">
+          <span class="kind">직접 비교</span>
+          <div class="vis">
+            <i class="lead"></i><i></i><i></i><i></i>
+          </div>
+          <span class="count">1 lead · 2~4 subs</span>
+        </div>
+        <div class="lvl">
+          <span class="kind">복잡 리서치</span>
+          <div class="vis">
+            <i class="lead"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <span class="count">1 lead · 10+ subs · 다중 레벨</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Eval -->
+  <div class="diagram-block" id="d-eval">
+    <div class="db-text">
+      <h4><span class="num">04 · 평가</span>End-state Eval with LLM Judge</h4>
+      <p>
+        멀티 에이전트는 매번 다른 경로를 탐색한다 — 같은 질문도 path가 다르므로
+        <strong>중간 step의 단위 테스트는 의미가 없다</strong>.
+        대신 입력 · 출력 · (있다면) 정답 references만 가지고 <strong>end-state</strong>를 LLM judge로 평가.
+      </p>
+      <p>
+        n=20 정도의 작은 평가셋도 의미 있다.
+        완벽한 1000개 셋을 기다리지 말고, 작은 셋으로 시작해서 <em>이상치를 잡아내는 데</em> 사용하라.
+      </p>
+      <div class="use-when">
+        <strong>피해야 할 것</strong>
+        <p>step-level metric에 매몰되기 / 평가 LLM도 generator와 같은 시스템 프롬프트 사용 (confirmation bias).</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Eval · End-state via LLM judge">
+      <div class="d-eval">
+        <div class="blk">
+          <h5>Multi-Agent Run</h5>
+          <small>query → output</small>
+        </div>
+        <div class="blk judge">
+          <h5>LLM Judge</h5>
+          <small>rubric · score</small>
+        </div>
+        <div class="loop-label">small set · early signal · iterate</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Production -->
+  <div class="diagram-block" id="d-prod">
+    <div class="db-text">
+      <h4><span class="num">05 · 운영</span>프로덕션 도전과제</h4>
+      <p>
+        에이전트는 stateful + long-running. 단순한 stateless 웹 서비스 운영 노하우가 통하지 않는다.
+        Rainbow deployment, observability, 메모리 관리, 비결정성 디버깅 — 네 가지가 곧 안정성의 결정 요인.
+      </p>
+      <p>
+        특히 <strong>heisenbug</strong>는 reproduce가 거의 불가능 — 같은 입력에도 다른 도구 호출 순서 → 다른 결과.
+        실패한 모든 step을 trace에 남겨두지 않으면 사후 분석 자체가 불가능하다.
+      </p>
+      <div class="use-when">
+        <strong>도입 전 체크리스트</strong>
+        <p>1) trace 인프라 / 2) rainbow 배포 / 3) 비용 캡 알림 / 4) HITL 체크포인트 — 이 넷이 모두 준비된 후에만 프로덕션.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Production · Operational Concerns">
+      <div class="d-prod">
+        <div class="item">
+          <span class="icon">[01]</span>
+          <div>
+            <div class="label">Rainbow Deployment</div>
+            <div class="desc">in-flight 에이전트가 있어 핫리스타트 불가. 신·구 버전을 병렬 운영하며 자연 종료 대기.</div>
+          </div>
+        </div>
+        <div class="item">
+          <span class="icon">[02]</span>
+          <div>
+            <div class="label">Trace & Observability</div>
+            <div class="desc">모든 LLM 호출 · 도구 호출 · 결과를 보존. 비결정성 디버깅은 사후 trace에 100% 의존.</div>
+          </div>
+        </div>
+        <div class="item">
+          <span class="icon">[03]</span>
+          <div>
+            <div class="label">Memory across context</div>
+            <div class="desc">200K context 한도 초과 시 압축·재요약 메커니즘. Subagent와 Lead 간 상태 인계 패턴.</div>
+          </div>
+        </div>
+        <div class="item">
+          <span class="icon">[04]</span>
+          <div>
+            <div class="label">Heisenbugs</div>
+            <div class="desc">같은 입력에 다른 path → reproduce 불가. seed/온도 고정도 완벽한 해결책 아님. trace만이 진실.</div>
+          </div>
+        </div>
+        <div class="item">
+          <span class="icon">[05]</span>
+          <div>
+            <div class="label">Cost Caps & HITL</div>
+            <div class="desc">실행 중 비용 임계치 도달 시 자동 중단. 중요 분기에서 사람 승인 필수.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="margin-note">
+    원문에서 강조된 가장 반직관적 교훈 — <strong>"더 좋은 모델보다 더 좋은 프롬프트가 효과적이었다"</strong>. 새 모델 출시 때마다 모두 업그레이드를 기대하지만, 실제로 사용자 만족도를 가장 크게 올린 것은 도구 description · Subagent scope · 출력 포맷에 대한 프롬프트 개선이었다.
+  </p>
+
+  <!-- Decision -->
+  <div class="decision">
+    <h3>그래서 — 언제 멀티 에이전트를 쓸까?</h3>
+    <div class="decision-table">
+      <div>
+        <h4>멀티 에이전트가 적합</h4>
+        <ul>
+          <li>탐색 가지가 여러 개 (breadth-first)</li>
+          <li>가지들이 서로 독립적 (병렬 가능)</li>
+          <li>답 하나의 가치가 토큰 비용을 정당화</li>
+          <li>지연보다 깊이가 중요</li>
+          <li>예: 시장 조사, 경쟁사 비교, 문헌 리서치, 다중 소스 fact-check</li>
+        </ul>
+      </div>
+      <div>
+        <h4>적합하지 않음</h4>
+        <ul>
+          <li>강한 sequential 의존성 (앞 결과로 다음 결정)</li>
+          <li>실시간 요구사항 (대화형 UI)</li>
+          <li>답이 짧고 단순 (FAQ · 분류 · 요약)</li>
+          <li>비용 민감 / 대량 트래픽</li>
+          <li>예: 챗봇, 자동완성, 단일 SQL 생성</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- §3 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Implementation</div>
+      <h2 class="section-title">실전 코드</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    Anthropic SDK 기준 최소 구현. <em>Lead → Subagent dispatch → 병렬 실행 → 합성 → Citation</em>의 전 파이프라인을 프레임워크 없이 — 일반 Python 함수와 `asyncio`만으로 표현한다.
+  </p>
+
+  <!-- A. Subagent tool definition -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>01 · Subagent를 도구로 정의</h4>
+      <span class="tag">tool schema</span>
+    </div>
+<pre><span class="kw">from</span> anthropic <span class="kw">import</span> Anthropic, AsyncAnthropic
+
+DISPATCH_SUBAGENT = {
+    <span class="str">"name"</span>: <span class="str">"dispatch_subagent"</span>,
+    <span class="str">"description"</span>: (
+        <span class="str">"하위 리서치 작업을 Subagent에게 위임한다. "</span>
+        <span class="str">"task에 'A 회사 매출 추이를 2020~2024 조사' 처럼 단일·구체 목표를 적어라. "</span>
+        <span class="str">"동시 dispatch 가능. 작업이 독립적일수록 좋다."</span>
+    ),
+    <span class="str">"input_schema"</span>: {
+        <span class="str">"type"</span>: <span class="str">"object"</span>,
+        <span class="str">"properties"</span>: {
+            <span class="str">"task"</span>: {<span class="str">"type"</span>: <span class="str">"string"</span>, <span class="str">"description"</span>: <span class="str">"단일 목표, 한 문장"</span>},
+            <span class="str">"tools"</span>: {<span class="str">"type"</span>: <span class="str">"array"</span>, <span class="str">"items"</span>: {<span class="str">"type"</span>: <span class="str">"string"</span>}},
+        },
+        <span class="str">"required"</span>: [<span class="str">"task"</span>],
+        <span class="str">"additionalProperties"</span>: <span class="kw">False</span>,
+    },
+}
+</pre>
+    <div class="note"><strong>포인트.</strong> 도구 description의 품질이 곧 Lead의 분해 품질. <em>주니어에게 설명하듯</em> 명확히 — "단일·구체 목표", "독립적일수록 좋다" 같은 가이드까지 description에 넣는 게 정답.</div>
+  </article>
+
+  <!-- B. Subagent execution -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>02 · Subagent 실행 (독립 context)</h4>
+      <span class="tag">worker</span>
+    </div>
+<pre>aclient = <span class="fn">AsyncAnthropic</span>()
+
+SUBAGENT_SYSTEM = <span class="str">"""너는 리서치 Subagent다. 단일 task에만 집중하라.
+- 결과는 사실 기반으로 압축. 5문장 이내.
+- 각 사실 옆에 (source: URL) 표기.
+- task 범위를 넘는 추가 탐색 금지."""</span>
+
+<span class="kw">async def</span> <span class="fn">run_subagent</span>(task: <span class="kw">str</span>, tools: <span class="kw">list</span>) -> <span class="kw">dict</span>:
+    messages = [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: task}]
+
+    <span class="kw">for</span> step <span class="kw">in</span> <span class="fn">range</span>(<span class="str">8</span>):  <span class="com"># max_steps 안전핀</span>
+        resp = <span class="kw">await</span> aclient.messages.create(
+            model=<span class="str">"claude-sonnet-4-6"</span>,
+            max_tokens=<span class="str">2048</span>,
+            system=SUBAGENT_SYSTEM,
+            tools=tools,
+            messages=messages,
+        )
+        <span class="kw">if</span> resp.stop_reason == <span class="str">"end_turn"</span>:
+            <span class="kw">return</span> {<span class="str">"task"</span>: task, <span class="str">"findings"</span>: resp.content[<span class="str">0</span>].text}
+
+        messages.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: resp.content})
+        results = []
+        <span class="kw">for</span> block <span class="kw">in</span> resp.content:
+            <span class="kw">if</span> block.type == <span class="str">"tool_use"</span>:
+                output = <span class="kw">await</span> <span class="fn">run_tool</span>(block.name, block.input)  <span class="com"># 외부 도구</span>
+                results.<span class="fn">append</span>({
+                    <span class="str">"type"</span>: <span class="str">"tool_result"</span>,
+                    <span class="str">"tool_use_id"</span>: block.id,
+                    <span class="str">"content"</span>: output[:<span class="str">8000</span>],  <span class="com"># truncate — 결과 폭발 방지</span>
+                })
+        messages.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: results})
+
+    <span class="kw">return</span> {<span class="str">"task"</span>: task, <span class="str">"findings"</span>: <span class="str">"&lt;incomplete: max_steps&gt;"</span>}
+</pre>
+    <div class="note"><strong>포인트.</strong> Subagent의 system 프롬프트가 <em>scope 강제</em>의 핵심. "task 범위를 넘는 추가 탐색 금지"가 없으면 Subagent가 자기 판단으로 영역을 확장해 토큰을 폭주시킨다. tool_result도 반드시 truncate.</div>
+  </article>
+
+  <!-- C. Lead dispatch in parallel -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>03 · Lead의 병렬 dispatch</h4>
+      <span class="tag">orchestrator</span>
+    </div>
+<pre><span class="kw">import</span> asyncio
+
+LEAD_SYSTEM = <span class="str">"""너는 Lead Research Agent다.
+1) 사용자 질문을 받아 step-by-step으로 사고하라.
+2) 독립적으로 병렬 탐색 가능한 sub-task로 분해.
+3) 각 sub-task를 dispatch_subagent 도구로 한 번에 여러 개 호출.
+4) findings가 모이면 synthesize.
+
+규칙: sub-task 수는 3~8개. 강한 의존성이 있으면 분해하지 마라."""</span>
+
+<span class="kw">async def</span> <span class="fn">lead_agent</span>(user_query: <span class="kw">str</span>) -> <span class="kw">str</span>:
+    messages = [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: user_query}]
+    tools = [DISPATCH_SUBAGENT]
+
+    <span class="kw">for</span> turn <span class="kw">in</span> <span class="fn">range</span>(<span class="str">5</span>):
+        resp = <span class="kw">await</span> aclient.messages.create(
+            model=<span class="str">"claude-opus-4-7"</span>,  <span class="com"># Lead는 비싸도 강한 모델</span>
+            max_tokens=<span class="str">4096</span>,
+            system=LEAD_SYSTEM,
+            tools=tools,
+            messages=messages,
+        )
+        <span class="kw">if</span> resp.stop_reason == <span class="str">"end_turn"</span>:
+            <span class="kw">return</span> resp.content[<span class="str">0</span>].text
+
+        messages.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: resp.content})
+
+        <span class="com"># 같은 turn 안의 모든 tool_use를 모아 한 번에 병렬 실행</span>
+        dispatches = [b <span class="kw">for</span> b <span class="kw">in</span> resp.content <span class="kw">if</span> b.type == <span class="str">"tool_use"</span>]
+        sub_results = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(
+            *[<span class="fn">run_subagent</span>(b.input[<span class="str">"task"</span>], SUBAGENT_TOOLS) <span class="kw">for</span> b <span class="kw">in</span> dispatches],
+            return_exceptions=<span class="kw">True</span>,
+        )
+
+        tool_results = []
+        <span class="kw">for</span> b, r <span class="kw">in</span> <span class="fn">zip</span>(dispatches, sub_results):
+            content = (<span class="str">f"&lt;error&gt;{r}&lt;/error&gt;"</span> <span class="kw">if</span> <span class="fn">isinstance</span>(r, <span class="fn">Exception</span>)
+                       <span class="kw">else</span> r[<span class="str">"findings"</span>])
+            tool_results.<span class="fn">append</span>({
+                <span class="str">"type"</span>: <span class="str">"tool_result"</span>,
+                <span class="str">"tool_use_id"</span>: b.id,
+                <span class="str">"content"</span>: content,
+            })
+        messages.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: tool_results})
+
+    <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="str">"lead exhausted turns without end_turn"</span>)
+</pre>
+    <div class="note"><strong>포인트.</strong> 같은 assistant turn 안의 모든 <code>tool_use</code> 블록을 <em>한 번에 모아 asyncio.gather</em>로 처리하는 게 핵심. 직렬 실행하면 멀티 에이전트의 이점이 사라진다. <code>return_exceptions=True</code>로 부분 실패 허용.</div>
+  </article>
+
+  <!-- D. Citation -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>04 · Citation Agent (인용 후처리)</h4>
+      <span class="tag">post-processor</span>
+    </div>
+<pre>CITATION_SYSTEM = <span class="str">"""너는 Citation Agent다. Lead가 작성한 본문의 각 주장 옆에
+findings에 있는 (source: URL)을 [^N] 형태로 매핑하라.
+- 본문은 그대로 두고 인용 표기만 추가.
+- 근거가 없는 주장은 [^?] 로 표시 (사후 검토 대상)."""</span>
+
+<span class="kw">async def</span> <span class="fn">add_citations</span>(synthesis: <span class="kw">str</span>, findings: <span class="kw">list</span>[<span class="kw">dict</span>]) -> <span class="kw">str</span>:
+    sources = <span class="str">"\n"</span>.<span class="fn">join</span>(<span class="str">f"- {f['task']}\n{f['findings']}"</span> <span class="kw">for</span> f <span class="kw">in</span> findings)
+    resp = <span class="kw">await</span> aclient.messages.create(
+        model=<span class="str">"claude-haiku-4-5"</span>,  <span class="com"># 후처리는 작은 모델로 충분</span>
+        max_tokens=<span class="str">4096</span>,
+        system=CITATION_SYSTEM,
+        messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>:
+            <span class="str">f"&lt;synthesis&gt;\n{synthesis}\n&lt;/synthesis&gt;\n\n&lt;findings&gt;\n{sources}\n&lt;/findings&gt;"</span>}],
+    )
+    <span class="kw">return</span> resp.content[<span class="str">0</span>].text
+</pre>
+    <div class="note"><strong>포인트.</strong> 인용을 본문 작성과 <em>분리</em>한 것이 hallucination을 크게 줄였다. 본문 작성 LLM은 사실을 외우려 하지 않고 findings만 참조, citation LLM은 매핑만 담당. 작은 모델로도 충분.</div>
+  </article>
+
+  <!-- E. LLM judge -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>05 · LLM Judge로 end-state 평가</h4>
+      <span class="tag">eval</span>
+    </div>
+<pre>JUDGE_RUBRIC = <span class="str">"""다음 기준으로 0~10점 채점하라.
+- 정확성 (claims가 sources에 의해 뒷받침되는가)
+- 완전성 (질문의 모든 측면을 커버했는가)
+- 인용 품질 (claim ↔ source 매핑이 정확한가)
+
+마지막 줄: score=N (정수)."""</span>
+
+<span class="kw">async def</span> <span class="fn">judge</span>(query: <span class="kw">str</span>, output: <span class="kw">str</span>) -> <span class="kw">int</span>:
+    resp = <span class="kw">await</span> aclient.messages.create(
+        model=<span class="str">"claude-opus-4-7"</span>,  <span class="com"># judge는 강한 모델로</span>
+        max_tokens=<span class="str">1024</span>,
+        system=JUDGE_RUBRIC,
+        messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>:
+            <span class="str">f"&lt;query&gt;{query}&lt;/query&gt;\n&lt;output&gt;{output}&lt;/output&gt;"</span>}],
+    )
+    text = resp.content[<span class="str">0</span>].text
+    last_line = text.<span class="fn">splitlines</span>()[-<span class="str">1</span>]
+    <span class="kw">return</span> <span class="fn">int</span>(last_line.<span class="fn">split</span>(<span class="str">"="</span>)[<span class="str">1</span>].strip())
+
+<span class="com"># 평가셋 n=20도 의미 있다 — early signal</span>
+<span class="kw">async def</span> <span class="fn">eval_suite</span>(queries: <span class="kw">list</span>[<span class="kw">str</span>]):
+    outputs = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(*[<span class="fn">lead_agent</span>(q) <span class="kw">for</span> q <span class="kw">in</span> queries])
+    scores = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(*[<span class="fn">judge</span>(q, o) <span class="kw">for</span> q, o <span class="kw">in</span> <span class="fn">zip</span>(queries, outputs)])
+    <span class="kw">return</span> <span class="fn">sum</span>(scores) / <span class="fn">len</span>(scores)
+</pre>
+    <div class="note"><strong>포인트.</strong> judge에 <em>generator와 다른 모델 / 다른 시스템 프롬프트</em>를 써야 confirmation bias를 피할 수 있다. 평가셋 크기보다 평가 기준의 명확성이 더 중요.</div>
+  </article>
+
+  <p class="margin-note">
+    프로덕션에서는 여기에 <strong>trace 인프라(OpenTelemetry · LangFuse 등) · 비용 캡 알림 · rainbow 배포 게이트 · HITL 체크포인트</strong>를 더해야 한다. 위 코드는 시스템의 "뼈대"이고, 프로덕션의 90%는 그 주변 인프라가 차지한다.
+  </p>
+</section>
+
+
+<footer>
+  <div>
+    원문 · <a href="https://www.anthropic.com/engineering/multi-agent-research-system" target="_blank" rel="noopener">anthropic.com/engineering/multi-agent-research-system</a>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    const btn = document.getElementById('menuBtn');
+    const panel = document.getElementById('tocPanel');
+    const backdrop = document.getElementById('tocBackdrop');
+    const body = document.body;
+
+    function setOpen(open) {
+      btn.classList.toggle('open', open);
+      panel.classList.toggle('open', open);
+      backdrop.classList.toggle('open', open);
+      body.classList.toggle('menu-open', open);
+      btn.setAttribute('aria-expanded', String(open));
+      panel.setAttribute('aria-hidden', String(!open));
+      btn.setAttribute('aria-label', open ? '목차 닫기' : '목차 열기');
+    }
+
+    btn.addEventListener('click', () => setOpen(!panel.classList.contains('open')));
+    backdrop.addEventListener('click', () => setOpen(false));
+
+    document.querySelectorAll('[data-close]').forEach(a => {
+      a.addEventListener('click', () => setOpen(false));
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && panel.classList.contains('open')) setOpen(false);
+    });
+  })();
+</script>
+
+</body>
+</html>

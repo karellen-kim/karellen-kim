@@ -67,6 +67,7 @@
 
 - 다크 배경 (`oklch(0.18 0.02 260)`), JetBrains Mono, 0.78rem
 - 상단 헤드에 제목 + 우측 작은 태그 (예: `building block`, `workflow`, `autonomous`)
+- 우측 태그 옆에 **copy 버튼 자동 주입** (JS) — HTML에 버튼 마크업 추가하지 않음. 페이지 하단 IIFE가 모든 `.code-card`를 순회하며 `<pre>` 내용을 `navigator.clipboard`로 복사. 클릭 시 1.5초 동안 "copied" 상태 표시
 - 코드 하단 노트(`.note`)에 핵심 포인트 1문장 — `<strong>포인트.</strong>` 강조어로 시작
 - 토큰 색상: 키워드(주황), 문자열(녹색), 주석(회색 italic), 함수(파랑), 데코레이터(노랑)
 - HTML 안에 코드 작성 시 `&lt; &gt;`로 이스케이프

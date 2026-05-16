@@ -745,6 +745,28 @@
     color: var(--paper);
     border-radius: 2px;
   }
+  .code-head .head-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .copy-btn {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.22rem 0.6rem;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    font-weight: 600;
+  }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .copy-btn.failed { background: var(--paper-deep); color: var(--accent-deep); border-color: var(--accent); }
   .code-card pre {
     margin: 0;
     padding: 1.35rem 1.5rem;
@@ -2144,6 +2166,59 @@ aclient = <span class="fn">AsyncAnthropic</span>()
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && panel.classList.contains('open')) setOpen(false);
+    });
+  })();
+
+  // Inject copy buttons into every code card
+  (function () {
+    document.querySelectorAll('.code-card').forEach(card => {
+      const head = card.querySelector('.code-head');
+      const pre  = card.querySelector('pre');
+      if (!head || !pre) return;
+
+      const tag = head.querySelector('.tag');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy-btn';
+      btn.textContent = 'copy';
+      btn.setAttribute('aria-label', '코드 복사');
+
+      const reset = () => { btn.textContent = 'copy'; btn.classList.remove('copied', 'failed'); };
+
+      btn.addEventListener('click', async () => {
+        const code = pre.textContent;
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(code);
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = code;
+            ta.style.position = 'fixed'; ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          btn.textContent = 'copied';
+          btn.classList.add('copied');
+          setTimeout(reset, 1500);
+        } catch (e) {
+          btn.textContent = 'failed';
+          btn.classList.add('failed');
+          setTimeout(reset, 2000);
+        }
+      });
+
+      // group tag + button on the right for clean layout
+      if (tag) {
+        const wrap = document.createElement('div');
+        wrap.className = 'head-right';
+        tag.replaceWith(wrap);
+        wrap.appendChild(tag);
+        wrap.appendChild(btn);
+      } else {
+        head.appendChild(btn);
+      }
     });
   })();
 </script>

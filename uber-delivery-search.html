@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uber Delivery Search Platform — 학습 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+  /* HERO */
+  .hero { max-width: 1200px; margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); position: relative; }
+  .hero::before { content: ""; position: absolute; top: 2rem; left: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); height: 1px; background: var(--ink); }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.5rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.95; font-weight: 600; margin-top: clamp(2rem, 5vw, 3rem); letter-spacing: -0.035em; color: var(--ink); }
+  .hero-title em { font-style: normal; font-weight: 300; color: var(--accent-deep); }
+  .hero-sub { margin-top: 1.4rem; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: var(--ink-soft); max-width: 42rem; line-height: 1.5; font-weight: 300; }
+  .hero-grid { margin-top: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .hero-grid > div { background: var(--paper); padding: 1.25rem 1.5rem; }
+  .hero-grid .k { display: block; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 0.4rem; }
+  .hero-grid .v { font-size: 1.2rem; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .hero-grid .v small { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; font-weight: 400; }
+
+  /* SECTIONS */
+  .section { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem); position: relative; }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head { display: grid; grid-template-columns: auto 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: baseline; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .section-num { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.85; color: var(--accent); font-weight: 200; letter-spacing: -0.04em; }
+  .section-titles { border-left: 1px solid var(--ink); padding-left: clamp(1rem, 3vw, 2rem); padding-top: 0.5rem; }
+  .section-kicker { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .section-title { font-size: clamp(1.65rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.028em; }
+
+  /* §1 TL;DR */
+  .tldr-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
+  @media (min-width: 720px) { .tldr-grid { grid-template-columns: repeat(12, 1fr); } }
+  .tldr-lead { grid-column: 1 / -1; font-size: clamp(1.2rem, 2.1vw, 1.6rem); line-height: 1.45; color: var(--ink); padding-bottom: 2rem; border-bottom: 1px solid var(--rule); margin-bottom: 2.5rem; font-weight: 300; letter-spacing: -0.012em; }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  .tldr-lead::first-letter { font-size: 3.4em; float: left; line-height: 0.9; padding-right: 0.12em; padding-top: 0.08em; color: var(--accent-deep); font-weight: 200; }
+  @media (min-width: 720px) { .tldr-lead { grid-column: 2 / 12; } }
+  .points { display: contents; }
+  .point { grid-column: 1 / -1; display: grid; grid-template-columns: 4ch 1fr; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 720px) { .point { grid-column: 2 / 12; grid-template-columns: 5ch 1fr; gap: 2rem; } }
+  .point .n { font-size: 1.25rem; color: var(--accent); line-height: 1; font-weight: 300; letter-spacing: 0.05em; text-transform: uppercase; }
+  .point h3 { font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.3; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.015em; }
+  .point p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
+  .point p strong { color: var(--ink); font-weight: 600; }
+
+  /* §2 다이어그램 */
+  .diagram-block { margin-bottom: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .db-text h4 { font-size: clamp(1.3rem, 2.3vw, 1.75rem); line-height: 1.25; margin-bottom: 0.8rem; color: var(--ink); font-weight: 600; letter-spacing: -0.022em; }
+  .db-text h4 .num { display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em; color: var(--accent-deep); vertical-align: middle; background: var(--accent-wash); padding: 0.28rem 0.55rem; border-radius: 999px; margin-right: 0.65rem; font-weight: 600; position: relative; top: -0.15em; }
+  .db-text p { color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.65; font-size: 0.95rem; }
+  .db-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .db-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas { background: var(--paper-deep); border: 1px solid var(--rule); padding: clamp(1.25rem, 3vw, 2rem); position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .canvas::before { content: attr(data-label); position: absolute; top: 0.7rem; left: 0.9rem; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; }
+
+  .box { display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 0.6rem 0.85rem; border: 1.5px solid var(--ink); background: var(--paper); font-family: var(--sans); font-size: 0.76rem; font-weight: 500; color: var(--ink); line-height: 1.3; min-width: 4rem; max-width: 100%; position: relative; word-break: keep-all; flex-direction: column; }
+  .box.accent { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); }
+  .box.soft { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .box.dashed { border-style: dashed; }
+  .box small { display: block; font-size: 0.6rem; font-weight: 400; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.18rem; }
+  .box.accent small { color: var(--accent-wash); opacity: 0.85; }
+
+  /* Two-Tower */
+  .d-tower { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; width: 100%; min-width: 0; }
+  .d-tower .col { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+  .d-tower .col .ttl { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); padding-bottom: 0.35rem; border-bottom: 1px solid var(--rule); margin-bottom: 0.2rem; }
+  .d-tower .col.online .ttl { color: var(--accent-deep); }
+  .d-tower .col .box { width: 100%; min-width: 0; padding: 0.55rem 0.6rem; font-size: 0.72rem; }
+  .d-tower .col .down { width: 1.5px; height: 0.6rem; background: var(--ink-soft); margin: 0 auto; position: relative; }
+  .d-tower .col .down::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
+  .d-tower .merge {
+    grid-column: 1 / -1;
+    margin-top: 0.5rem;
+    padding: 0.55rem 0.7rem;
+    border: 1.5px solid var(--accent);
+    background: var(--accent-wash);
+    color: var(--accent-deep);
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  /* MRL dimensions */
+  .d-mrl { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; min-width: 0; }
+  .d-mrl .row { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) 4.5rem; align-items: center; gap: 0.6rem; font-size: 0.76rem; }
+  .d-mrl .row .dim { font-family: var(--mono); color: var(--ink-soft); font-size: 0.72rem; letter-spacing: 0.04em; }
+  .d-mrl .row .bar { height: 1rem; background: var(--rule); position: relative; }
+  .d-mrl .row .bar > span { display: block; height: 100%; background: var(--accent); }
+  .d-mrl .row.pick .bar > span { background: var(--accent-deep); }
+  .d-mrl .row .note-val { font-family: var(--mono); color: var(--ink-faint); font-size: 0.7rem; text-align: right; }
+  .d-mrl .row.pick .note-val { color: var(--accent-deep); font-weight: 600; }
+  .d-mrl .annotation {
+    margin-top: 0.7rem;
+    padding: 0.55rem 0.7rem;
+    background: var(--paper);
+    border: 1px dashed var(--accent);
+    font-size: 0.74rem;
+    color: var(--accent-deep);
+    text-align: center;
+  }
+
+  /* Pipeline funnel */
+  .d-funnel { display: flex; flex-direction: column; gap: 0.45rem; width: 100%; min-width: 0; }
+  .d-funnel .stage { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.7rem; padding: 0.65rem 0.85rem; border: 1px solid var(--rule); background: var(--paper); }
+  .d-funnel .stage .label { font-size: 0.82rem; font-weight: 500; color: var(--ink); }
+  .d-funnel .stage .label small { display: block; font-size: 0.68rem; color: var(--ink-faint); margin-top: 0.15rem; font-weight: 400; }
+  .d-funnel .stage .count { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-soft); letter-spacing: 0.04em; white-space: nowrap; }
+  .d-funnel .arrow-d { justify-self: center; width: 1.5px; height: 0.6rem; background: var(--ink-soft); position: relative; }
+  .d-funnel .arrow-d::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
+  .d-funnel .stage.final { border-color: var(--accent); background: var(--accent-wash); }
+  .d-funnel .stage.final .count { color: var(--accent-deep); font-weight: 600; }
+
+  /* Wins / bar */
+  .d-wins { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; min-width: 0; }
+  .d-wins .row { display: grid; grid-template-columns: 8rem minmax(0, 1fr) auto; align-items: center; gap: 0.6rem; font-size: 0.78rem; }
+  .d-wins .row .label { color: var(--ink); font-weight: 500; }
+  .d-wins .row .label small { display: block; font-size: 0.66rem; color: var(--ink-faint); font-weight: 400; margin-top: 0.1rem; }
+  .d-wins .row .bar { height: 1.1rem; background: var(--rule); position: relative; overflow: hidden; }
+  .d-wins .row .bar > span { display: block; height: 100%; background: var(--accent); }
+  .d-wins .row .bar > span.dim { background: var(--ink-faint); }
+  .d-wins .row .bar > span.alt { background: var(--accent-deep); }
+  .d-wins .row .val { font-family: var(--mono); color: var(--ink-soft); font-size: 0.76rem; font-weight: 500; letter-spacing: 0.04em; }
+  .d-wins .row.win .val { color: var(--accent-deep); font-weight: 600; }
+
+  /* Decision */
+  .decision { margin-top: clamp(3rem, 6vw, 5rem); border-top: 2px solid var(--ink); padding-top: 2.5rem; }
+  .decision h3 { font-size: clamp(1.35rem, 2.4vw, 1.75rem); font-weight: 600; letter-spacing: -0.025em; margin-bottom: 1.4rem; }
+  .decision-table { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  @media (min-width: 760px) { .decision-table { grid-template-columns: 1fr 1fr; } }
+  .decision-table > div { background: var(--paper); padding: 1.5rem; }
+  .decision-table h4 { font-size: 1.1rem; margin-bottom: 0.7rem; color: var(--accent-deep); font-weight: 600; letter-spacing: -0.015em; }
+  .decision-table ul { list-style: none; color: var(--ink-soft); }
+  .decision-table li { padding: 0.35rem 0; padding-left: 1.1rem; position: relative; font-size: 0.92rem; }
+  .decision-table li::before { content: "→"; position: absolute; left: 0; color: var(--accent); font-family: var(--mono); }
+
+  /* §3 코드 */
+  .code-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card { margin-bottom: 2.5rem; border: 1px solid var(--rule); background: var(--paper); overflow: hidden; }
+  .code-head { display: flex; align-items: baseline; justify-content: space-between; padding: 1rem 1.4rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; gap: 0.5rem; }
+  .code-head h4 { font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .code-head .tag { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--accent); color: var(--paper); border-radius: 2px; }
+  .code-head .head-right { display: flex; align-items: center; gap: 0.5rem; }
+  .copy-btn { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease; font-weight: 600; }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .copy-btn.failed { background: var(--paper-deep); color: var(--accent-deep); border-color: var(--accent); }
+  .code-card pre { margin: 0; padding: 1.35rem 1.5rem; overflow-x: auto; background: oklch(0.18 0.02 260); color: oklch(0.92 0.015 75); font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note { padding: 1rem 1.4rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper-deep); line-height: 1.6; }
+  .code-card .note strong { color: var(--accent-deep); }
+
+  .margin-note { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; padding: 1.1rem 1.3rem; background: var(--paper-deep); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); margin: 2rem 0; font-weight: 300; }
+  .margin-note::before { content: "노트"; font-weight: 600; color: var(--accent-deep); font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-right: 0.8rem; display: inline-block; padding-right: 0.7rem; border-right: 1px solid var(--rule); }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  /* FOOTER */
+  footer { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: var(--ink-faint); }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* HOME LINK */
+  .home-link { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 60; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0 0.95rem; height: 48px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.04em; transition: background 0.2s ease, color 0.2s ease; }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow { font-family: var(--mono); font-size: 0.95rem; transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  /* HAMBURGER + TOC */
+  .menu-btn { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; transition: background 0.2s ease; }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span { display: block; width: 20px; height: 1.5px; background: var(--ink); transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, background 0.2s ease; transform-origin: center; }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+  .toc-backdrop { position: fixed; inset: 0; background: oklch(0.18 0.015 260 / 0.35); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+  .toc-panel { position: fixed; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--ink); z-index: 55; transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); overflow-y: auto; padding: 6rem 2.5rem 3rem; }
+  .toc-panel.open { transform: translateX(0); }
+  .toc-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .toc-title { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.03em; color: var(--ink); margin-bottom: 2.2rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule); }
+  .toc-list { list-style: none; counter-reset: toc; }
+  .toc-list > li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a { display: grid; grid-template-columns: 2.5rem 1fr; align-items: baseline; text-decoration: none; color: var(--ink); font-weight: 500; font-size: 1.05rem; letter-spacing: -0.012em; transition: color 0.2s ease; }
+  .toc-list > li > a::before { counter-increment: toc; content: counter(toc, decimal-leading-zero); color: var(--accent); font-weight: 300; font-size: 0.85rem; letter-spacing: 0.05em; }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+  .toc-sub { list-style: none; margin-top: 0.6rem; margin-left: 2.5rem; padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a { color: var(--ink-soft); text-decoration: none; font-size: 0.88rem; font-weight: 400; transition: color 0.2s ease; display: flex; align-items: baseline; gap: 0.6rem; }
+  .toc-sub a span { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; min-width: 1.6rem; }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-sub a:hover span { color: var(--accent); }
+  .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); line-height: 1.6; }
+  body.menu-open { overflow: hidden; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card { animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html" aria-label="홈으로 돌아가기">
+  <span class="arrow">←</span><span>notebook</span>
+</a>
+
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+<div class="toc-backdrop" id="tocBackdrop"></div>
+
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#diagrams" data-close>그림으로 보는 구조</a>
+      <ul class="toc-sub">
+        <li><a href="#d-tower" data-close><span>01</span>Two-Tower 아키텍처</a></li>
+        <li><a href="#d-mrl" data-close><span>02</span>Matryoshka 임베딩</a></li>
+        <li><a href="#d-funnel" data-close><span>03</span>Retrieval 파이프라인</a></li>
+        <li><a href="#d-wins" data-close><span>04</span>성능 개선 지표</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+
+  <div class="toc-foot">
+    Uber Delivery Search Platform · Uber Eng Blog<br>학습 노트 · 2026.05
+  </div>
+</aside>
+
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="meta-row">
+    <span>Uber Blog · 2026.04</span>
+    <span>학습 노트 · 읽는 시간 13분</span>
+  </div>
+
+  <h1 class="hero-title">Uber Delivery<br><em>Search Platform</em></h1>
+
+  <p class="hero-sub">
+    "Uber Eats 사용자는 'gf pizza'를 검색하고 'soda'를 'soft drink'로 바꿔 찾는다.
+    Lexical 매칭으로는 답을 찾을 수 없는 — billion-scale의 의미 검색을 어떻게 풀었는가."
+  </p>
+
+  <div class="hero-grid">
+    <div>
+      <span class="k">저자</span>
+      <span class="v">Nagar et al<small>· 5명</small></span>
+    </div>
+    <div>
+      <span class="k">발행</span>
+      <span class="v">Uber Blog<small>· 2026.04</small></span>
+    </div>
+    <div>
+      <span class="k">코어</span>
+      <span class="v">Two-Tower<small>+ MRL</small></span>
+    </div>
+    <div>
+      <span class="k">백본</span>
+      <span class="v">QWEN<small>· 단일 모델</small></span>
+    </div>
+    <div>
+      <span class="k">작성</span>
+      <span class="v">2026<small>.05.20</small></span>
+    </div>
+  </div>
+</header>
+
+
+<!-- §1 TL;DR -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      Uber Eats 검색의 본질은 <span class="hl">의미 매칭</span>이다.
+      "soda"를 입력해도 "soft drink"가 잡혀야 하고, "gf pizza"가 gluten-free임을 알아야 한다.
+      Uber는 QWEN 백본의 <em>Two-Tower</em> 시맨틱 검색을 <em>Matryoshka 임베딩 · Lucene Plus · int7 양자화 · 사전 필터링</em>으로 묶어
+      billion-scale 카탈로그를 밀리초 단위로 푼다.
+    </p>
+
+    <div class="points">
+      <article class="point">
+        <div class="n">i</div>
+        <div>
+          <h3>문제 — Lexical 매칭의 한계</h3>
+          <p>전통적 키워드 매칭은 <strong>synonym · typo · shorthand · 다국어 혼용</strong>에서 실패한다. "soda" vs "soft drink", "gf pizza" → gluten-free 같은 패턴은 키워드 겹침이 없어 검색 결과가 비어버린다.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">ii</div>
+        <div>
+          <h3>Two-Tower 아키텍처</h3>
+          <p>쿼리와 문서를 <strong>같은 임베딩 공간</strong>으로 매핑하되, 계산은 분리. <strong>Query Tower는 온라인 실시간</strong>(사용자가 입력할 때마다), <strong>Document Tower는 오프라인 배치</strong>(스케줄 작업). 두 경로를 분리해 독립 최적화 가능.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iii</div>
+        <div>
+          <h3>QWEN 단일 백본</h3>
+          <p>두 타워의 백본 모두 <strong>QWEN LLM</strong>. world knowledge + cross-lingual 능력을 가져오고 Uber Eats 사내 데이터로 fine-tuning. <em>모든 vertical(레스토랑·grocery·retail), 모든 시장에 단일 모델</em>로 임베딩 — 운영 단순화.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iv</div>
+        <div>
+          <h3>Matryoshka 임베딩 — 한 모델, 7개 차원</h3>
+          <p>MRL-기반 InfoNCE loss로 학습. 같은 모델이 <strong>[128, 256, 512, 768, 1024, 1280, 1536]</strong> 7개 차원을 동시에 출력. <strong>256-dim에서 저장공간 -50%, 품질 손실 &lt;0.3%</strong>. 비용/품질 트레이드오프 곡선 위 sweet spot.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">v</div>
+        <div>
+          <h3>Lucene Plus + HNSW + int7 양자화</h3>
+          <p>Lucene Plus를 인덱스 기반으로 — vertical별 분리(OFD/GR). <strong>HNSW로 ANN 검색</strong>, <strong>int7 양자화로 latency 50% 추가 절감</strong>(recall 0.95+ 유지). float32와 int8 듀얼 저장도 지원.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">vi</div>
+        <div>
+          <h3>Boolean Pre-filter — 99%+ 후보 제거</h3>
+          <p>ANN 검색 <em>전에</em> hexagon(지리) · city_id · doc_type · fulfillment_types로 boolean 필터링. 수십억 후보 중 1% 미만만 ANN으로 넘기므로 billion-scale도 ms 단위 응답 가능. <strong>가장 중요한 비용 절감 트릭</strong>.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- §2 다이어그램 -->
+<section class="section" id="diagrams">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Architecture & Wins</div>
+      <h2 class="section-title">그림으로 보는 구조</h2>
+    </div>
+  </div>
+
+  <!-- 1. Two-Tower -->
+  <div class="diagram-block" id="d-tower">
+    <div class="db-text">
+      <h4><span class="num">01 · 아키텍처</span>Two-Tower 구조</h4>
+      <p>
+        쿼리와 문서를 <strong>같은 임베딩 공간</strong>으로 사상하되 계산 경로를 둘로 분리.
+        Query Tower는 사용자 요청마다 ms 단위로 인코딩, Document Tower는 격주 스케줄로 카탈로그 전체를 한 번에 인코딩.
+      </p>
+      <p>
+        분리된 덕분에 — query 측은 latency 최적화, document 측은 throughput · 비용 최적화로
+        독립적으로 진화 가능. 같은 백본(QWEN)을 사용하므로 공간 일관성은 자동 보장.
+      </p>
+      <div class="use-when">
+        <strong>왜 분리하나</strong>
+        <p>document 임베딩을 매 요청마다 다시 계산하면 비용이 폭주. 카탈로그는 분 단위로 변하지 않으니 배치로 충분. 사용자 쿼리만 실시간.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Architecture · two-tower">
+      <div class="d-tower">
+        <div class="col online">
+          <div class="ttl">Online · query</div>
+          <div class="box accent">user query<small>real-time</small></div>
+          <div class="down"></div>
+          <div class="box">QWEN encoder<small>fine-tuned</small></div>
+          <div class="down"></div>
+          <div class="box dashed">q ∈ ℝᵈ<small>MRL · 7 cuts</small></div>
+        </div>
+        <div class="col">
+          <div class="ttl">Offline · document</div>
+          <div class="box">catalog<small>store · dish · item</small></div>
+          <div class="down"></div>
+          <div class="box">QWEN encoder<small>same model</small></div>
+          <div class="down"></div>
+          <div class="box dashed">d ∈ ℝᵈ<small>feature store</small></div>
+        </div>
+        <div class="merge">ANN matching · Lucene Plus + HNSW</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. MRL -->
+  <div class="diagram-block" id="d-mrl">
+    <div class="db-text">
+      <h4><span class="num">02 · 임베딩</span>Matryoshka 임베딩</h4>
+      <p>
+        MRL(Matryoshka Representation Learning)은 한 모델이 <strong>여러 차원의 임베딩을 동시에</strong> 학습하도록 만든다.
+        InfoNCE loss를 7개 차원 cut 각각에 똑같은 가중치로 적용해 어느 차원으로 잘라도 의미가 보존되도록.
+      </p>
+      <p>
+        결과: 검색 latency와 저장 비용이 가장 큰 256-dim cut을 운영에 사용해도 품질 손실 0.3% 미만.
+        나머지 차원들은 정확도가 더 중요한 re-ranking 단계용으로 활용 가능.
+      </p>
+      <div class="use-when">
+        <strong>실용 가치</strong>
+        <p>"품질 vs 비용" 곡선을 한 모델로 모두 커버. 별도 dimensionality reduction (PCA 등) 불필요. 차원별 retraining도 불필요.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Embedding · MRL dimension cuts">
+      <div class="d-mrl">
+        <div class="row">
+          <span class="dim">128</span>
+          <div class="bar"><span style="width: 8%"></span></div>
+          <span class="note-val">tiny · re-rank</span>
+        </div>
+        <div class="row pick">
+          <span class="dim">256</span>
+          <div class="bar"><span style="width: 17%"></span></div>
+          <span class="note-val">prod · −50%</span>
+        </div>
+        <div class="row">
+          <span class="dim">512</span>
+          <div class="bar"><span style="width: 33%"></span></div>
+          <span class="note-val">balanced</span>
+        </div>
+        <div class="row">
+          <span class="dim">768</span>
+          <div class="bar"><span style="width: 50%"></span></div>
+          <span class="note-val">high recall</span>
+        </div>
+        <div class="row">
+          <span class="dim">1024</span>
+          <div class="bar"><span style="width: 67%"></span></div>
+          <span class="note-val">research</span>
+        </div>
+        <div class="row">
+          <span class="dim">1280</span>
+          <div class="bar"><span style="width: 83%"></span></div>
+          <span class="note-val">research</span>
+        </div>
+        <div class="row">
+          <span class="dim">1536</span>
+          <div class="bar"><span style="width: 100%"></span></div>
+          <span class="note-val">full</span>
+        </div>
+        <div class="annotation">256-dim cut · 품질 손실 &lt;0.3% · 저장 비용 −50%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Pipeline funnel -->
+  <div class="diagram-block" id="d-funnel">
+    <div class="db-text">
+      <h4><span class="num">03 · 파이프라인</span>Retrieval Funnel</h4>
+      <p>
+        billion-scale 카탈로그를 ms 단위로 푸는 비결은 <strong>ANN 전에 후보를 99% 이상 깎는 것</strong>.
+        지리적으로 갈 수 없는 음식점, vertical 불일치, fulfillment 타입 불일치는 boolean 필터로 즉시 제거.
+      </p>
+      <p>
+        남은 후보에 한해서만 HNSW 그래프 위에서 ANN, 그 결과를 작은 신경망으로 micro-re-rank.
+        <strong>각 단계가 다음 단계의 후보를 한 자릿수씩 줄이는 깔때기 구조</strong>.
+      </p>
+      <div class="use-when">
+        <strong>핵심 교훈</strong>
+        <p>"ANN을 빠르게"보다 "ANN에 넘어가는 후보를 줄이는" 것이 훨씬 효과적. boolean pre-filter는 무료에 가깝다 — index 설계만 잘 하면.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Pipeline · billions → tens">
+      <div class="d-funnel">
+        <div class="stage">
+          <div class="label">전체 카탈로그<small>store · dish · item</small></div>
+          <span class="count">~10⁹</span>
+        </div>
+        <div class="arrow-d"></div>
+        <div class="stage">
+          <div class="label">Boolean pre-filter<small>hexagon · city · doc_type</small></div>
+          <span class="count">~10⁵ (−99.99%)</span>
+        </div>
+        <div class="arrow-d"></div>
+        <div class="stage">
+          <div class="label">ANN on HNSW<small>int7 · 256-dim</small></div>
+          <span class="count">~200</span>
+        </div>
+        <div class="arrow-d"></div>
+        <div class="stage final">
+          <div class="label">Micro re-rank<small>compact NN</small></div>
+          <span class="count">~20 (응답)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Wins -->
+  <div class="diagram-block" id="d-wins">
+    <div class="db-text">
+      <h4><span class="num">04 · 결과</span>측정된 개선</h4>
+      <p>
+        세 개의 독립적 최적화가 누적으로 효과를 낸다 —
+        <strong>shard k 튜닝 (1200→200)</strong>, <strong>int7 양자화</strong>, <strong>MRL 256-dim cut</strong>.
+        각각이 단독으로도 의미 있지만, 조합되면서 운영 비용 곡선을 완전히 새로 그렸다.
+      </p>
+      <p>
+        주목할 점: <em>품질 손실 없이</em> 비용·지연을 깎는 데 성공했다는 것.
+        대부분의 efficiency 작업은 약간의 정확도를 희생하지만, 여기서는 recall 0.95+를 유지하면서 latency · CPU · storage를 동시에 압축.
+      </p>
+      <div class="use-when">
+        <strong>실전 우선순위</strong>
+        <p>도입 순서는 shard k 튜닝 → 양자화 → MRL. 앞쪽이 변경 비용이 낮고 효과 측정도 쉽다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Wins · numbers from prod">
+      <div class="d-wins">
+        <div class="row win">
+          <span class="label">Shard k <small>1200 → 200</small></span>
+          <div class="bar"><span style="width: 66%"></span></div>
+          <span class="val">latency −34%</span>
+        </div>
+        <div class="row win">
+          <span class="label">Shard k <small>CPU</small></span>
+          <div class="bar"><span class="alt" style="width: 17%"></span></div>
+          <span class="val">CPU −17%</span>
+        </div>
+        <div class="row win">
+          <span class="label">int7 양자화 <small>vs fp32</small></span>
+          <div class="bar"><span style="width: 50%"></span></div>
+          <span class="val">latency −50%+</span>
+        </div>
+        <div class="row win">
+          <span class="label">MRL 256-dim <small>vs 1536-dim</small></span>
+          <div class="bar"><span class="dim" style="width: 50%"></span></div>
+          <span class="val">storage −50%</span>
+        </div>
+        <div class="row">
+          <span class="label">품질 손실 <small>recall</small></span>
+          <div class="bar"><span class="dim" style="width: 3%"></span></div>
+          <span class="val">&lt;0.3%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="margin-note">
+    가장 반직관적 부분 — <strong>"ANN 자체 최적화보다 ANN으로 들어가는 후보를 줄이는 게 압도적으로 효과적이었다"</strong>. 사람들은 흔히 HNSW 파라미터 튜닝에 매달리지만, 실제 운영에서는 boolean 사전 필터의 설계가 latency · 비용에 훨씬 큰 영향을 미친다. index를 vertical/지리 기준으로 분리하는 데 시간을 더 쓰는 게 ROI가 훨씬 높음.
+  </p>
+
+  <div class="decision">
+    <h3>그래서 — 이 패턴은 언제 적합한가?</h3>
+    <div class="decision-table">
+      <div>
+        <h4>적합한 시나리오</h4>
+        <ul>
+          <li>의미 매칭이 중요한 검색 (synonym · typo · 다국어)</li>
+          <li>대규모 카탈로그 (수백만~수십억 문서)</li>
+          <li>지리·카테고리 등 강한 사전 필터가 존재</li>
+          <li>카탈로그 갱신이 분 단위가 아닌 시간/일 단위</li>
+          <li>비용에 민감 (저장 + 추론 둘 다)</li>
+        </ul>
+      </div>
+      <div>
+        <h4>적합하지 않은 경우</h4>
+        <ul>
+          <li>키워드 정확 매칭만으로 충분 (코드 검색, 정형 데이터)</li>
+          <li>카탈로그가 실시간으로 변함 (재고 변동 등 분 단위)</li>
+          <li>강한 사전 필터가 없어 ANN이 전체 카탈로그를 봐야 함</li>
+          <li>모델 학습 인프라가 없거나 fine-tuning 데이터 부족</li>
+          <li>응답 일관성 · 디버깅 가능성이 latency보다 중요</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- §3 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Reference Implementation</div>
+      <h2 class="section-title">실전 코드</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    Uber 내부 코드는 공개되지 않았으니, <em>아이디어를 PyTorch + Sentence-Transformers + FAISS로 재구성한 참고 구현</em>. 실제 배포에서는 Lucene Plus / HNSW 인덱스, gRPC 서빙, 모니터링 등이 더 붙는다.
+  </p>
+
+  <!-- 1. Two-tower with MRL output -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>01 · Two-Tower 모델 (QWEN 백본 + MRL 출력)</h4>
+      <span class="tag">model</span>
+    </div>
+<pre><span class="kw">import</span> torch
+<span class="kw">import</span> torch.nn <span class="kw">as</span> nn
+<span class="kw">from</span> transformers <span class="kw">import</span> AutoModel, AutoTokenizer
+
+MRL_DIMS = [<span class="str">128</span>, <span class="str">256</span>, <span class="str">512</span>, <span class="str">768</span>, <span class="str">1024</span>, <span class="str">1280</span>, <span class="str">1536</span>]
+
+<span class="kw">class</span> <span class="fn">EncoderTower</span>(nn.Module):
+    <span class="str">"""쿼리·문서 양쪽이 공유하는 인코더 — 같은 임베딩 공간 보장."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, model_name: <span class="kw">str</span> = <span class="str">"Qwen/Qwen-Embedding"</span>):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        self.backbone = AutoModel.<span class="fn">from_pretrained</span>(model_name)
+        self.proj = nn.<span class="fn">Linear</span>(self.backbone.config.hidden_size, <span class="fn">max</span>(MRL_DIMS))
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, input_ids, attention_mask):
+        h = self.<span class="fn">backbone</span>(input_ids, attention_mask=attention_mask).last_hidden_state
+        <span class="com"># pool: weighted mean over tokens</span>
+        mask = attention_mask.<span class="fn">unsqueeze</span>(-<span class="str">1</span>).<span class="fn">float</span>()
+        pooled = (h * mask).<span class="fn">sum</span>(<span class="str">1</span>) / mask.<span class="fn">sum</span>(<span class="str">1</span>).<span class="fn">clamp</span>(min=<span class="str">1e-6</span>)
+        z = self.<span class="fn">proj</span>(pooled)                          <span class="com"># (B, 1536)</span>
+        <span class="kw">return</span> nn.functional.<span class="fn">normalize</span>(z, dim=-<span class="str">1</span>)    <span class="com"># L2 정규화 — cosine sim 위해</span>
+
+<span class="kw">def</span> <span class="fn">slice_mrl</span>(z: torch.Tensor, dim: <span class="kw">int</span>) -> torch.Tensor:
+    <span class="str">"""주어진 차원으로 잘라서 다시 L2 정규화."""</span>
+    <span class="kw">return</span> nn.functional.<span class="fn">normalize</span>(z[..., :dim], dim=-<span class="str">1</span>)
+</pre>
+    <div class="note"><strong>포인트.</strong> 쿼리와 문서 양쪽이 <em>같은 인코더</em>를 쓰는 게 핵심 — 임베딩 공간 일관성 보장. MRL은 단순히 "큰 임베딩을 앞에서 잘라쓴다"가 아니라, 학습 시 모든 차원 cut에 loss를 거는 것이 트릭.</p></div>
+  </article>
+
+  <!-- 2. MRL InfoNCE loss -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>02 · MRL InfoNCE Loss</h4>
+      <span class="tag">training</span>
+    </div>
+<pre><span class="kw">def</span> <span class="fn">mrl_info_nce</span>(q: torch.Tensor, d_pos: torch.Tensor, d_neg: torch.Tensor,
+                 temperature: <span class="kw">float</span> = <span class="str">0.05</span>) -> torch.Tensor:
+    <span class="str">"""모든 MRL 차원 cut에 대해 InfoNCE를 동등 가중치로 합산.
+
+    q, d_pos: (B, D_max)
+    d_neg:    (B, K, D_max)  — in-batch + hard negatives
+    """</span>
+    total = <span class="str">0.0</span>
+    <span class="kw">for</span> dim <span class="kw">in</span> MRL_DIMS:
+        qc = <span class="fn">slice_mrl</span>(q, dim)                <span class="com"># (B, dim)</span>
+        dp = <span class="fn">slice_mrl</span>(d_pos, dim)            <span class="com"># (B, dim)</span>
+        dn = <span class="fn">slice_mrl</span>(d_neg, dim)            <span class="com"># (B, K, dim)</span>
+
+        <span class="com"># positive: q · d_pos, negatives: q · each d_neg</span>
+        pos_sim = (qc * dp).<span class="fn">sum</span>(-<span class="str">1</span>, keepdim=<span class="kw">True</span>)       <span class="com"># (B, 1)</span>
+        neg_sim = torch.<span class="fn">einsum</span>(<span class="str">"bd,bkd->bk"</span>, qc, dn)        <span class="com"># (B, K)</span>
+        logits = torch.<span class="fn">cat</span>([pos_sim, neg_sim], dim=-<span class="str">1</span>) / temperature
+
+        target = torch.<span class="fn">zeros</span>(logits.<span class="fn">size</span>(<span class="str">0</span>), dtype=torch.long, device=logits.device)
+        total += nn.functional.<span class="fn">cross_entropy</span>(logits, target)
+
+    <span class="kw">return</span> total / <span class="fn">len</span>(MRL_DIMS)
+</pre>
+    <div class="note"><strong>포인트.</strong> 핵심은 <em>모든 차원에 동등 가중치</em>. 만약 큰 차원에 더 큰 weight를 주면 작은 차원 cut의 품질이 무너진다. Uber는 7개 cut 모두 1/7씩 — 그래서 256-dim도 1536-dim과 거의 동등한 품질을 낸다.</div>
+  </article>
+
+  <!-- 3. Offline document indexing -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>03 · Offline Document Indexing (배치)</h4>
+      <span class="tag">offline</span>
+    </div>
+<pre><span class="kw">import</span> faiss
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="kw">def</span> <span class="fn">build_index</span>(docs: <span class="kw">list</span>[<span class="kw">dict</span>], encoder: EncoderTower,
+                dim: <span class="kw">int</span> = <span class="str">256</span>, hnsw_m: <span class="kw">int</span> = <span class="str">32</span>) -> faiss.Index:
+    <span class="str">"""스케줄 작업으로 격주 실행되는 인덱스 빌드 — Blue/Green 컬럼."""</span>
+
+    <span class="com"># 1) 배치 임베딩</span>
+    embeds = []
+    <span class="kw">for</span> batch <span class="kw">in</span> <span class="fn">chunks</span>(docs, <span class="str">1024</span>):
+        toks = <span class="fn">tokenize</span>([d[<span class="str">"text"</span>] <span class="kw">for</span> d <span class="kw">in</span> batch])
+        <span class="kw">with</span> torch.<span class="fn">no_grad</span>():
+            z = <span class="fn">encoder</span>(**toks)
+        embeds.<span class="fn">append</span>(<span class="fn">slice_mrl</span>(z, dim).<span class="fn">cpu</span>().<span class="fn">numpy</span>())
+    vecs = np.<span class="fn">vstack</span>(embeds).<span class="fn">astype</span>(<span class="str">"float32"</span>)
+
+    <span class="com"># 2) int7 양자화 — latency 절반</span>
+    quantizer = faiss.<span class="fn">ScalarQuantizer</span>(dim, faiss.ScalarQuantizer.QT_7bit)
+    index = faiss.<span class="fn">IndexHNSWSQ</span>(dim, faiss.ScalarQuantizer.QT_7bit, hnsw_m)
+    index.<span class="fn">train</span>(vecs)
+    index.<span class="fn">add</span>(vecs)
+
+    <span class="com"># 3) Boolean 필터용 메타데이터 별도 저장</span>
+    meta = {d[<span class="str">"id"</span>]: {<span class="str">"hexagon"</span>: d[<span class="str">"hexagon"</span>], <span class="str">"city_id"</span>: d[<span class="str">"city_id"</span>],
+                       <span class="str">"doc_type"</span>: d[<span class="str">"doc_type"</span>]} <span class="kw">for</span> d <span class="kw">in</span> docs}
+
+    <span class="kw">return</span> index, meta
+
+<span class="com"># 검증 게이트 3종 — 배포 전 통과 필수</span>
+<span class="kw">def</span> <span class="fn">validate_index</span>(new_idx, old_idx, sample_queries):
+    <span class="kw">assert</span> new_idx.ntotal &gt;= old_idx.ntotal * <span class="str">0.99</span>     <span class="com"># completeness</span>
+    <span class="kw">assert</span> <span class="fn">schema_compat</span>(new_idx, old_idx)              <span class="com"># backward-compatibility</span>
+    <span class="kw">assert</span> <span class="fn">recall_regression</span>(new_idx, old_idx,
+                             sample_queries) &gt; <span class="str">0.98</span>      <span class="com"># correctness</span>
+</pre>
+    <div class="note"><strong>포인트.</strong> Uber는 <em>blue/green을 별도 인덱스가 아닌 한 인덱스 안의 컬럼</em>으로 운영해 저장 -50%. 대신 세 가지 검증 게이트(완전성·하위호환·정확성)로 single-index 리스크를 방어. <code>QT_7bit</code>가 성능 핵심.</div>
+  </article>
+
+  <!-- 4. Online retrieval with pre-filter -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>04 · Online Retrieval (pre-filter + ANN + re-rank)</h4>
+      <span class="tag">online</span>
+    </div>
+<pre><span class="kw">def</span> <span class="fn">search</span>(query: <span class="kw">str</span>, user_ctx: <span class="kw">dict</span>, encoder: EncoderTower,
+           index: faiss.Index, meta: <span class="kw">dict</span>, reranker, k: <span class="kw">int</span> = <span class="str">200</span>) -> <span class="kw">list</span>:
+
+    <span class="com"># 1) 쿼리 임베딩 (online, ms 단위)</span>
+    toks = <span class="fn">tokenize</span>([query])
+    <span class="kw">with</span> torch.<span class="fn">no_grad</span>():
+        q = <span class="fn">encoder</span>(**toks)
+    q256 = <span class="fn">slice_mrl</span>(q, <span class="str">256</span>).<span class="fn">cpu</span>().<span class="fn">numpy</span>().<span class="fn">astype</span>(<span class="str">"float32"</span>)
+
+    <span class="com"># 2) Boolean pre-filter — billion → 1M 미만으로 먼저 깎는다</span>
+    allowed_ids = {
+        doc_id <span class="kw">for</span> doc_id, m <span class="kw">in</span> meta.<span class="fn">items</span>()
+        <span class="kw">if</span> m[<span class="str">"hexagon"</span>] <span class="kw">in</span> user_ctx[<span class="str">"reachable_hexagons"</span>]
+        <span class="kw">and</span> m[<span class="str">"city_id"</span>] == user_ctx[<span class="str">"city_id"</span>]
+        <span class="kw">and</span> m[<span class="str">"doc_type"</span>] <span class="kw">in</span> user_ctx[<span class="str">"allowed_types"</span>]
+    }
+    selector = faiss.<span class="fn">IDSelectorArray</span>(<span class="fn">list</span>(allowed_ids))
+    params = faiss.<span class="fn">SearchParametersHNSW</span>(sel=selector, efSearch=<span class="str">128</span>)
+
+    <span class="com"># 3) ANN — 깎인 후보들 안에서만</span>
+    D, I = index.<span class="fn">search</span>(q256, k, params=params)
+
+    <span class="com"># 4) Micro re-rank — 작은 NN으로 top-K 정밀 정렬</span>
+    candidates = [{<span class="str">"id"</span>: <span class="fn">int</span>(i), <span class="str">"score"</span>: <span class="fn">float</span>(d)} <span class="kw">for</span> i, d <span class="kw">in</span> <span class="fn">zip</span>(I[<span class="str">0</span>], D[<span class="str">0</span>])]
+    <span class="kw">return</span> <span class="fn">reranker</span>(query, candidates, user_ctx)[:<span class="str">20</span>]
+</pre>
+    <div class="note"><strong>포인트.</strong> 단계 순서가 핵심 — <em>pre-filter → ANN → re-rank</em>. 순서를 바꾸면 (예: ANN 먼저, filter 나중) billion-scale에서 latency가 즉시 1000배 차이난다. <code>IDSelectorArray</code>로 HNSW 안에서 제외 처리.</div>
+  </article>
+
+  <!-- 5. Training pipeline -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>05 · 학습 파이프라인 (DDP + DeepSpeed ZeRO-3)</h4>
+      <span class="tag">training</span>
+    </div>
+<pre><span class="kw">import</span> deepspeed
+<span class="kw">from</span> torch.utils.data <span class="kw">import</span> DataLoader
+
+<span class="kw">def</span> <span class="fn">train</span>(encoder: EncoderTower, dataset, config_path: <span class="kw">str</span>):
+    <span class="str">"""수억 샘플 학습 — ZeRO-3로 모델 파라미터 분산."""</span>
+    model_engine, optimizer, _, _ = deepspeed.<span class="fn">initialize</span>(
+        model=encoder,
+        config=config_path,        <span class="com"># ZeRO-3 + bf16 + grad checkpointing</span>
+    )
+
+    loader = <span class="fn">DataLoader</span>(dataset, batch_size=<span class="str">256</span>, num_workers=<span class="str">8</span>, pin_memory=<span class="kw">True</span>)
+
+    <span class="kw">for</span> step, batch <span class="kw">in</span> <span class="fn">enumerate</span>(loader):
+        q  = <span class="fn">model_engine</span>(**batch[<span class="str">"query"</span>])             <span class="com"># (B, D_max)</span>
+        dp = <span class="fn">model_engine</span>(**batch[<span class="str">"pos_doc"</span>])           <span class="com"># (B, D_max)</span>
+        dn = <span class="fn">model_engine</span>(**batch[<span class="str">"neg_docs"</span>])          <span class="com"># (B, K, D_max)</span>
+
+        loss = <span class="fn">mrl_info_nce</span>(q, dp, dn, temperature=<span class="str">0.05</span>)
+        model_engine.<span class="fn">backward</span>(loss)
+        model_engine.<span class="fn">step</span>()
+
+        <span class="kw">if</span> step % <span class="str">100</span> == <span class="str">0</span>:
+            <span class="fn">log</span>(<span class="str">f"step={step} loss={loss.item():.4f}"</span>)
+</pre>
+    <div class="note"><strong>포인트.</strong> 수억 단위 학습 데이터 + 큰 LLM 백본은 단일 GPU 불가 — <em>DDP + DeepSpeed ZeRO-3</em>로 파라미터·옵티마이저 상태·gradient를 모두 분산. bf16 + gradient checkpointing은 메모리 추가 절약. Hard negatives의 품질이 학습 결과를 크게 좌우한다.</div>
+  </article>
+
+  <p class="margin-note">
+    위 코드는 <strong>핵심 아이디어 재구성</strong>이다. 실제 Uber 배포에서는 Lucene Plus의 분산 인덱싱, 컨테이너 오케스트레이션, gRPC 서빙 레이어, A/B 실험 프레임워크, 모니터링·alert 인프라가 모두 붙는다. 단일 모델로 모든 vertical(레스토랑·grocery·retail)과 모든 시장을 커버한 것이 운영 관점에서 가장 큰 수확이라고 저자들은 강조한다.
+  </p>
+</section>
+
+
+<footer>
+  <div>
+    원문 · <a href="https://www.uber.com/blog/evolution-and-scale-of-ubers-delivery-search-platform/" target="_blank" rel="noopener">uber.com/blog/evolution-and-scale-of-ubers-delivery-search-platform</a>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    const btn = document.getElementById('menuBtn');
+    const panel = document.getElementById('tocPanel');
+    const backdrop = document.getElementById('tocBackdrop');
+    const body = document.body;
+
+    function setOpen(open) {
+      btn.classList.toggle('open', open);
+      panel.classList.toggle('open', open);
+      backdrop.classList.toggle('open', open);
+      body.classList.toggle('menu-open', open);
+      btn.setAttribute('aria-expanded', String(open));
+      panel.setAttribute('aria-hidden', String(!open));
+      btn.setAttribute('aria-label', open ? '목차 닫기' : '목차 열기');
+    }
+
+    btn.addEventListener('click', () => setOpen(!panel.classList.contains('open')));
+    backdrop.addEventListener('click', () => setOpen(false));
+    document.querySelectorAll('[data-close]').forEach(a => a.addEventListener('click', () => setOpen(false)));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && panel.classList.contains('open')) setOpen(false);
+    });
+  })();
+
+  // Inject copy buttons into every code card
+  (function () {
+    document.querySelectorAll('.code-card').forEach(card => {
+      const head = card.querySelector('.code-head');
+      const pre  = card.querySelector('pre');
+      if (!head || !pre) return;
+
+      const tag = head.querySelector('.tag');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy-btn';
+      btn.textContent = 'copy';
+      btn.setAttribute('aria-label', '코드 복사');
+
+      const reset = () => { btn.textContent = 'copy'; btn.classList.remove('copied', 'failed'); };
+
+      btn.addEventListener('click', async () => {
+        const code = pre.textContent;
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(code);
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = code;
+            ta.style.position = 'fixed'; ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          btn.textContent = 'copied';
+          btn.classList.add('copied');
+          setTimeout(reset, 1500);
+        } catch (e) {
+          btn.textContent = 'failed';
+          btn.classList.add('failed');
+          setTimeout(reset, 2000);
+        }
+      });
+
+      if (tag) {
+        const wrap = document.createElement('div');
+        wrap.className = 'head-right';
+        tag.replaceWith(wrap);
+        wrap.appendChild(tag);
+        wrap.appendChild(btn);
+      } else {
+        head.appendChild(btn);
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>

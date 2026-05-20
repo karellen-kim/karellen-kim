@@ -169,6 +169,150 @@
   }
   .d-svc .storage small { display: block; font-size: 0.66rem; letter-spacing: 0.08em; margin-top: 0.15rem; text-transform: uppercase; opacity: 0.8; }
 
+  /* Overall architecture */
+  .d-overall { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.35rem; width: 100%; min-width: 0; }
+  .d-overall .row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .d-overall .lyr {
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--ink);
+    min-width: 0;
+  }
+  .d-overall .lyr small {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 0.18rem;
+    font-weight: 400;
+  }
+  .d-overall .lyr.client {
+    background: var(--paper-deep);
+    border-color: var(--rule);
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  .d-overall .lyr.gateway {
+    background: var(--ink); color: var(--paper);
+    border: none; font-weight: 600;
+    font-size: 0.88rem;
+  }
+  .d-overall .lyr.gateway small { color: var(--paper); opacity: 0.7; }
+  .d-overall .lyr.storage {
+    background: var(--accent-wash);
+    border: 1.5px solid var(--accent);
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+  .d-overall .lyr.storage small { color: var(--accent-deep); opacity: 0.8; }
+
+  .d-overall .multi {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+  .d-overall .multi .lyr { padding: 0.55rem 0.4rem; font-size: 0.72rem; }
+  .d-overall .multi .lyr.accent {
+    background: var(--accent); color: var(--paper); border-color: var(--accent-deep);
+  }
+  .d-overall .multi .lyr.accent small { color: var(--paper); opacity: 0.85; }
+
+  .d-overall .paths {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45rem;
+  }
+  .d-overall .path {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    border: 1px dashed var(--rule);
+    background: var(--paper-deep);
+    min-width: 0;
+  }
+  .d-overall .path-label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    text-align: center;
+    margin-bottom: 0.15rem;
+    font-weight: 600;
+  }
+  .d-overall .path .lyr {
+    padding: 0.45rem 0.4rem;
+    font-size: 0.7rem;
+    width: 100%;
+  }
+  .d-overall .path .arrow-mini {
+    margin: 0 auto;
+    width: 1.5px;
+    height: 0.35rem;
+    background: var(--ink-soft);
+    position: relative;
+  }
+  .d-overall .path .arrow-mini.up::after {
+    content: ""; position: absolute; left: 50%; top: -1px;
+    transform: translateX(-50%);
+    border: 3px solid transparent;
+    border-bottom-color: var(--ink-soft);
+  }
+
+  .d-overall .arrow {
+    justify-self: center;
+    width: 1.5px;
+    height: 0.55rem;
+    background: var(--ink-soft);
+    position: relative;
+  }
+  .d-overall .arrow.down::after {
+    content: ""; position: absolute; left: 50%; bottom: -1px;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: var(--ink-soft);
+  }
+  .d-overall .arrow.up::after {
+    content: ""; position: absolute; left: 50%; top: -1px;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-bottom-color: var(--ink-soft);
+  }
+  .d-overall .arrow.bi {
+    height: 1rem;
+  }
+  .d-overall .arrow.bi::before {
+    content: ""; position: absolute; left: 50%; top: -1px;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-bottom-color: var(--ink-soft);
+  }
+  .d-overall .arrow.bi::after {
+    content: ""; position: absolute; left: 50%; bottom: -1px;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: var(--ink-soft);
+  }
+  .d-overall .arrow-flow {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+    margin: -0.05rem 0;
+  }
+
+  /* Canvas override for overall — needs more vertical room */
+  .canvas.canvas-tall { min-height: 460px; }
+
   /* Decision */
   .decision { margin-top: clamp(3rem, 6vw, 5rem); border-top: 2px solid var(--ink); padding-top: 2.5rem; }
   .decision h3 { font-size: clamp(1.35rem, 2.4vw, 1.75rem); font-weight: 600; letter-spacing: -0.025em; margin-bottom: 1.4rem; }
@@ -295,6 +439,7 @@
         <li><a href="#d-mr" data-close><span>04</span>Active-Active Multi-region</a></li>
         <li><a href="#d-vec" data-close><span>05</span>Vector + Blue-Green</a></li>
         <li><a href="#d-svc" data-close><span>06</span>서비스 토폴로지</a></li>
+        <li><a href="#d-overall" data-close><span>07</span>전체 아키텍처</a></li>
       </ul>
     </li>
     <li><a href="#code" data-close>실전 코드</a></li>
@@ -694,6 +839,85 @@
           </div>
         </div>
         <div class="storage">Remote Storage · HDFS / GCS<small>인덱스 매개체 · 영속화</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Overall architecture (synthesis) -->
+  <div class="diagram-block" id="d-overall">
+    <div class="db-text">
+      <h4><span class="num">07 · 종합</span>전체 아키텍처</h4>
+      <p>
+        앞서 본 6개 부분도가 하나의 시스템으로 어떻게 연결되는지 정리.
+        <strong>위쪽은 read path</strong> (Client → Gateway → Searcher) ·
+        <strong>중앙의 Remote Storage가 read와 write를 분리</strong>하는 경계점 ·
+        <strong>아래쪽은 write path</strong> (스트리밍 / 배치 두 경로).
+      </p>
+      <p>
+        핵심 디자인 원칙 세 가지가 모두 보인다:
+        <em>① write/read 물리 분리</em>(Storage가 경계),
+        <em>② source-of-truth는 항상 cluster 밖</em>(Kafka · Hive),
+        <em>③ 두 ingestion 경로가 같은 storage로 수렴</em>(통합된 read 인터페이스).
+      </p>
+      <div class="use-when">
+        <strong>한 줄 요약</strong>
+        <p>"OpenSearch는 query engine이고, 진짜 source-of-truth는 Kafka(스트리밍) + Hive(벡터). 그 사이를 Ingester · Spark · Remote Storage가 잇는다."</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Overall · platform topology">
+      <div class="d-overall">
+        <!-- Top: clients -->
+        <div class="lyr client">Apps · Services · Users<small>internal &amp; external</small></div>
+
+        <div class="arrow down"></div>
+        <div class="arrow-flow">queries (gRPC / REST)</div>
+
+        <!-- Gateway -->
+        <div class="lyr gateway">Search Gateway<small>gRPC + REST · OpenSearch-compatible</small></div>
+
+        <div class="arrow down"></div>
+
+        <!-- Multi-region searchers -->
+        <div class="multi">
+          <div class="lyr accent">Searcher · A<small>region A</small></div>
+          <div class="lyr accent">Searcher · B<small>region B</small></div>
+          <div class="lyr accent">Searcher · C<small>region C</small></div>
+        </div>
+
+        <div class="arrow up"></div>
+        <div class="arrow-flow">read merged indices</div>
+
+        <!-- Storage boundary -->
+        <div class="lyr storage">Remote Storage · HDFS / GCS<small>write ↔ read 경계 · 인덱스 영속</small></div>
+
+        <div class="arrow up"></div>
+        <div class="arrow-flow">upload merged segments</div>
+
+        <!-- Write paths: streaming + batch -->
+        <div class="paths">
+          <!-- Streaming path -->
+          <div class="path">
+            <div class="path-label">Streaming · Pull-based</div>
+            <div class="lyr">Ingester · StreamPoller<small>per-shard · no-op translog</small></div>
+            <div class="arrow-mini up"></div>
+            <div class="lyr accent">Global Aggregated Kafka<small>cross-replicated</small></div>
+            <div class="arrow-mini up"></div>
+            <div class="lyr">Regional Kafka<small>A · B · C writes</small></div>
+            <div class="arrow-mini up"></div>
+            <div class="lyr client">App / Service writes<small>real-time events</small></div>
+          </div>
+          <!-- Batch path -->
+          <div class="path">
+            <div class="path-label">Batch · Vector pipeline</div>
+            <div class="lyr">Spark Bulk Indexing<small>blue/green · gRPC bulk</small></div>
+            <div class="arrow-mini up"></div>
+            <div class="lyr accent">Hive · embeddings table<small>1.5B docs · 400-dim</small></div>
+            <div class="arrow-mini up"></div>
+            <div class="lyr">Embedding Generation<small>QWEN backbone · MRL</small></div>
+            <div class="arrow-mini up"></div>
+            <div class="lyr client">Raw catalog data<small>store · dish · item</small></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

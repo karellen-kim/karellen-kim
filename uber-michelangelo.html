@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uber Michelangelo — 학습 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+  /* HERO */
+  .hero { max-width: 1200px; margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); position: relative; }
+  .hero::before { content: ""; position: absolute; top: 2rem; left: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); height: 1px; background: var(--ink); }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.5rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.95; font-weight: 600; margin-top: clamp(2rem, 5vw, 3rem); letter-spacing: -0.035em; color: var(--ink); }
+  .hero-title em { font-style: normal; font-weight: 300; color: var(--accent-deep); }
+  .hero-sub { margin-top: 1.4rem; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: var(--ink-soft); max-width: 42rem; line-height: 1.5; font-weight: 300; }
+  .hero-grid { margin-top: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .hero-grid > div { background: var(--paper); padding: 1.25rem 1.5rem; }
+  .hero-grid .k { display: block; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 0.4rem; }
+  .hero-grid .v { font-size: 1.2rem; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .hero-grid .v small { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; font-weight: 400; }
+
+  /* SECTIONS */
+  .section { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem); position: relative; }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head { display: grid; grid-template-columns: auto 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: baseline; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .section-num { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.85; color: var(--accent); font-weight: 200; letter-spacing: -0.04em; }
+  .section-titles { border-left: 1px solid var(--ink); padding-left: clamp(1rem, 3vw, 2rem); padding-top: 0.5rem; }
+  .section-kicker { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .section-title { font-size: clamp(1.65rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.028em; }
+
+  /* §1 TL;DR */
+  .tldr-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
+  @media (min-width: 720px) { .tldr-grid { grid-template-columns: repeat(12, 1fr); } }
+  .tldr-lead { grid-column: 1 / -1; font-size: clamp(1.2rem, 2.1vw, 1.6rem); line-height: 1.45; color: var(--ink); padding-bottom: 2rem; border-bottom: 1px solid var(--rule); margin-bottom: 2.5rem; font-weight: 300; letter-spacing: -0.012em; }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  .tldr-lead::first-letter { font-size: 3.4em; float: left; line-height: 0.9; padding-right: 0.12em; padding-top: 0.08em; color: var(--accent-deep); font-weight: 200; }
+  @media (min-width: 720px) { .tldr-lead { grid-column: 2 / 12; } }
+  .points { display: contents; }
+  .point { grid-column: 1 / -1; display: grid; grid-template-columns: 4ch 1fr; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 720px) { .point { grid-column: 2 / 12; grid-template-columns: 5ch 1fr; gap: 2rem; } }
+  .point .n { font-size: 1.25rem; color: var(--accent); line-height: 1; font-weight: 300; letter-spacing: 0.05em; text-transform: uppercase; }
+  .point h3 { font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.3; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.015em; }
+  .point p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
+  .point p strong { color: var(--ink); font-weight: 600; }
+  .point p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+
+  /* §2 다이어그램 */
+  .diagram-block { margin-bottom: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .db-text h4 { font-size: clamp(1.3rem, 2.3vw, 1.75rem); line-height: 1.25; margin-bottom: 0.8rem; color: var(--ink); font-weight: 600; letter-spacing: -0.022em; }
+  .db-text h4 .num { display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em; color: var(--accent-deep); vertical-align: middle; background: var(--accent-wash); padding: 0.28rem 0.55rem; border-radius: 999px; margin-right: 0.65rem; font-weight: 600; position: relative; top: -0.15em; }
+  .db-text p { color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.65; font-size: 0.95rem; }
+  .db-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .db-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .db-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas { background: var(--paper-deep); border: 1px solid var(--rule); padding: clamp(1.25rem, 3vw, 2rem); position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .canvas::before { content: attr(data-label); position: absolute; top: 0.7rem; left: 0.9rem; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; }
+  .canvas-tall { min-height: 420px; }
+
+  /* Timeline */
+  .d-timeline { display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; min-width: 0; }
+  .d-timeline .gen { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.8rem; padding: 0.85rem 1rem; border: 1px solid var(--rule); background: var(--paper); align-items: baseline; position: relative; }
+  .d-timeline .gen.hero { border-color: var(--accent); border-width: 1.5px; }
+  .d-timeline .gen .year { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-faint); letter-spacing: 0.04em; }
+  .d-timeline .gen.hero .year { color: var(--accent-deep); font-weight: 600; }
+  .d-timeline .gen .name { font-size: 0.92rem; font-weight: 600; color: var(--ink); margin-bottom: 0.25rem; }
+  .d-timeline .gen .desc { font-size: 0.78rem; color: var(--ink-soft); line-height: 1.5; }
+  .d-timeline .gen .desc b { color: var(--ink); font-weight: 600; }
+  .d-timeline .arr { justify-self: center; width: 1.5px; height: 0.55rem; background: var(--ink-soft); position: relative; margin: -0.1rem 0; }
+  .d-timeline .arr::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
+
+  /* 6-step workflow */
+  .d-flow6 { display: grid; grid-template-columns: 1fr; gap: 0.4rem; width: 100%; min-width: 0; }
+  .d-flow6 .step { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: 0.7rem; padding: 0.6rem 0.8rem; border: 1px solid var(--rule); background: var(--paper); align-items: baseline; }
+  .d-flow6 .step .nr { font-family: var(--mono); font-size: 0.7rem; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; }
+  .d-flow6 .step .label { font-size: 0.82rem; font-weight: 600; color: var(--ink); }
+  .d-flow6 .step .label small { display: block; color: var(--ink-faint); font-size: 0.7rem; font-weight: 400; margin-top: 0.15rem; line-height: 1.45; }
+  .d-flow6 .down { justify-self: center; width: 1.5px; height: 0.35rem; background: var(--ink-soft); position: relative; }
+  .d-flow6 .down::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
+
+  /* 2.0 4 themes */
+  .d-themes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; width: 100%; min-width: 0; }
+  .d-themes .theme { padding: 0.85rem 0.95rem; border: 1px solid var(--rule); background: var(--paper); min-width: 0; }
+  .d-themes .theme.t1 { border-color: var(--accent); background: var(--accent-wash); }
+  .d-themes .theme .ttl { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.45rem; flex-wrap: wrap; }
+  .d-themes .theme .ttl .num { font-family: var(--mono); font-size: 0.7rem; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; }
+  .d-themes .theme.t1 .ttl .num { color: var(--accent-deep); }
+  .d-themes .theme .ttl .nm { font-size: 0.92rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .d-themes .theme.t1 .ttl .nm { color: var(--accent-deep); }
+  .d-themes .theme .body { font-size: 0.76rem; color: var(--ink-soft); line-height: 1.55; }
+  .d-themes .theme.t1 .body { color: var(--ink); }
+  .d-themes .theme .body b { color: var(--ink); font-weight: 600; }
+  .d-themes .theme .body code { font-family: var(--mono); font-size: 0.7rem; padding: 0.04rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .d-themes .theme.t1 .body code { background: var(--paper); }
+
+  /* MAJC federation */
+  .d-majc { display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; min-width: 0; }
+  .d-majc .top { padding: 0.75rem 0.9rem; background: var(--paper-deep); border: 1px solid var(--rule); text-align: center; font-size: 0.78rem; color: var(--ink); font-weight: 500; }
+  .d-majc .top small { display: block; color: var(--ink-faint); font-size: 0.68rem; margin-top: 0.15rem; font-weight: 400; }
+  .d-majc .arrow { justify-self: center; width: 1.5px; height: 0.55rem; background: var(--ink-soft); position: relative; }
+  .d-majc .arrow::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
+  .d-majc .gw {
+    padding: 0.9rem 1.1rem; background: var(--ink); color: var(--paper);
+    text-align: center; font-weight: 600; font-size: 0.92rem; letter-spacing: 0.01em;
+  }
+  .d-majc .gw small { display: block; font-size: 0.68rem; opacity: 0.7; margin-top: 0.2rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .d-majc .policies { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.3rem; padding: 0.5rem; background: var(--paper); border: 1px dashed var(--rule); }
+  .d-majc .policies .pl { padding: 0.45rem 0.3rem; text-align: center; font-size: 0.68rem; color: var(--accent-deep); font-weight: 600; border-right: 1px solid var(--rule); }
+  .d-majc .policies .pl:last-child { border-right: none; }
+  .d-majc .policies .pl small { display: block; font-family: var(--mono); font-size: 0.6rem; color: var(--ink-faint); margin-top: 0.15rem; font-weight: 400; letter-spacing: 0.04em; }
+  .d-majc .clusters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; }
+  .d-majc .clusters .cl {
+    padding: 0.6rem 0.5rem; border: 1.5px solid var(--ink); background: var(--paper);
+    text-align: center; font-size: 0.74rem; font-weight: 600; color: var(--ink);
+  }
+  .d-majc .clusters .cl small { display: block; font-family: var(--mono); font-size: 0.62rem; color: var(--ink-faint); margin-top: 0.18rem; font-weight: 400; letter-spacing: 0.06em; }
+
+  /* GenAI Gateway */
+  .d-genai { display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; min-width: 0; }
+  .d-genai .users {
+    padding: 0.6rem 0.85rem; background: var(--paper-deep); border: 1px solid var(--rule);
+    text-align: center; font-size: 0.78rem; color: var(--ink); font-style: italic;
+  }
+  .d-genai .arrow { justify-self: center; width: 1.5px; height: 0.55rem; background: var(--ink-soft); position: relative; }
+  .d-genai .arrow::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
+  .d-genai .gw {
+    padding: 0.9rem 1rem; background: var(--accent); color: var(--paper);
+    text-align: center; font-weight: 600; font-size: 0.92rem; border: 1.5px solid var(--accent-deep);
+  }
+  .d-genai .gw small { display: block; font-size: 0.66rem; opacity: 0.85; margin-top: 0.2rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .d-genai .guards {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.3rem; padding: 0.55rem; background: var(--accent-wash); border: 1px dashed var(--accent);
+  }
+  .d-genai .guards .g { text-align: center; font-size: 0.7rem; color: var(--accent-deep); font-weight: 600; padding: 0.35rem 0.2rem; border-right: 1px solid var(--accent); }
+  .d-genai .guards .g:last-child { border-right: none; }
+  .d-genai .guards .g small { display: block; font-family: var(--mono); font-size: 0.58rem; opacity: 0.75; margin-top: 0.12rem; font-weight: 400; letter-spacing: 0.04em; }
+  .d-genai .backends { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; }
+  .d-genai .backends .b {
+    padding: 0.6rem 0.4rem; border: 1.5px solid var(--ink); background: var(--paper);
+    text-align: center; font-size: 0.74rem; font-weight: 600; color: var(--ink);
+  }
+  .d-genai .backends .b small { display: block; font-family: var(--mono); font-size: 0.6rem; color: var(--ink-faint); margin-top: 0.15rem; font-weight: 400; letter-spacing: 0.04em; }
+
+  /* Overall arch */
+  .d-overall { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.35rem; width: 100%; min-width: 0; }
+  .d-overall .lyr {
+    padding: 0.7rem 0.85rem; border: 1px solid var(--rule); background: var(--paper);
+    text-align: center; font-size: 0.8rem; font-weight: 500; color: var(--ink); min-width: 0;
+  }
+  .d-overall .lyr small { display: block; font-family: var(--mono); font-size: 0.62rem; color: var(--ink-faint); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 0.18rem; font-weight: 400; }
+  .d-overall .lyr.client { background: var(--paper-deep); color: var(--ink-soft); font-style: italic; }
+  .d-overall .lyr.studio { background: var(--ink); color: var(--paper); border: none; font-weight: 600; font-size: 0.88rem; }
+  .d-overall .lyr.studio small { color: var(--paper); opacity: 0.7; }
+  .d-overall .lyr.federation { background: var(--accent-wash); border: 1.5px solid var(--accent); color: var(--accent-deep); font-weight: 600; }
+  .d-overall .lyr.federation small { color: var(--accent-deep); opacity: 0.8; }
+  .d-overall .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.35rem; }
+  .d-overall .grid3 .lyr { padding: 0.55rem 0.4rem; font-size: 0.72rem; }
+  .d-overall .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+  .d-overall .grid2 .col {
+    display: flex; flex-direction: column; gap: 0.3rem; padding: 0.5rem;
+    border: 1px dashed var(--rule); background: var(--paper-deep); min-width: 0;
+  }
+  .d-overall .grid2 .col .col-label {
+    font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--accent-deep); text-align: center;
+    margin-bottom: 0.15rem; font-weight: 600;
+  }
+  .d-overall .grid2 .col .lyr { padding: 0.45rem 0.4rem; font-size: 0.7rem; }
+  .d-overall .arrow {
+    justify-self: center; width: 1.5px; height: 0.55rem; background: var(--ink-soft); position: relative;
+  }
+  .d-overall .arrow.down::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
+
+  /* Decision */
+  .decision { margin-top: clamp(3rem, 6vw, 5rem); border-top: 2px solid var(--ink); padding-top: 2.5rem; }
+  .decision h3 { font-size: clamp(1.35rem, 2.4vw, 1.75rem); font-weight: 600; letter-spacing: -0.025em; margin-bottom: 1.4rem; }
+  .decision-table { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  @media (min-width: 760px) { .decision-table { grid-template-columns: 1fr 1fr; } }
+  .decision-table > div { background: var(--paper); padding: 1.5rem; }
+  .decision-table h4 { font-size: 1.1rem; margin-bottom: 0.7rem; color: var(--accent-deep); font-weight: 600; letter-spacing: -0.015em; }
+  .decision-table ul { list-style: none; color: var(--ink-soft); }
+  .decision-table li { padding: 0.35rem 0; padding-left: 1.1rem; position: relative; font-size: 0.92rem; }
+  .decision-table li::before { content: "→"; position: absolute; left: 0; color: var(--accent); font-family: var(--mono); }
+
+  /* Gloss */
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
+
+  /* §3 코드 */
+  .code-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card { margin-bottom: 2.5rem; border: 1px solid var(--rule); background: var(--paper); overflow: hidden; }
+  .code-head { display: flex; align-items: baseline; justify-content: space-between; padding: 1rem 1.4rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; gap: 0.5rem; }
+  .code-head h4 { font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .code-head .tag { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--accent); color: var(--paper); border-radius: 2px; }
+  .code-head .head-right { display: flex; align-items: center; gap: 0.5rem; }
+  .copy-btn { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease; font-weight: 600; }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .copy-btn.failed { background: var(--paper-deep); color: var(--accent-deep); border-color: var(--accent); }
+  .code-card pre { margin: 0; padding: 1.35rem 1.5rem; overflow-x: auto; background: oklch(0.18 0.02 260); color: oklch(0.92 0.015 75); font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note { padding: 1rem 1.4rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper-deep); line-height: 1.6; }
+  .code-card .note strong { color: var(--accent-deep); }
+
+  .margin-note { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; padding: 1.1rem 1.3rem; background: var(--paper-deep); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); margin: 2rem 0; font-weight: 300; }
+  .margin-note::before { content: "노트"; font-weight: 600; color: var(--accent-deep); font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-right: 0.8rem; display: inline-block; padding-right: 0.7rem; border-right: 1px solid var(--rule); }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  /* FOOTER */
+  footer { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: var(--ink-faint); }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+  .footer-sources { display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-end; text-align: right; }
+  .footer-sources a { display: block; font-size: 0.78rem; line-height: 1.4; }
+
+  /* HOME LINK */
+  .home-link { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 60; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0 0.95rem; height: 48px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.04em; transition: background 0.2s ease, color 0.2s ease; }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow { font-family: var(--mono); font-size: 0.95rem; transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  /* HAMBURGER + TOC */
+  .menu-btn { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; transition: background 0.2s ease; }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span { display: block; width: 20px; height: 1.5px; background: var(--ink); transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, background 0.2s ease; transform-origin: center; }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+  .toc-backdrop { position: fixed; inset: 0; background: oklch(0.18 0.015 260 / 0.35); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+  .toc-panel { position: fixed; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--ink); z-index: 55; transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); overflow-y: auto; padding: 6rem 2.5rem 3rem; }
+  .toc-panel.open { transform: translateX(0); }
+  .toc-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .toc-title { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.03em; color: var(--ink); margin-bottom: 2.2rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule); }
+  .toc-list { list-style: none; counter-reset: toc; }
+  .toc-list > li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a { display: grid; grid-template-columns: 2.5rem 1fr; align-items: baseline; text-decoration: none; color: var(--ink); font-weight: 500; font-size: 1.05rem; letter-spacing: -0.012em; transition: color 0.2s ease; }
+  .toc-list > li > a::before { counter-increment: toc; content: counter(toc, decimal-leading-zero); color: var(--accent); font-weight: 300; font-size: 0.85rem; letter-spacing: 0.05em; }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+  .toc-sub { list-style: none; margin-top: 0.6rem; margin-left: 2.5rem; padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a { color: var(--ink-soft); text-decoration: none; font-size: 0.88rem; font-weight: 400; transition: color 0.2s ease; display: flex; align-items: baseline; gap: 0.6rem; }
+  .toc-sub a span { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; min-width: 1.6rem; }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-sub a:hover span { color: var(--accent); }
+  .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); line-height: 1.6; }
+  body.menu-open { overflow: hidden; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card { animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html" aria-label="홈으로 돌아가기">
+  <span class="arrow">←</span><span>notebook</span>
+</a>
+
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+<div class="toc-backdrop" id="tocBackdrop"></div>
+
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#diagrams" data-close>그림으로 보는 구조</a>
+      <ul class="toc-sub">
+        <li><a href="#d-timeline" data-close><span>01</span>8년 진화 타임라인</a></li>
+        <li><a href="#d-flow6" data-close><span>02</span>6-step ML 워크플로우</a></li>
+        <li><a href="#d-themes" data-close><span>03</span>Michelangelo 2.0 4 themes</a></li>
+        <li><a href="#d-majc" data-close><span>04</span>MAJC Federation</a></li>
+        <li><a href="#d-genai" data-close><span>05</span>GenAI Gateway</a></li>
+        <li><a href="#d-overall" data-close><span>06</span>전체 종합 아키텍처</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+
+  <div class="toc-foot">
+    Uber Michelangelo · Multi-source synthesis<br>학습 노트 · 2026.05
+  </div>
+</aside>
+
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="meta-row">
+    <span>Uber Blog · 2017~2024</span>
+    <span>학습 노트 · 읽는 시간 17분</span>
+  </div>
+
+  <h1 class="hero-title">Uber<br><em>Michelangelo</em></h1>
+
+  <p class="hero-sub">
+    "2016년 Spark 모놀리식으로 시작해, PyML(2018) → Spark ML 표준화(2019) → MAJC + 2.0(2024) → GenAI Gateway(2024) → Ray on K8s(2025)까지 — 9년 동안 ML 플랫폼이 어떻게 진화해왔는지의 가장 잘 문서화된 사례."
+  </p>
+
+  <div class="hero-grid">
+    <div>
+      <span class="k">시작</span>
+      <span class="v">2016<small>· 8+ 년</small></span>
+    </div>
+    <div>
+      <span class="k">규모</span>
+      <span class="v">5K+ 모델<small>· 400+ 프로젝트</small></span>
+    </div>
+    <div>
+      <span class="k">예측 처리</span>
+      <span class="v">10M / s<small>· peak</small></span>
+    </div>
+    <div>
+      <span class="k">GPU</span>
+      <span class="v">5K+<small>· on-prem + cloud</small></span>
+    </div>
+    <div>
+      <span class="k">작성</span>
+      <span class="v">2026<small>.05.27</small></span>
+    </div>
+  </div>
+</header>
+
+
+<!-- §1 TL;DR -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      Michelangelo는 ML 플랫폼이 8년에 걸쳐 거치는 <span class="hl">전형적인 진화 궤적</span>의 살아있는 사례다 —
+      <em>Spark 기반 모놀리식 (2016) → Python 친화적 모듈화 (2018, PyML) → Kubernetes federation (2024 MAJC) → Generative AI Gateway 통합 (2024 Michelangelo 2.0)</em>.
+      각 단계의 trigger는 분명했고, 결정이 만든 운영 부담도 함께 따라왔다.
+    </p>
+
+    <div class="points">
+      <article class="point">
+        <div class="n">i</div>
+        <div>
+          <h3>2016 — Spark 기반 모놀리식 시작</h3>
+          <p>당시 Uber는 "팀마다 ML 시스템을 처음부터 다시 만드는" 상태. Michelangelo가 <strong>6-step 워크플로우</strong>(data → train → eval → deploy → predict → monitor)를 표준화. 핵심은 <strong>Palette Feature Store</strong> — 10K+ 피처를 중앙에서 공유, 팀 간 중복 제거. 인프라는 HDFS + Spark + Cassandra + XGBoost.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">ii</div>
+        <div>
+          <h3>2018 — PyML과 모듈화 전환</h3>
+          <p>Scala/config 워크플로우가 빠른 iteration을 막음. <strong>PyML SDK</strong>로 어떤 Python 모델이든 서빙 — <code>DataFrameModel</code>/<code>TensorModel</code> 추상 클래스 + <strong>3-file 패턴</strong>(<code>model.py</code> · <code>requirements.txt</code> · <code>setup.sh</code>). Docker 자동 빌드 → online(gRPC + Unix socket) + offline(PySpark) <em>같은 코드로 양쪽 환경 지원</em>. 이후 2019에 모델 표현 자체도 <strong>Spark ML 표준</strong>으로 전환.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iii</div>
+        <div>
+          <h3>Michelangelo 2.0 — 4 user-facing themes</h3>
+          <p>2024 출시. ① <strong>Model Excellence Score (MES) + 4-tier project</strong> — 우선순위 + 거버넌스. ② <strong>Canvas</strong> — version-controlled ML monorepo + Docker + CI/CD. ③ <strong>DL first-class</strong> — Ray + Horovod + Triton native. ④ <strong>MA Studio</strong> — 모든 ML 자산이 한 UI에서 version control 가능.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iv</div>
+        <div>
+          <h3>MAJC + Ray on Kubernetes</h3>
+          <p>K8s 클러스터들이 region/AZ별로 흩어져 GPU 활용이 깨짐 → <strong>MAJC가 federation layer</strong>로 abstract (load-aware · bin-pack · compute affinity · data affinity 4 policy). 2025에 DL 학습 인프라를 <strong>MADLJ on Peloton(Mesos) → KubeRay</strong>로 재구축, <strong>학습 속도 1.5~4× 향상</strong>. ML 엔지니어는 K8s 복잡도를 모르고 작업만 제출.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">v</div>
+        <div>
+          <h3>GenAI Gateway — predictive + generative 통합</h3>
+          <p>2024 추가. 사내·외부 LLM(OCI·GCP·OpenAI 등) 모두 단일 게이트웨이로. <strong>4 guardrails</strong>: logging/auditing · cost attribution · safety policy · PII redaction. 부수적으로 <strong>Prompt Toolkit</strong>(prompt as code) + <strong>LLM Eval Framework</strong>(in-house vs 3P 비교).</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">vi</div>
+        <div>
+          <h3>운영 규모 — ML 플랫폼의 현실</h3>
+          <p>400+ active 프로젝트 · 5K+ 모델 in production · <strong>월 20K+ training job</strong> · peak <strong>10M predictions/sec</strong> · 20K+ features in Palette · 5K+ GPU. 1.37억 MAU에게 10K+ 도시에서 서빙. 이 규모가 곧 platform 운영의 모든 결정에 작용한다.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- §2 다이어그램 -->
+<section class="section" id="diagrams">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Architecture</div>
+      <h2 class="section-title">그림으로 보는 구조</h2>
+    </div>
+  </div>
+
+  <!-- 1. Timeline -->
+  <div class="diagram-block" id="d-timeline">
+    <div class="db-text">
+      <h4><span class="num">01 · 진화</span>8년 타임라인 — 모놀리식에서 GenAI까지</h4>
+      <p>
+        각 단계 전환에는 분명한 trigger가 있었다.
+        <strong>Scala 모놀리식 → Python 모듈화</strong>는 developer velocity가 trigger.
+        <strong>단일 K8s → MAJC federation</strong>은 region별 GPU 활용 불균형이 trigger.
+        <strong>predictive → generative</strong>는 LLM 도입 시 거버넌스 부재가 trigger.
+      </p>
+      <p>
+        한 가지 일관된 원칙 — <em>"플랫폼이 한 가지 워크로드만 잘하면 결국 다른 워크로드가 사이드 시스템을 만든다"</em>.
+        Michelangelo는 매번 새 워크로드(DL · LLM)를 첫 시민으로 흡수해왔다.
+      </p>
+      <div class="use-when">
+        <strong>일반 교훈</strong>
+        <p>"플랫폼 1.0이 완성된 것 같다"는 순간이 가장 위험. ML/AI 영역은 6개월마다 패러다임이 바뀐다. 모듈화 + 확장 포인트가 곧 생존.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Evolution · 6 phases">
+      <div class="d-timeline">
+        <div class="gen">
+          <span class="year">2016<br>~2017</span>
+          <div>
+            <div class="name">Phase 1 · 모놀리식 출시</div>
+            <div class="desc">6-step 워크플로우 (data→train→eval→deploy→predict→monitor) 표준화. <b>Palette Feature Store</b>(10K+ 피처). HDFS · Spark · Cassandra · MLLib · XGBoost · TensorFlow. <b>P95 &lt;10ms</b> RPC 서빙.</div>
+          </div>
+        </div>
+        <div class="arr"></div>
+        <div class="gen">
+          <span class="year">2018.10</span>
+          <div>
+            <div class="name">Phase 2 · PyML 출시</div>
+            <div class="desc">Scala 단일 환경의 한계 — <b>PyML SDK</b>로 어떤 Python 모델이든 서빙. <code>DataFrameModel</code>/<code>TensorModel</code> 추상 클래스 + <b>3-file 패턴</b>(model.py · requirements.txt · setup.sh). Docker 자동 빌드 → online(gRPC+Unix socket) + offline(PySpark) 같은 코드.</div>
+          </div>
+        </div>
+        <div class="arr"></div>
+        <div class="gen">
+          <span class="year">2019.10</span>
+          <div>
+            <div class="name">Phase 3 · Model Representation 표준화</div>
+            <div class="desc">자체 protobuf 형식이 신규 Spark transformer 추가를 막음 → <b>Spark ML pipeline 표준 serialization</b> 채택. <code>OnlineTransformer</code> trait (Transform + scoreInstance) 추가. <b>load time 8~44× slower → 2~3× slower</b>로 개선. 생태계 호환성 우선.</div>
+          </div>
+        </div>
+        <div class="arr"></div>
+        <div class="gen hero">
+          <span class="year">2024 Q1</span>
+          <div>
+            <div class="name">Phase 4 · MAJC + Michelangelo 2.0</div>
+            <div class="desc"><b>Job Controller</b>가 K8s 클러스터들을 federate. <b>Palette Meta Store</b> 재구축(온보딩 95%↓). <b>4 themes</b>: MES tiering / Canvas / DL first-class / MA Studio. Triton 통합. 5K+ GPU.</div>
+          </div>
+        </div>
+        <div class="arr"></div>
+        <div class="gen hero">
+          <span class="year">2024 Q2</span>
+          <div>
+            <div class="name">Phase 5 · GenAI Gateway</div>
+            <div class="desc">사내·외부 LLM 통합 게이트웨이. 4 guardrails (log·cost·safety·PII). <b>Prompt Toolkit</b> · <b>LLM Eval Framework</b>. Predictive와 Generative가 같은 플랫폼 위.</div>
+          </div>
+        </div>
+        <div class="arr"></div>
+        <div class="gen">
+          <span class="year">2025.04</span>
+          <div>
+            <div class="name">Phase 6 · Ray on Kubernetes</div>
+            <div class="desc">DL 학습 인프라가 <b>MADLJ on Peloton (Mesos) → KubeRay</b>로 전환. federated control plane + 로컬 K8s 클러스터. <b>uOwn</b> asset management 통합. <b>학습 속도 1.5~4× 향상</b>, GPU 활용도 개선.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 6-step workflow -->
+  <div class="diagram-block" id="d-flow6">
+    <div class="db-text">
+      <h4><span class="num">02 · 워크플로우</span>6-step ML 워크플로우 (원조 패턴)</h4>
+      <p>
+        2017년 Michelangelo가 <strong>업계 표준으로 정착시킨 6-step</strong>. 이전엔 팀마다 다른 단계 정의를 썼지만,
+        이후 거의 모든 ML 플랫폼(Kubeflow, MLflow, Vertex AI, SageMaker Pipelines)이 이 6단계를 따른다.
+      </p>
+      <p>
+        핵심은 <strong>monitor 단계의 first-class 취급</strong> — 배포 후 모델 성능을 지속 추적하는 게 workflow의 일부.
+        "deploy 끝"이 아니라 "deploy + monitor가 한 단위".
+      </p>
+      <div class="use-when">
+        <strong>왜 6-step인가</strong>
+        <p>이 단계 외에 추가가 필요한 작업은 보통 "feature engineering"인데, 그건 Palette Feature Store에 흡수됨. 그래서 6단계가 minimum complete set.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="6-step ML workflow (canonical)">
+      <div class="d-flow6">
+        <div class="step">
+          <span class="nr">[01]</span>
+          <div class="label">Manage Data
+            <small>Palette Feature Store · HDFS · Cassandra. 10K+ 피처 공유</small>
+          </div>
+        </div>
+        <div class="down"></div>
+        <div class="step">
+          <span class="nr">[02]</span>
+          <div class="label">Train Models
+            <small>Spark MLLib · XGBoost · TensorFlow/PyTorch (DL). 분산 학습</small>
+          </div>
+        </div>
+        <div class="down"></div>
+        <div class="step">
+          <span class="nr">[03]</span>
+          <div class="label">Evaluate Models
+            <small>holdout 평가 · 시각화 · 모델 간 비교 · regression detection</small>
+          </div>
+        </div>
+        <div class="down"></div>
+        <div class="step">
+          <span class="nr">[04]</span>
+          <div class="label">Deploy Models
+            <small>online (수백 대 cluster · 로드밸런서) · offline (Spark batch)</small>
+          </div>
+        </div>
+        <div class="down"></div>
+        <div class="step">
+          <span class="nr">[05]</span>
+          <div class="label">Make Predictions
+            <small>RPC online (P95 &lt;10ms) + scheduled batch · 10M/s peak</small>
+          </div>
+        </div>
+        <div class="down"></div>
+        <div class="step">
+          <span class="nr">[06]</span>
+          <div class="label">Monitor Predictions
+            <small>data drift · model regression · alerts. <b>first-class step</b>으로 처음 정착</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 2.0 themes -->
+  <div class="diagram-block" id="d-themes">
+    <div class="db-text">
+      <h4><span class="num">03 · 2.0</span>Michelangelo 2.0 — 4 user-facing themes</h4>
+      <p>
+        Michelangelo 2.0의 reorganization은 <strong>사용자 시점에서 본 평가</strong>가 핵심.
+        백엔드 아키텍처가 아니라 "ML 엔지니어가 매일 만지는 4가지"를 정렬했다.
+      </p>
+      <p>
+        <strong>MES(Model Excellence Score)</strong>는 ML 거버넌스의 묘안 — 각 모델을 lifecycle stage별로 정량 평가, 4-tier로 분류해서 운영 리소스 우선순위 결정.
+        <strong>Canvas</strong>는 ML도 일반 코드처럼 monorepo + version control + CI/CD가 되어야 한다는 선언.
+      </p>
+      <div class="use-when">
+        <strong>가장 큰 영향</strong>
+        <p>Canvas의 "ML as code" 전환 — Jupyter notebook 기반 개발이 끝나고 Python module + Docker + git workflow로. ML 엔지니어와 일반 SWE의 toolchain이 합쳐졌다.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Michelangelo 2.0 · 4 themes">
+      <div class="d-themes">
+        <div class="theme t1">
+          <div class="ttl"><span class="num">01</span><span class="nm">Model Quality + Project Tiering</span></div>
+          <div class="body"><b>Model Excellence Score (MES)</b> — 각 lifecycle stage 정량 평가. 4-tier project 분류로 high-impact에 리소스 우선 배분. ML 거버넌스.</div>
+        </div>
+        <div class="theme">
+          <div class="ttl"><span class="num">02</span><span class="nm">Canvas — ML as Code</span></div>
+          <div class="body">ML Application Framework (<code>MAF</code>) + <b>ML Monorepo</b> + Docker packaging + CI/CD. Jupyter 시대 졸업. 모든 ML 자산이 PR 리뷰 대상.</div>
+        </div>
+        <div class="theme">
+          <div class="ttl"><span class="num">03</span><span class="nm">DL First-Class Citizen</span></div>
+          <div class="body">TensorFlow · PyTorch native. <code>Horovod</code> distributed training on <code>Ray</code>. <code>Triton</code> inference server 통합. elastic GPU resource management.</div>
+        </div>
+        <div class="theme">
+          <div class="ttl"><span class="num">04</span><span class="nm">MA Studio — Unified Web UI</span></div>
+          <div class="body">전 ML 자산(model · feature · pipeline · prompt)을 <b>한 UI에서 version control + code review</b>. 흩어진 도구들 통합.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. MAJC -->
+  <div class="diagram-block" id="d-majc">
+    <div class="db-text">
+      <h4><span class="num">04 · 인프라</span>Michelangelo Job Controller (MAJC)</h4>
+      <p>
+        K8s 클러스터들이 region/AZ별로 흩어져 있어 <strong>GPU 활용이 cluster boundary에 갇힘</strong>.
+        한 클러스터는 GPU 놀고 다른 클러스터는 queue 폭주 — 그래도 cross-cluster 스케줄링 불가능했다.
+      </p>
+      <p>
+        MAJC는 그 boundary를 <strong>federation layer</strong>로 abstract.
+        ML 엔지니어는 K8s 클러스터 자체를 모르고 "job 제출"만 함.
+        스케줄러가 4가지 policy로 자동 라우팅 — <em>load-aware · bin-pack · compute affinity · data affinity</em>.
+      </p>
+      <div class="use-when">
+        <strong>왜 자체 federation?</strong>
+        <p>K8s 자체 federation v2는 ML 워크로드 특수성(긴 학습 · GPU 친밀도 · data locality)을 표현하기 어려웠다. 그래서 자체 layer를 ML-specific하게 만든 게 MAJC의 결정.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="MAJC · cross-cluster federation">
+      <div class="d-majc">
+        <div class="top">ML Engineer · 작업 제출
+          <small>"GPU 8개, 24시간, dataset X" — 클러스터 모름</small>
+        </div>
+        <div class="arrow"></div>
+        <div class="gw">Michelangelo Job Controller (MAJC)<small>federation layer · single submit interface</small></div>
+        <div class="arrow"></div>
+        <div class="policies">
+          <div class="pl">Load Aware<small>균등 분산</small></div>
+          <div class="pl">Bin-Pack<small>밀도 최적화</small></div>
+          <div class="pl">Compute Affinity<small>관련 작업 인접</small></div>
+          <div class="pl">Data Affinity<small>데이터 이동 최소화</small></div>
+        </div>
+        <div class="arrow"></div>
+        <div class="clusters">
+          <div class="cl">K8s · A<small>region us-west · GPU</small></div>
+          <div class="cl">K8s · B<small>region us-east · GPU</small></div>
+          <div class="cl">K8s · C<small>cloud · GPU spot</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. GenAI Gateway -->
+  <div class="diagram-block" id="d-genai">
+    <div class="db-text">
+      <h4><span class="num">05 · GenAI</span>Gen AI Gateway — vendor abstraction + guardrails</h4>
+      <p>
+        LLM 도입 시 가장 큰 문제는 <strong>"누가 어떤 모델을 얼마나 쓰는지 추적 안 됨"</strong> + <strong>"PII가 외부로 새는지 모름"</strong>.
+        Michelangelo는 단일 게이트웨이를 두고 모든 LLM 호출(in-house · OCI · GCP · OpenAI 등)을 통과시킨다.
+      </p>
+      <p>
+        4 guardrails이 한 자리에서 강제 — <em>logging/auditing · cost attribution · safety policy · PII redaction</em>.
+        이건 단순 proxy가 아니라 <strong>policy enforcement layer</strong>.
+        팀이 어떤 LLM을 쓰든 거버넌스는 일관.
+      </p>
+      <div class="use-when">
+        <strong>왜 자체 게이트웨이?</strong>
+        <p>각 LLM 벤더 SDK를 직접 쓰면 거버넌스가 팀마다 분산 → 일관성 0. 게이트웨이가 있어야 PII redaction을 외부 API 호출 전에 보장할 수 있다.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="GenAI Gateway · unified LLM access">
+      <div class="d-genai">
+        <div class="users">앱 · 에이전트 · 사내 도구<small>(직접 LLM SDK 호출 금지 — 모든 트래픽이 게이트웨이를 통과)</small></div>
+        <div class="arrow"></div>
+        <div class="gw">Gen AI Gateway<small>policy enforcement · single entrypoint</small></div>
+        <div class="arrow"></div>
+        <div class="guards">
+          <div class="g">Logging<small>auditing</small></div>
+          <div class="g">Cost<small>attribution</small></div>
+          <div class="g">Safety<small>policy</small></div>
+          <div class="g">PII<small>redaction</small></div>
+        </div>
+        <div class="arrow"></div>
+        <div class="backends">
+          <div class="b">In-house LLM<small>fine-tuned</small></div>
+          <div class="b">OCI / GCP<small>partner</small></div>
+          <div class="b">OpenAI / 3P<small>external</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Overall -->
+  <div class="diagram-block" id="d-overall">
+    <div class="db-text">
+      <h4><span class="num">06 · 종합</span>전체 종합 아키텍처</h4>
+      <p>
+        앞서 본 5개 부분도가 어떻게 한 시스템으로 연결되는지 정리.
+        <strong>최상단은 MA Studio UI</strong>(ML 엔지니어 진입점),
+        <strong>중앙은 MAJC federation</strong>(작업 분배 경계),
+        <strong>하단은 두 실행 경로</strong> — Predictive(전통 ML) + Generative(LLM Gateway).
+      </p>
+      <p>
+        핵심 디자인 원칙: <em>① 진입점 단일화 (MA Studio · Gateway)</em>,
+        <em>② 인프라 추상화 (MAJC)</em>,
+        <em>③ 거버넌스 일관 (guardrails · MES)</em>.
+        각 layer가 다음 layer의 복잡도를 감춤.
+      </p>
+      <div class="use-when">
+        <strong>핵심 원리</strong>
+        <p>"플랫폼은 좋은 인터페이스를 제공하기 위해 좋은 인터페이스 위에 만들어진다." MA Studio → MAJC → K8s → GPU. 각 층은 위 층에 깔끔한 API만 노출.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Overall · platform topology">
+      <div class="d-overall">
+        <div class="lyr client">ML Engineers · Data Scientists · App Teams<small>via SDK · Notebook · CI</small></div>
+        <div class="arrow down"></div>
+        <div class="lyr studio">MA Studio · Canvas · Prompt Toolkit<small>unified web UI · ML as code</small></div>
+        <div class="arrow down"></div>
+        <div class="grid2">
+          <div class="col">
+            <div class="col-label">Predictive ML</div>
+            <div class="lyr">Palette Feature Store<small>20K+ features</small></div>
+            <div class="lyr">Training (Spark · Ray + Horovod)</div>
+            <div class="lyr">Serving (online · batch · Triton)</div>
+            <div class="lyr">Monitoring · MES scoring</div>
+          </div>
+          <div class="col">
+            <div class="col-label">Generative AI</div>
+            <div class="lyr">Prompt Template Repository</div>
+            <div class="lyr">Gen AI Gateway<small>4 guardrails</small></div>
+            <div class="lyr">LLM backends · fine-tuned + 3P</div>
+            <div class="lyr">LLM Eval Framework</div>
+          </div>
+        </div>
+        <div class="arrow down"></div>
+        <div class="lyr federation">Michelangelo Job Controller (MAJC)<small>federation layer · 4 policies (load · bin-pack · compute · data)</small></div>
+        <div class="arrow down"></div>
+        <div class="grid3">
+          <div class="lyr">K8s Cluster A<small>region us-west · GPU</small></div>
+          <div class="lyr">K8s Cluster B<small>region us-east · GPU</small></div>
+          <div class="lyr">K8s Cluster C<small>cloud · OCI · GCP</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="margin-note">
+    Michelangelo 진화에서 가장 반직관적 결정은 <strong>"Scala 모놀리식이 잘 돌아갈 때 Python으로 옮긴 것"</strong>. 성능·안정성은 Scala가 우위였지만 <em>developer velocity가 결국 플랫폼의 가치를 결정</em>한다는 인식. 이후 Canvas("ML as code")까지의 모든 결정이 이 통찰의 연장선이다 — ML 도구는 <em>SWE 도구와 같은 워크플로우</em>로 수렴해야 한다.
+  </p>
+
+  <!-- Gloss: Palette -->
+  <div class="gloss">
+    <div class="gloss-head">
+      <span class="gloss-label">참고</span>
+      <h5>Palette Feature Store</h5>
+      <span class="gloss-pron">"팔레트"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>정의.</strong> Michelangelo의 중앙 feature store — 모든 팀이 만든 ML feature를 한 곳에 모아 공유·재사용 가능하게 한 인프라. 현재 <b>20K+ features</b>.</p>
+      <p><strong>왜 필요했나.</strong> 2016 이전, 각 팀이 자체 ETL로 feature 만들어 중복·일관성 깨짐 — 같은 "운전자 평점"을 5개 팀이 각자 다르게 계산. Palette가 <b>이름 + schema + 계산 로직 + offline/online 일관성 보장</b>.</p>
+      <p><strong>구조.</strong> ① Offline 자동 계산(Spark daily) → HDFS 저장 → 학습용. ② Online은 같은 로직을 Cassandra real-time lookup으로 → 서빙용. <b>같은 feature가 두 환경에서 동일 값을 보장</b>(training-serving skew 방지).</p>
+      <p><strong>Meta Store 재구축 (2024).</strong> 메타데이터 레이어를 재설계 — 객체 모델 <code>FeatureGroup</code> · <code>Feature</code> · <code>Dataset</code> · <code>Storage</code> · <code>FeatureServingGroup</code>로 정형화. K8s 컨트롤러가 <code>ObjectConfig</code> 캐시 동기화. <b>온보딩 시간 95%↓, Cassandra 마이그레이션 90%↓, offline metadata update 1시간 → 15분</b>.</p>
+      <p><strong>업계 영향.</strong> 이 패턴이 Feast · Tecton · Vertex Feature Store 등 후속 feature store들의 원형이 됨.</p>
+    </div>
+  </div>
+
+  <!-- Gloss: MAJC -->
+  <div class="gloss">
+    <div class="gloss-head">
+      <span class="gloss-label">참고</span>
+      <h5>MAJC (Michelangelo Job Controller)</h5>
+      <span class="gloss-pron">"매직 / 엠에이제이씨"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>정의.</strong> 여러 K8s 클러스터를 abstract하는 <b>federation layer</b>. 단일 작업 제출 인터페이스를 제공하고 클러스터들 사이를 자동으로 라우팅·스케줄.</p>
+      <p><strong>4가지 policy.</strong> ① <b>Load aware</b>: 클러스터 부하 균등 분산. ② <b>Bin-pack</b>: 자원 밀도 최대화 (fragment 최소). ③ <b>Compute affinity</b>: 연관 작업을 인접 노드에. ④ <b>Data affinity</b>: 데이터 이동 비용 최소화 (대규모 dataset은 그 데이터가 있는 클러스터로).</p>
+      <p><strong>왜 자체 구현?</strong> K8s native federation(KubeFed 등)은 ML 워크로드 특수성(긴 학습 · GPU 친화도 · data locality)을 표현하기 어려웠다. ML-specific하게 만들어야 했다.</p>
+      <p><strong>운영 효과.</strong> ML 엔지니어가 K8s 클러스터를 몰라도 됨. 클러스터 추가/삭제도 사용자 영향 0. <b>17개 GPU/CPU SKU</b>를 통합 관리.</p>
+      <p><strong>2025 Ray on K8s 전환.</strong> DL 학습 인프라를 <b>MADLJ(Michelangelo Deep Learning Jobs) on Peloton/Mesos → KubeRay</b>로 재구축. federated control plane(API server · job controller · scheduler) + 로컬 K8s 클러스터. <code>uOwn</code> asset management 통합. 결과: <b>학습 속도 1.5~4× 향상</b> · GPU 활용도 개선.</p>
+    </div>
+  </div>
+
+  <!-- Gloss: MES -->
+  <div class="gloss">
+    <div class="gloss-head">
+      <span class="gloss-label">참고</span>
+      <h5>MES (Model Excellence Score)</h5>
+      <span class="gloss-pron">"멤"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>정의.</strong> 모델 lifecycle의 각 stage(training · eval · deploy · monitor)에서 핵심 지표를 정량 측정해 단일 점수로 합산한 거버넌스 framework.</p>
+      <p><strong>왜 필요했나.</strong> 5K+ 모델이 동시 운영될 때 "어떤 모델이 건강한가"를 manual로 판단 불가능. MES가 <b>signal-to-action</b> 자동화 — 점수 낮은 모델은 우선순위 낮춤, 임계치 이하면 alert.</p>
+      <p><strong>4-tier project 시스템.</strong> MES와 함께 도입 — 비즈니스 영향에 따라 모델을 Tier 1~4로 분류. <b>Tier 1은 운영 리소스 우선 배정</b>(GPU, monitoring, on-call), Tier 4는 best-effort. 한정된 운영 인력을 가장 가치 있는 곳에 집중.</p>
+      <p><strong>적용 어려움.</strong> "어떤 지표가 excellence를 대표하는가" 정의가 도메인별로 다름. Uber도 처음엔 universal score를 시도했다 결국 domain-specific MES로 분기.</p>
+    </div>
+  </div>
+
+  <div class="decision">
+    <h3>그래서 — 이 패턴을 우리 조직에 적용한다면?</h3>
+    <div class="decision-table">
+      <div>
+        <h4>도입 권장 시점</h4>
+        <ul>
+          <li>ML 모델 50개 이상 + 팀 5개 이상 — feature 중복이 통증</li>
+          <li>같은 dataset에 대해 팀마다 다른 feature 정의가 있다 → <b>Palette 우선 도입</b></li>
+          <li>K8s 클러스터 3개 이상 + GPU 활용 불균형 → <b>MAJC-like federation</b></li>
+          <li>LLM 사용 시작 + 거버넌스 없음 → <b>Gateway 우선 도입</b></li>
+          <li>ML 엔지니어들이 notebook에서 못 벗어나는 단계 → <b>Canvas-like 모노레포</b></li>
+        </ul>
+      </div>
+      <div>
+        <h4>도입 자제 / 차용 부분</h4>
+        <ul>
+          <li>ML 모델 10개 미만 — 플랫폼 인프라가 과투자</li>
+          <li>K8s가 익숙치 않은 조직 — federation은 K8s 마스터한 후</li>
+          <li>MES 같은 전사 거버넌스 — 작은 팀엔 burden, 자유도 침해</li>
+          <li>Spark 의존 — Spark 운영 인력 없으면 다른 ETL 선택</li>
+          <li>"Michelangelo full stack" 복제 시도 — 1년 안에 못 끝남. <b>한 요소씩 차용</b>이 정답</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- §3 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Reference Implementation</div>
+      <h2 class="section-title">실전 코드</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    Michelangelo 내부 코드는 비공개. 여기서는 각 컴포넌트의 <em>아이디어를 PyML SDK 스타일로 재구성한 참고 구현</em>. Feast/Ray/Triton 등 오픈 소스 등가물로 같은 패턴을 만들 수 있다.
+  </p>
+
+  <!-- 1. Palette feature -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>01 · Palette feature 정의 + 등록</h4>
+      <span class="tag">feature store</span>
+    </div>
+<pre><span class="kw">from</span> palette <span class="kw">import</span> Feature, FeatureGroup, feature
+
+@<span class="fn">feature</span>(
+    name=<span class="str">"driver_avg_rating_30d"</span>,
+    description=<span class="str">"기사 30일 평균 평점 · 운영팀 + ML 양쪽 사용"</span>,
+    owners=[<span class="str">"safety-team"</span>],
+    tier=<span class="str">2</span>,                    <span class="com"># MES 거버넌스 — Tier 2</span>
+)
+<span class="kw">class</span> <span class="fn">DriverAvgRating30d</span>(Feature):
+    <span class="str">"""offline/online 동일 로직 보장 — training-serving skew 방지."""</span>
+
+    entity = <span class="str">"driver_uuid"</span>
+    dtype = <span class="str">"float32"</span>
+
+    <span class="kw">def</span> <span class="fn">offline_compute</span>(self, batch_df):
+        <span class="str">"""daily Spark job — HDFS에 저장"""</span>
+        <span class="kw">return</span> (batch_df
+            .<span class="fn">filter</span>(<span class="str">"trip_completed_at &gt; current_date() - INTERVAL 30 DAYS"</span>)
+            .<span class="fn">groupBy</span>(<span class="str">"driver_uuid"</span>)
+            .<span class="fn">agg</span>({<span class="str">"rider_rating"</span>: <span class="str">"avg"</span>})
+            .<span class="fn">withColumnRenamed</span>(<span class="str">"avg(rider_rating)"</span>, <span class="str">"value"</span>))
+
+    <span class="kw">def</span> <span class="fn">online_compute</span>(self, entity_id):
+        <span class="str">"""real-time Cassandra lookup — same logic"""</span>
+        <span class="kw">return</span> cassandra.<span class="fn">get</span>(
+            keyspace=<span class="str">"palette_driver_avg_rating_30d"</span>,
+            key=entity_id,
+            ttl=<span class="str">3600</span>,
+        )
+
+<span class="com"># 등록: MA Studio에서 모든 팀이 검색·재사용 가능</span>
+<span class="fn">DriverAvgRating30d</span>().<span class="fn">register</span>()
+</pre>
+    <div class="note"><strong>포인트.</strong> Palette의 핵심은 <em>offline/online 동일 로직 보장</em>. 두 path를 한 class에 모아서 <b>training-serving skew</b>(학습 때 본 feature 값과 서빙 때 본 값이 달라 모델 무력화)를 원천 차단. <code>tier</code>가 MES 거버넌스의 entry point.</div>
+  </article>
+
+  <!-- 2. PyML 3-file pattern -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>02 · PyML 3-file 패턴 (online + offline 같은 코드)</h4>
+      <span class="tag">pyml</span>
+    </div>
+<pre><span class="com"># projects/churn_predictor/model.py</span>
+<span class="kw">from</span> michelangelo.pyml <span class="kw">import</span> DataFrameModel
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">import</span> joblib
+
+<span class="kw">class</span> <span class="fn">ChurnPredictor</span>(DataFrameModel):
+    <span class="str">"""DataFrameModel = pandas DataFrame 입출력 모델 (online + offline 공통)."""</span>
+
+    <span class="kw">def</span> <span class="fn">load</span>(self, artifact_path: <span class="kw">str</span>):
+        <span class="str">"""모델 weights 로드 — 한 번만 실행 (warm)."""</span>
+        self.clf = joblib.<span class="fn">load</span>(<span class="str">f"{artifact_path}/model.pkl"</span>)
+        self.feature_cols = [<span class="str">"trip_count"</span>, <span class="str">"avg_rating"</span>, <span class="str">"days_since_last"</span>]
+
+    <span class="kw">def</span> <span class="fn">predict</span>(self, df: pd.DataFrame) -> pd.DataFrame:
+        <span class="str">"""input/output 모두 DataFrame — online RPC와 offline Spark 동일 호출."""</span>
+        X = df[self.feature_cols]
+        df[<span class="str">"churn_prob"</span>] = self.clf.<span class="fn">predict_proba</span>(X)[:, <span class="str">1</span>]
+        <span class="kw">return</span> df
+
+<span class="com"># projects/churn_predictor/requirements.txt</span>
+<span class="com"># scikit-learn==1.3.0</span>
+<span class="com"># pandas==2.0.3</span>
+<span class="com"># joblib==1.3.2</span>
+
+<span class="com"># projects/churn_predictor/setup.sh (선택)</span>
+<span class="com"># apt-get install -y libgomp1  # XGBoost용 등 OS 의존성</span>
+
+<span class="com"># --- 배포 후 사용 ---</span>
+<span class="com"># Online (gRPC server on Unix socket, P99 ~ 50ms)</span>
+client = ma_client.<span class="fn">connect</span>(<span class="str">"churn_predictor:v3"</span>)
+result = client.<span class="fn">predict</span>(pd.<span class="fn">DataFrame</span>([{<span class="str">"trip_count"</span>: <span class="str">42</span>, <span class="str">"avg_rating"</span>: <span class="str">4.8</span>, <span class="str">"days_since_last"</span>: <span class="str">3</span>}]))
+
+<span class="com"># Offline (PySpark batch) — 같은 코드, 같은 결과</span>
+<span class="kw">from</span> michelangelo.pyml.batch <span class="kw">import</span> spark_predict
+out_df = <span class="fn">spark_predict</span>(<span class="str">"churn_predictor:v3"</span>, large_spark_df)
+</pre>
+    <div class="note"><strong>포인트.</strong> PyML의 핵심은 <em>"online과 offline에서 같은 Python 코드를 그대로 쓸 수 있다"</em>는 것. 단일 모델 정의(<code>model.py</code>) + 환경 명세(<code>requirements.txt</code>) + OS 의존성(<code>setup.sh</code>) — Michelangelo가 Docker 이미지 자동 빌드 후 두 환경에 동일 배포. <b>code drift 원천 차단</b>.</div>
+  </article>
+
+  <!-- 3. Canvas ML as code -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>03 · Canvas — ML as Code (monorepo + CI/CD)</h4>
+      <span class="tag">canvas</span>
+    </div>
+<pre><span class="com"># projects/eta_prediction/model.py</span>
+<span class="kw">from</span> michelangelo.maf <span class="kw">import</span> MLApplication, Model
+<span class="kw">from</span> palette.features <span class="kw">import</span> DriverAvgRating30d, TripDistance, WeatherZone
+
+<span class="kw">class</span> <span class="fn">EtaModel</span>(Model):
+    <span class="str">"""모델 = 일반 Python module. PR 리뷰 대상."""</span>
+
+    name = <span class="str">"eta_v3"</span>
+    framework = <span class="str">"xgboost"</span>
+    tier = <span class="str">1</span>                       <span class="com"># Tier 1 = high-impact</span>
+
+    features = [
+        <span class="fn">DriverAvgRating30d</span>(),
+        <span class="fn">TripDistance</span>(),
+        <span class="fn">WeatherZone</span>(),
+    ]
+
+    hyperparams = {
+        <span class="str">"max_depth"</span>: <span class="str">6</span>,
+        <span class="str">"learning_rate"</span>: <span class="str">0.1</span>,
+        <span class="str">"n_estimators"</span>: <span class="str">500</span>,
+    }
+
+    <span class="kw">def</span> <span class="fn">train</span>(self, X, y):
+        <span class="kw">import</span> xgboost <span class="kw">as</span> xgb
+        self.booster = xgb.<span class="fn">XGBRegressor</span>(**self.hyperparams)
+        self.booster.<span class="fn">fit</span>(X, y)
+
+    <span class="kw">def</span> <span class="fn">predict</span>(self, X):
+        <span class="kw">return</span> self.booster.<span class="fn">predict</span>(X)
+
+<span class="com"># projects/eta_prediction/app.yaml — Docker + CI 설정</span>
+<span class="com"># trigger: PR → CI: train on sample → eval gate → deploy to staging</span>
+</pre>
+    <div class="note"><strong>포인트.</strong> "Jupyter notebook으로 만든 모델을 어떻게 production으로 보내나"의 가장 깔끔한 답 — <em>처음부터 Python module로 작성</em>. PR마다 CI가 sample 학습 + eval gate 통과해야 머지. Docker 패키징은 자동. <b>"ML도 일반 코드와 같은 워크플로우"</b>의 실체화.</div>
+  </article>
+
+  <!-- 4. Triton inference -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>04 · Triton Inference Server 통합</h4>
+      <span class="tag">serving</span>
+    </div>
+<pre><span class="com"># DL 모델 (TensorFlow / PyTorch / ONNX)을 Triton으로 통합 서빙</span>
+<span class="com"># Michelangelo가 model registry에서 자동으로 Triton 설정 생성</span>
+
+<span class="com"># config.pbtxt (auto-generated by MA)</span>
+<span class="kw">name</span>: <span class="str">"eta_dl_v2"</span>
+<span class="kw">platform</span>: <span class="str">"tensorflow_savedmodel"</span>
+<span class="kw">max_batch_size</span>: <span class="str">128</span>
+<span class="kw">input</span> [{
+  <span class="kw">name</span>: <span class="str">"features"</span>
+  <span class="kw">data_type</span>: TYPE_FP32
+  <span class="kw">dims</span>: [ -<span class="str">1</span>, <span class="str">64</span> ]
+}]
+<span class="kw">instance_group</span> [{ <span class="kw">count</span>: <span class="str">4</span>, <span class="kw">kind</span>: KIND_GPU }]
+<span class="kw">dynamic_batching</span> {
+  <span class="kw">preferred_batch_size</span>: [ <span class="str">32</span>, <span class="str">64</span>, <span class="str">128</span> ]
+  <span class="kw">max_queue_delay_microseconds</span>: <span class="str">500</span>
+}
+
+<span class="com"># Python client 호출 (앱에서)</span>
+<span class="kw">import</span> tritonclient.grpc <span class="kw">as</span> grpcclient
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+client = grpcclient.<span class="fn">InferenceServerClient</span>(<span class="str">"triton.internal:8001"</span>)
+inputs = [grpcclient.<span class="fn">InferInput</span>(<span class="str">"features"</span>, [<span class="str">1</span>, <span class="str">64</span>], <span class="str">"FP32"</span>)]
+inputs[<span class="str">0</span>].<span class="fn">set_data_from_numpy</span>(query_features.<span class="fn">astype</span>(np.float32))
+
+result = client.<span class="fn">infer</span>(<span class="str">"eta_dl_v2"</span>, inputs)
+prediction = result.<span class="fn">as_numpy</span>(<span class="str">"output"</span>)
+</pre>
+    <div class="note"><strong>포인트.</strong> Triton의 강점은 <em>dynamic batching</em> — 짧은 시간 (예: 500μs) 안에 들어오는 요청을 묶어 GPU 한 번에 처리. 단일 요청 latency를 살짝 양보하고 throughput 폭증. Michelangelo는 모델 등록 시 <code>config.pbtxt</code>를 자동 생성해 ML 엔지니어가 Triton 자체를 몰라도 됨.</div>
+  </article>
+
+  <!-- 5. Prompt + Gateway -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>05 · Prompt 등록 + Gen AI Gateway 호출</h4>
+      <span class="tag">genai</span>
+    </div>
+<pre><span class="kw">from</span> michelangelo.prompt <span class="kw">import</span> Prompt, prompt
+<span class="kw">from</span> michelangelo.genai <span class="kw">import</span> GenAIClient
+
+<span class="com"># Prompt template = code · version control + code review</span>
+@<span class="fn">prompt</span>(name=<span class="str">"trip_summary_v3"</span>, tier=<span class="str">2</span>)
+<span class="kw">class</span> <span class="fn">TripSummary</span>(Prompt):
+    system = <span class="str">"""너는 trip summary 생성기다.
+    - 운전자 행동 + 경로를 3문장 이내로
+    - PII (이름·번호) 절대 포함 금지
+    - 객관적·중립적 톤"""</span>
+
+    template = <span class="str">"""&lt;trip&gt;
+{trip_json}
+&lt;/trip&gt;
+
+요약:"""</span>
+
+    eval_set = [
+        {<span class="str">"trip_json"</span>: <span class="str">"..."</span>, <span class="str">"expected"</span>: <span class="str">"..."</span>},
+        <span class="com"># ... LLM Eval Framework가 자동으로 regression 측정</span>
+    ]
+
+<span class="com"># 호출: 모든 LLM 트래픽은 게이트웨이를 통과 — 직접 SDK 호출 금지</span>
+client = <span class="fn">GenAIClient</span>()    <span class="com"># Gen AI Gateway endpoint</span>
+result = client.<span class="fn">complete</span>(
+    prompt=<span class="fn">TripSummary</span>(),
+    inputs={<span class="str">"trip_json"</span>: trip.<span class="fn">to_json</span>()},
+    model=<span class="str">"in-house-llama-3-70b"</span>,    <span class="com"># 또는 "openai-gpt-4", "gcp-gemini"</span>
+    user_id=current_user.id,           <span class="com"># cost attribution</span>
+)
+<span class="com"># Gateway 내부: PII redaction → policy check → vendor call → log + cost track</span>
+</pre>
+    <div class="note"><strong>포인트.</strong> Prompt를 <em>코드처럼 versioning</em>하는 게 핵심 — 어떤 prompt가 production에서 쓰이는지, 누가 언제 바꿨는지가 git history로 추적 가능. Gateway는 <em>SDK 호출 금지 + 단일 entry point</em>로 강제 — 모든 LLM 호출에 4 guardrails(PII · cost · safety · log) 자동 적용.</div>
+  </article>
+
+  <!-- 6. LLM Eval -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>06 · LLM Evaluation Framework</h4>
+      <span class="tag">eval</span>
+    </div>
+<pre><span class="kw">from</span> michelangelo.eval <span class="kw">import</span> LLMEvaluator, Rubric
+
+<span class="com"># 비교 대상: in-house vs OpenAI vs Gemini · prompt v2 vs v3 · 등등</span>
+candidates = [
+    {<span class="str">"name"</span>: <span class="str">"v3 + llama-3-70b"</span>,    <span class="str">"prompt"</span>: <span class="str">"trip_summary_v3"</span>, <span class="str">"model"</span>: <span class="str">"in-house-llama-3-70b"</span>},
+    {<span class="str">"name"</span>: <span class="str">"v3 + gpt-4o"</span>,         <span class="str">"prompt"</span>: <span class="str">"trip_summary_v3"</span>, <span class="str">"model"</span>: <span class="str">"openai-gpt-4o"</span>},
+    {<span class="str">"name"</span>: <span class="str">"v2 + gpt-4o (baseline)"</span>, <span class="str">"prompt"</span>: <span class="str">"trip_summary_v2"</span>, <span class="str">"model"</span>: <span class="str">"openai-gpt-4o"</span>},
+]
+
+<span class="com"># Rubric — LLM judge가 사용할 평가 기준</span>
+rubric = <span class="fn">Rubric</span>(
+    criteria=[
+        <span class="str">"factual_accuracy"</span>,       <span class="com"># 0~10</span>
+        <span class="str">"conciseness"</span>,             <span class="com"># 0~10</span>
+        <span class="str">"no_pii_leak"</span>,             <span class="com"># 0 or 1 (hard gate)</span>
+        <span class="str">"tone_neutrality"</span>,         <span class="com"># 0~10</span>
+    ],
+    judge_model=<span class="str">"openai-gpt-4o"</span>,    <span class="com"># 별도 강한 모델로 judge</span>
+)
+
+<span class="com"># 평가 수행 (n=100 eval set)</span>
+evaluator = <span class="fn">LLMEvaluator</span>(eval_set=load_eval_set(<span class="str">"trip_summary"</span>, n=<span class="str">100</span>))
+results = evaluator.<span class="fn">compare</span>(candidates, rubric)
+
+<span class="com"># 결과 — 모든 candidate × 모든 criteria 점수 행렬</span>
+<span class="kw">for</span> cand <span class="kw">in</span> results:
+    <span class="fn">print</span>(<span class="str">f"{cand.name:30s} acc={cand.scores['factual_accuracy']:.2f}  "</span>
+          <span class="str">f"pii={cand.scores['no_pii_leak']:.2f}  cost=${cand.cost_per_1k:.3f}"</span>)
+
+<span class="com"># Promote 결정 — pass 게이트 통과한 candidate 중 비용 최소를 선택</span>
+winner = evaluator.<span class="fn">recommend</span>(
+    results,
+    require={<span class="str">"factual_accuracy"</span>: <span class="str">">= 8.0"</span>, <span class="str">"no_pii_leak"</span>: <span class="str">"== 1.0"</span>},
+    optimize=<span class="str">"cost"</span>,    <span class="com"># 비용 최소화</span>
+)
+</pre>
+    <div class="note"><strong>포인트.</strong> LLM Eval은 <em>"여러 candidate를 동시에 객관적으로 비교"</em>가 핵심. 사람이 비교하기 시작하면 일관성 0 + 비용 폭주. <em>강한 LLM을 judge로</em> 두고 rubric으로 점수화. <b>require + optimize 분리</b>가 운영의 묘안 — "pass 기준은 강하게, 그 안에서 비용 최소"는 거의 모든 LLM 의사결정의 일반 패턴.</div>
+  </article>
+
+  <p class="margin-note">
+    위 6개 코드는 <strong>오픈 소스로 거의 동일 구성 가능</strong>: ① Feature Store → <em>Feast</em>. ② PyML 3-file 패턴 → <em>BentoML</em> · <em>MLflow Models</em>. ③ Canvas-like 모노레포 → <em>MLflow + git</em>. ④ Triton은 이미 오픈 소스. ⑤ Gen AI Gateway → <em>LiteLLM</em> 또는 직접 구현. ⑥ LLM Eval → <em>RAGAS</em>, <em>OpenAI evals</em>, <em>LangSmith</em>. Michelangelo가 보여준 건 "이 컴포넌트들을 한 platform으로 묶어 거버넌스 일관성을 만든다"는 통합 사고방식.
+  </p>
+</section>
+
+
+<footer>
+  <div>학습 노트 · Uber Michelangelo</div>
+  <div class="footer-sources">
+    <a href="https://www.uber.com/blog/michelangelo-machine-learning-platform/" target="_blank" rel="noopener">Meet Michelangelo (2017.09)</a>
+    <a href="https://www.uber.com/blog/michelangelo-pyml/" target="_blank" rel="noopener">Michelangelo PyML (2018.10)</a>
+    <a href="https://www.uber.com/blog/scaling-michelangelo/" target="_blank" rel="noopener">Scaling ML with Michelangelo (2018.11)</a>
+    <a href="https://www.uber.com/blog/michelangelo-machine-learning-model-representation/" target="_blank" rel="noopener">Model Representation (2019.10)</a>
+    <a href="https://www.uber.com/blog/palette-meta-store-journey/" target="_blank" rel="noopener">Palette Meta Store Journey (2024.01)</a>
+    <a href="https://www.uber.com/blog/scaling-ai-ml-infrastructure-at-uber/" target="_blank" rel="noopener">Scaling AI/ML Infrastructure (2024.03)</a>
+    <a href="https://www.uber.com/blog/from-predictive-to-generative-ai/" target="_blank" rel="noopener">Predictive to Generative (2024.05)</a>
+    <a href="https://www.uber.com/blog/ubers-journey-to-ray-on-kubernetes-ray-setup/" target="_blank" rel="noopener">Ray on Kubernetes (2025.04)</a>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    const btn = document.getElementById('menuBtn');
+    const panel = document.getElementById('tocPanel');
+    const backdrop = document.getElementById('tocBackdrop');
+    const body = document.body;
+
+    function setOpen(open) {
+      btn.classList.toggle('open', open);
+      panel.classList.toggle('open', open);
+      backdrop.classList.toggle('open', open);
+      body.classList.toggle('menu-open', open);
+      btn.setAttribute('aria-expanded', String(open));
+      panel.setAttribute('aria-hidden', String(!open));
+      btn.setAttribute('aria-label', open ? '목차 닫기' : '목차 열기');
+    }
+
+    btn.addEventListener('click', () => setOpen(!panel.classList.contains('open')));
+    backdrop.addEventListener('click', () => setOpen(false));
+    document.querySelectorAll('[data-close]').forEach(a => a.addEventListener('click', () => setOpen(false)));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && panel.classList.contains('open')) setOpen(false);
+    });
+  })();
+
+  // Inject copy buttons into every code card
+  (function () {
+    document.querySelectorAll('.code-card').forEach(card => {
+      const head = card.querySelector('.code-head');
+      const pre  = card.querySelector('pre');
+      if (!head || !pre) return;
+
+      const tag = head.querySelector('.tag');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy-btn';
+      btn.textContent = 'copy';
+      btn.setAttribute('aria-label', '코드 복사');
+
+      const reset = () => { btn.textContent = 'copy'; btn.classList.remove('copied', 'failed'); };
+
+      btn.addEventListener('click', async () => {
+        const code = pre.textContent;
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(code);
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = code;
+            ta.style.position = 'fixed'; ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          btn.textContent = 'copied';
+          btn.classList.add('copied');
+          setTimeout(reset, 1500);
+        } catch (e) {
+          btn.textContent = 'failed';
+          btn.classList.add('failed');
+          setTimeout(reset, 2000);
+        }
+      });
+
+      if (tag) {
+        const wrap = document.createElement('div');
+        wrap.className = 'head-right';
+        tag.replaceWith(wrap);
+        wrap.appendChild(tag);
+        wrap.appendChild(btn);
+      } else {
+        head.appendChild(btn);
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>

@@ -197,6 +197,49 @@
   }
   .d-overall .arrow.down::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
 
+  /* Memory budget */
+  .d-mem-budget { width: 100%; min-width: 0; overflow-x: auto; }
+  .d-mem-budget table { width: 100%; border-collapse: collapse; font-size: 0.74rem; }
+  .d-mem-budget th, .d-mem-budget td { padding: 0.5rem 0.55rem; border: 1px solid var(--rule); text-align: center; }
+  .d-mem-budget th { background: var(--ink); color: var(--paper); font-weight: 600; font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .d-mem-budget td.comp { background: var(--paper-deep); font-weight: 600; color: var(--ink); text-align: left; }
+  .d-mem-budget td.formula { font-family: var(--mono); font-size: 0.7rem; color: var(--accent-deep); }
+  .d-mem-budget td.size { font-family: var(--mono); }
+  .d-mem-budget tr.total td { background: var(--accent-wash); color: var(--accent-deep); font-weight: 700; }
+
+  /* Training strategy ladder */
+  .d-train { display: grid; grid-template-columns: 1fr; gap: 0.4rem; width: 100%; min-width: 0; }
+  .d-train .step { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 0.7rem; padding: 0.65rem 0.85rem; border: 1px solid var(--rule); background: var(--paper); align-items: baseline; }
+  .d-train .step.highlight { border-color: var(--accent); background: var(--accent-wash); }
+  .d-train .step .range { font-family: var(--mono); font-size: 0.74rem; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; }
+  .d-train .step.highlight .range { color: var(--accent-deep); }
+  .d-train .step .body { font-size: 0.78rem; color: var(--ink-soft); line-height: 1.5; }
+  .d-train .step .body code { font-family: var(--mono); font-size: 0.7rem; padding: 0.04rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .d-train .step.highlight .body code { background: var(--paper); }
+  .d-train .step .body b { color: var(--ink); font-weight: 600; }
+
+  /* Throughput control */
+  .d-thr { display: grid; grid-template-columns: 1fr; gap: 0.4rem; width: 100%; min-width: 0; }
+  .d-thr .step { display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 0.6rem; padding: 0.6rem 0.8rem; border: 1px solid var(--rule); background: var(--paper); align-items: baseline; }
+  .d-thr .step .nr { font-family: var(--mono); color: var(--accent); font-weight: 600; font-size: 0.72rem; letter-spacing: 0.04em; }
+  .d-thr .step .label { font-size: 0.82rem; color: var(--ink); font-weight: 500; }
+  .d-thr .step .label small { display: block; color: var(--ink-faint); font-size: 0.7rem; font-weight: 400; margin-top: 0.18rem; line-height: 1.45; }
+
+  /* Deployment gate (shadow + canary) */
+  .d-deploy { display: grid; grid-template-columns: 1fr; gap: 0.45rem; width: 100%; min-width: 0; }
+  .d-deploy .gate { padding: 0.7rem 0.9rem; background: var(--paper); border: 1px solid var(--rule); display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; gap: 0.6rem; align-items: baseline; }
+  .d-deploy .gate.shadow { border-color: var(--accent); background: var(--accent-wash); }
+  .d-deploy .gate .nr { font-family: var(--mono); color: var(--accent); font-weight: 600; font-size: 0.7rem; }
+  .d-deploy .gate.shadow .nr { color: var(--accent-deep); }
+  .d-deploy .gate .ttl { font-size: 0.82rem; font-weight: 500; color: var(--ink); }
+  .d-deploy .gate .ttl small { display: block; color: var(--ink-faint); font-size: 0.7rem; font-weight: 400; margin-top: 0.15rem; line-height: 1.4; }
+  .d-deploy .gate.shadow .ttl { color: var(--accent-deep); }
+  .d-deploy .gate.shadow .ttl small { color: var(--accent-deep); opacity: 0.75; }
+  .d-deploy .gate .pct { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-soft); letter-spacing: 0.04em; white-space: nowrap; }
+  .d-deploy .gate.shadow .pct { color: var(--accent-deep); font-weight: 600; }
+  .d-deploy .down { justify-self: center; width: 1.5px; height: 0.4rem; background: var(--ink-soft); position: relative; }
+  .d-deploy .down::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
+
   /* Decision */
   .decision { margin-top: clamp(3rem, 6vw, 5rem); border-top: 2px solid var(--ink); padding-top: 2.5rem; }
   .decision h3 { font-size: clamp(1.35rem, 2.4vw, 1.75rem); font-weight: 600; letter-spacing: -0.025em; margin-bottom: 1.4rem; }
@@ -325,6 +368,7 @@
         <li><a href="#d-overall" data-close><span>06</span>전체 종합 아키텍처</a></li>
       </ul>
     </li>
+    <li><a href="#scale" data-close>대용량 처리 체크포인트</a></li>
     <li><a href="#code" data-close>실전 코드</a></li>
   </ol>
 
@@ -842,10 +886,492 @@
 </section>
 
 
-<!-- §3 실전 코드 -->
-<section class="section" id="code">
+<!-- §3 대용량 처리 체크포인트 -->
+<section class="section" id="scale">
   <div class="section-head">
     <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Scale Checkpoints</div>
+      <h2 class="section-title">대용량 처리 체크포인트</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    ML 플랫폼 대용량 운영은 <em>4가지 사전 체크</em>에서 결정된다 — 학습 메모리 budget · 분산 학습 전략 · 추론 처리량 제어 · 배포 검증. 학습 작업이 며칠 걸리고 GPU 한 대당 $30/h인 상황에서 OOM 한 번은 비용과 시간 둘 다 잃는다.
+  </p>
+
+  <!-- 1. Training memory budget -->
+  <div class="diagram-block" id="scale-mem">
+    <div class="db-text">
+      <h4><span class="num">01 · 학습 메모리</span>GPU 메모리 사전 체크</h4>
+      <p>
+        DL 학습 GPU 메모리는 단순히 모델 크기가 아니다. <strong>4 components의 합산</strong>:
+        모델 파라미터 + optimizer state + gradient + activation.
+        Adam optimizer는 파라미터의 2배(m·v), gradient는 1배, activation은 batch·seq·layer 함수.
+      </p>
+      <p>
+        Llama 70B fine-tuning 예시 — <strong>760GB 이상</strong>. Single H100 80GB로 불가.
+        ZeRO-3 sharding + activation checkpointing + mixed precision 모두 동원해야 GPU 8~10대로 fit.
+        <em>학습 시작 전에 4 components를 계산해야 어떤 분산 전략이 필요한지 결정된다</em>.
+      </p>
+      <div class="use-when">
+        <strong>핵심 트릭</strong>
+        <p>Activation checkpointing — backward에 다시 forward 계산해서 activation 메모리 sqrt(N)으로 감소. compute 1.3x 늘지만 메모리 폭주 막음. 사실상 LLM 학습 default.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Memory budget · Llama 70B fine-tune (FP16)">
+      <div class="d-mem-budget">
+        <table>
+          <thead>
+            <tr><th>Component</th><th>공식 (FP16)</th><th>70B params</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="comp">모델 파라미터</td><td class="formula">N × 2 byte</td><td class="size">~140 GB</td></tr>
+            <tr><td class="comp">Optimizer state (Adam)</td><td class="formula">N × 8 byte (m + v in FP32)</td><td class="size">~560 GB</td></tr>
+            <tr><td class="comp">Gradient</td><td class="formula">N × 2 byte</td><td class="size">~140 GB</td></tr>
+            <tr><td class="comp">Activation (batch=1, seq=2K)</td><td class="formula">12 × L × H × seq × batch</td><td class="size">~200 GB</td></tr>
+            <tr class="total"><td class="comp">합계</td><td class="formula">필요 GPU 메모리</td><td class="size">~1040 GB</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Distributed strategy -->
+  <div class="diagram-block" id="scale-dist">
+    <div class="db-text">
+      <h4><span class="num">02 · 분산 전략</span>모델 크기별 사다리</h4>
+      <p>
+        모델이 single GPU에 fit하면 <strong>DDP가 가장 단순·빠름</strong> (data parallel).
+        Fit하지 않으면 <strong>FSDP / ZeRO-2 (optimizer shard) → ZeRO-3 (parameter shard) → CPU offload → Pipeline parallel</strong> 순으로 사다리.
+      </p>
+      <p>
+        규칙: <strong>한 단계 위로 갈수록 MFU(Model FLOPs Utilization)가 떨어짐</strong>.
+        쓸 수 있는 최단순 전략부터 시도. ZeRO-3가 필요한데 ZeRO-2로 시작하면 OOM. ZeRO-3로 충분한데 CPU offload 추가하면 throughput만 손해.
+      </p>
+      <div class="use-when">
+        <strong>잘못 흔히 한 선택</strong>
+        <p>"DeepSpeed가 좋다더라" → 검증 없이 ZeRO-3 + CPU offload 모두 켜기. MFU 30% 미만. 먼저 ZeRO 없이 시도해 OOM 확인 후 사다리 올라가는 게 정석.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Distributed training · ladder">
+      <div class="d-train">
+        <div class="step">
+          <span class="range">model fit</span>
+          <div class="body"><b>Single GPU</b> — DataLoader + autograd. baseline. 모델이 GPU 메모리 70% 이하면 여기서 시작.</div>
+        </div>
+        <div class="step">
+          <span class="range">model fit</span>
+          <div class="body"><b>DDP (Data Parallel)</b> — 모델 N×replication, gradient all-reduce. throughput N배. <code>torch.nn.parallel.DistributedDataParallel</code>.</div>
+        </div>
+        <div class="step">
+          <span class="range">model too big</span>
+          <div class="body"><b>FSDP / ZeRO-2</b> — optimizer state shard across GPUs. <code>FullyShardedDataParallel</code> 또는 <code>deepspeed.zero_stage=2</code>. 메모리 1/N로.</div>
+        </div>
+        <div class="step highlight">
+          <span class="range">model massive</span>
+          <div class="body"><b>ZeRO-3 (Parameter shard)</b> — params/grad/opt 모두 shard. communication 늘지만 가장 큰 모델 가능. <code>deepspeed.zero_stage=3</code>.</div>
+        </div>
+        <div class="step">
+          <span class="range">+ offload</span>
+          <div class="body"><b>+ CPU offload</b> — optimizer state를 CPU RAM으로. 추가 메모리 확보, <b>MFU 30~50% 손해</b>. NVMe offload도 있음 (더 큰 손해).</div>
+        </div>
+        <div class="step">
+          <span class="range">+ pipeline</span>
+          <div class="body"><b>+ Pipeline parallel</b> — layer 그룹별로 다른 GPU. bubble 발생 (MFU 추가 손해). 진짜 거대한 모델 (1T+)에서만.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Inference throughput -->
+  <div class="diagram-block" id="scale-thr">
+    <div class="db-text">
+      <h4><span class="num">03 · 추론 제어</span>Triton dynamic batching + auto-scaling</h4>
+      <p>
+        Online inference에서 GPU 비용 최소화의 핵심은 <strong>dynamic batching</strong>.
+        짧은 시간(예: 500μs) 안에 들어오는 요청을 묶어 GPU 한 번에 처리.
+        단일 latency는 살짝 양보하되 throughput을 폭증시킴.
+      </p>
+      <p>
+        실패 패턴: <strong>queue depth 모니터링 없이 운영</strong> → 트래픽 스파이크에 queue 폭주, p99 무한 증가.
+        Auto-scaling은 GPU 인스턴스 수가 아니라 <em>queue depth + GPU utilization</em> 기준으로 트리거.
+      </p>
+      <div class="use-when">
+        <strong>가장 흔한 실수</strong>
+        <p><code>max_batch_size</code>만 키우면 throughput 늘 거라고 생각. 실제로는 <code>max_queue_delay_microseconds</code>와 함께 튜닝해야 의미. 늦게 들어온 요청이 batch에 못 묶이면 latency 폭주.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Inference · throughput control">
+      <div class="d-thr">
+        <div class="step">
+          <span class="nr">[1]</span>
+          <div class="label"><code>max_queue_delay_microseconds</code>
+            <small>batch가 충분히 차지 않아도 이 시간 후 강제 발사. 500μs가 default sweet spot</small>
+          </div>
+        </div>
+        <div class="step">
+          <span class="nr">[2]</span>
+          <div class="label"><code>preferred_batch_size</code>
+            <small>가장 효율적인 batch size 후보 ([32, 64, 128] 등). 하드웨어별 sweet spot 측정 필수</small>
+          </div>
+        </div>
+        <div class="step">
+          <span class="nr">[3]</span>
+          <div class="label"><code>instance_group</code> count
+            <small>같은 모델의 GPU 인스턴스 수. 메모리 ÷ 모델 크기. concurrency도 함께 결정</small>
+          </div>
+        </div>
+        <div class="step">
+          <span class="nr">[4]</span>
+          <div class="label">Queue depth 모니터링
+            <small>실제 부하 지표. 임계치 초과 시 alarm + auto-scale 트리거</small>
+          </div>
+        </div>
+        <div class="step">
+          <span class="nr">[5]</span>
+          <div class="label">Auto-scaling (HPA)
+            <small>GPU utilization &gt; 70% AND queue depth &gt; threshold → replica 증가</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Deployment gates -->
+  <div class="diagram-block" id="scale-deploy">
+    <div class="db-text">
+      <h4><span class="num">04 · 배포 검증</span>Staging → Shadow → Canary → 100%</h4>
+      <p>
+        ML 모델은 <em>같은 input에도 학습 데이터에 따라 결과가 다름</em>. 일반 SW와 달리 코드 정확성으로는 검증 불가.
+        4단계 게이트가 표준: <strong>staging offline eval → shadow traffic mirror → canary 점진 cutover → 100%</strong>.
+      </p>
+      <p>
+        Shadow는 <em>응답 안 하고 측정만</em> — recall · latency diff · error rate.
+        Canary 단계마다 임계치 위반 시 <strong>auto-rollback</strong>.
+        Michelangelo는 이 흐름을 MA Studio에서 GUI로 제공.
+      </p>
+      <div class="use-when">
+        <strong>Shadow의 함정</strong>
+        <p>Green 인덱스에 read load만 들어가므로 cache 동작이 prod와 다를 수 있음. Cutover 후 latency가 더 나쁠 가능성 항상 염두. 그래서 canary 5%부터 시작.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Deployment · 4 gates">
+      <div class="d-deploy">
+        <div class="gate">
+          <span class="nr">[1]</span>
+          <div class="ttl">Staging offline eval
+            <small>holdout test set · 정확도·F1·AUC 비교 · baseline 대비 regression 차단</small>
+          </div>
+          <span class="pct">eval set</span>
+        </div>
+        <div class="down"></div>
+        <div class="gate shadow">
+          <span class="nr">[2]</span>
+          <div class="ttl">Shadow traffic mirror
+            <small>prod query를 new model에도 복제 · 응답 버리고 측정만 · diff 비교</small>
+          </div>
+          <span class="pct">0% serve</span>
+        </div>
+        <div class="down"></div>
+        <div class="gate">
+          <span class="nr">[3]</span>
+          <div class="ttl">Canary gradual cutover
+            <small>사용자별 stable hash로 5% → 25% → 50% → 100% · 각 단계 검증</small>
+          </div>
+          <span class="pct">5→100%</span>
+        </div>
+        <div class="down"></div>
+        <div class="gate">
+          <span class="nr">[4]</span>
+          <div class="ttl">Auto-rollback
+            <small>임계치 위반 (recall/latency/error) 시 즉시 이전 model로 트래픽 복원 · oncall page</small>
+          </div>
+          <span class="pct">auto</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="margin-note">
+    가장 흔한 실수 — ① <strong>학습 메모리 사전 체크 누락</strong>: 며칠 학습 중 OOM 발견 → 처음부터 다시. ② <strong>DeepSpeed/ZeRO를 검증 없이 max 설정</strong>: MFU 30% 미만으로 비용만 폭주. 사다리 한 단씩 올라가야 함. ③ <strong>Triton batching 단독 튜닝</strong>: <code>max_batch_size</code>만 늘리면 의미 없음. <code>max_queue_delay</code>와 함께. ④ <strong>Shadow 없는 모델 배포</strong>: offline eval만으로 prod regression 못 잡음. 거의 모든 model rollback의 trigger.
+  </p>
+
+  <div class="decision">
+    <h3>학습/배포 전 통과해야 할 4 게이트</h3>
+    <div class="decision-table">
+      <div>
+        <h4>통과 신호 (Go)</h4>
+        <ul>
+          <li>학습 메모리 4 components 모두 계산, 가용 GPU 메모리 ≥ 1.3 × 추정치</li>
+          <li>분산 전략 사다리에서 <b>가장 단순한 옵션</b>으로 시작</li>
+          <li>Triton config의 <code>max_queue_delay_microseconds</code> + <code>preferred_batch_size</code> 함께 측정 완료</li>
+          <li>Shadow traffic 24시간 이상 + recall/latency diff &lt; threshold</li>
+          <li>Auto-rollback 트리거 + oncall page 자동화 검증</li>
+        </ul>
+      </div>
+      <div>
+        <h4>차단 신호 (Stop)</h4>
+        <ul>
+          <li>"DeepSpeed 좋다더라"로 ZeRO-3 + offload 모두 활성화</li>
+          <li>학습 메모리 계산 안 함 / 추정만 함</li>
+          <li>Triton dynamic batching 비활성화 (GPU 자원 낭비)</li>
+          <li>Shadow 없이 staging만으로 prod 직배포</li>
+          <li>Auto-scaling이 CPU/메모리 기준 (queue depth 무시)</li>
+          <li>Canary 단계 건너뛰고 100% 즉시 cutover</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Code: GPU memory budget -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>01 · GPU 학습 메모리 사전 계산기</h4>
+      <span class="tag">precheck</span>
+    </div>
+<pre><span class="kw">def</span> <span class="fn">training_memory_gb</span>(
+    n_params: <span class="kw">int</span>,        <span class="com"># 모델 파라미터 수</span>
+    dtype: <span class="kw">str</span> = <span class="str">"fp16"</span>,
+    optimizer: <span class="kw">str</span> = <span class="str">"adamw"</span>,
+    seq_len: <span class="kw">int</span> = <span class="str">2048</span>,
+    batch_size: <span class="kw">int</span> = <span class="str">1</span>,
+    hidden_dim: <span class="kw">int</span> = <span class="str">8192</span>,
+    n_layers: <span class="kw">int</span> = <span class="str">80</span>,
+    activation_checkpoint: <span class="kw">bool</span> = <span class="kw">True</span>,
+) -> <span class="kw">dict</span>:
+    <span class="str">"""학습 GPU 메모리의 4 components 추정 (GB)."""</span>
+
+    bytes_per = {<span class="str">"fp32"</span>: <span class="str">4</span>, <span class="str">"fp16"</span>: <span class="str">2</span>, <span class="str">"bf16"</span>: <span class="str">2</span>, <span class="str">"int8"</span>: <span class="str">1</span>}[dtype]
+
+    <span class="com"># 1. 모델 파라미터</span>
+    model_gb = n_params * bytes_per / <span class="str">1024</span>**<span class="str">3</span>
+
+    <span class="com"># 2. Optimizer state (Adam = 2x params in FP32)</span>
+    opt_mult = {<span class="str">"sgd"</span>: <span class="str">0</span>, <span class="str">"adamw"</span>: <span class="str">8</span>, <span class="str">"adam"</span>: <span class="str">8</span>}[optimizer]   <span class="com"># FP32 기준</span>
+    opt_gb = n_params * opt_mult / <span class="str">1024</span>**<span class="str">3</span>
+
+    <span class="com"># 3. Gradient (= params size)</span>
+    grad_gb = model_gb
+
+    <span class="com"># 4. Activation (transformer 근사식)</span>
+    act_factor = <span class="str">12</span> <span class="kw">if</span> <span class="kw">not</span> activation_checkpoint <span class="kw">else</span> <span class="str">2</span>
+    act_gb = (act_factor * n_layers * hidden_dim * seq_len * batch_size
+              * bytes_per) / <span class="str">1024</span>**<span class="str">3</span>
+
+    total = model_gb + opt_gb + grad_gb + act_gb
+    <span class="kw">return</span> {
+        <span class="str">"model_gb"</span>: model_gb, <span class="str">"optimizer_gb"</span>: opt_gb,
+        <span class="str">"gradient_gb"</span>: grad_gb, <span class="str">"activation_gb"</span>: act_gb,
+        <span class="str">"total_gb"</span>: total, <span class="str">"safe_gb"</span>: total * <span class="str">1.3</span>,
+    }
+
+<span class="com"># Llama 70B fine-tuning 예시</span>
+m = <span class="fn">training_memory_gb</span>(n_params=<span class="str">70_000_000_000</span>, dtype=<span class="str">"fp16"</span>,
+                       hidden_dim=<span class="str">8192</span>, n_layers=<span class="str">80</span>)
+<span class="fn">print</span>(<span class="str">f"total {m['total_gb']:.0f}GB (safe {m['safe_gb']:.0f}GB)"</span>)
+<span class="com"># → total 1040GB (safe 1352GB) — single H100 80GB로 절대 불가</span>
+
+<span class="kw">def</span> <span class="fn">required_gpus</span>(m: <span class="kw">dict</span>, gpu_mem_gb: <span class="kw">int</span> = <span class="str">80</span>) -> <span class="kw">int</span>:
+    <span class="str">"""ZeRO-3로 sharding 가정 시 필요 GPU 개수."""</span>
+    <span class="kw">import</span> math
+    <span class="kw">return</span> math.<span class="fn">ceil</span>(m[<span class="str">"safe_gb"</span>] / (gpu_mem_gb * <span class="str">0.7</span>))   <span class="com"># 70% 사용 가정</span>
+
+<span class="fn">print</span>(<span class="str">f"H100 80GB × {required_gpus(m, 80)}대 필요"</span>)
+<span class="com"># → H100 80GB × 25대 필요</span>
+</pre>
+    <div class="note"><strong>포인트.</strong> 학습 메모리는 <em>모델 크기 ≠ GPU 메모리 요구</em>. Adam optimizer state가 보통 가장 큼 (params의 4배). activation checkpointing 켜면 act 메모리 1/6로 감소 — LLM 학습 사실상 default. 학습 시작 코드 가장 위에 <code>training_memory_gb()</code> assertion 박아두면 며칠 낭비 방지.</div>
+  </article>
+
+  <!-- Code: Distributed strategy selector -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>02 · 분산 학습 전략 선택기</h4>
+      <span class="tag">strategy</span>
+    </div>
+<pre><span class="kw">def</span> <span class="fn">recommend_strategy</span>(model_gb: <span class="kw">float</span>, gpu_mem_gb: <span class="kw">int</span> = <span class="str">80</span>) -> <span class="kw">str</span>:
+    <span class="str">"""사다리 순서대로 시도 — 가능한 가장 단순한 전략."""</span>
+    safe_gpu = gpu_mem_gb * <span class="str">0.7</span>
+
+    <span class="kw">if</span> model_gb &lt; safe_gpu * <span class="str">0.3</span>:
+        <span class="kw">return</span> <span class="str">"single-gpu"</span>                  <span class="com"># 모델이 작음</span>
+    <span class="kw">elif</span> model_gb &lt; safe_gpu * <span class="str">0.5</span>:
+        <span class="kw">return</span> <span class="str">"ddp"</span>                         <span class="com"># throughput만 키우기</span>
+    <span class="kw">elif</span> model_gb &lt; safe_gpu:
+        <span class="kw">return</span> <span class="str">"fsdp"</span>                        <span class="com"># optimizer state shard</span>
+    <span class="kw">elif</span> model_gb &lt; safe_gpu * <span class="str">4</span>:
+        <span class="kw">return</span> <span class="str">"zero-3"</span>                      <span class="com"># parameter shard</span>
+    <span class="kw">elif</span> model_gb &lt; safe_gpu * <span class="str">16</span>:
+        <span class="kw">return</span> <span class="str">"zero-3 + cpu-offload"</span>        <span class="com"># MFU 손해 감수</span>
+    <span class="kw">else</span>:
+        <span class="kw">return</span> <span class="str">"zero-3 + pipeline-parallel"</span>  <span class="com"># 거대 모델</span>
+
+<span class="com"># 사용 예 — 모델 크기에 따른 추천</span>
+<span class="kw">for</span> n_params <span class="kw">in</span> [<span class="str">7e9</span>, <span class="str">13e9</span>, <span class="str">70e9</span>, <span class="str">175e9</span>]:
+    model_gb = n_params * <span class="str">2</span> / <span class="str">1024</span>**<span class="str">3</span>     <span class="com"># fp16</span>
+    strategy = <span class="fn">recommend_strategy</span>(model_gb, gpu_mem_gb=<span class="str">80</span>)
+    <span class="fn">print</span>(<span class="str">f"{n_params/1e9:>5.0f}B: model {model_gb:5.0f}GB → {strategy}"</span>)
+<span class="com">#   7B: model    13GB → ddp</span>
+<span class="com">#  13B: model    24GB → ddp</span>
+<span class="com">#  70B: model   130GB → zero-3</span>
+<span class="com"># 175B: model   326GB → zero-3 + cpu-offload</span>
+
+<span class="com"># DeepSpeed config 예시 (ZeRO-3)</span>
+deepspeed_config = {
+    <span class="str">"zero_optimization"</span>: {
+        <span class="str">"stage"</span>: <span class="str">3</span>,
+        <span class="str">"offload_optimizer"</span>: {<span class="str">"device"</span>: <span class="str">"none"</span>},    <span class="com"># 일단 끄고 시작</span>
+        <span class="str">"offload_param"</span>: {<span class="str">"device"</span>: <span class="str">"none"</span>},
+    },
+    <span class="str">"bf16"</span>: {<span class="str">"enabled"</span>: <span class="kw">True</span>},
+    <span class="str">"gradient_clipping"</span>: <span class="str">1.0</span>,
+    <span class="str">"train_micro_batch_size_per_gpu"</span>: <span class="str">1</span>,
+    <span class="str">"gradient_accumulation_steps"</span>: <span class="str">32</span>,
+    <span class="str">"activation_checkpointing"</span>: {<span class="str">"partition_activations"</span>: <span class="kw">True</span>},
+}
+</pre>
+    <div class="note"><strong>포인트.</strong> 사다리 핵심은 <em>"한 단계 위로 갈수록 MFU 떨어짐"</em>. ZeRO-3가 필요한데 ZeRO-2로 시작하면 OOM, 반대로 ZeRO-3로 충분한데 CPU offload까지 켜면 throughput만 손해. <b>가장 단순한 옵션부터 시도</b>가 정석.</div>
+  </article>
+
+  <!-- Code: Triton dynamic batching -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>03 · Triton dynamic batching 튜닝</h4>
+      <span class="tag">throughput</span>
+    </div>
+<pre><span class="com"># config.pbtxt — Triton 모델 설정 핵심 부분</span>
+<span class="kw">name</span>: <span class="str">"llm_inference"</span>
+<span class="kw">platform</span>: <span class="str">"pytorch_libtorch"</span>
+<span class="kw">max_batch_size</span>: <span class="str">256</span>           <span class="com"># 절대 최대치 (메모리 한계)</span>
+
+<span class="kw">input</span> [{ <span class="kw">name</span>: <span class="str">"input_ids"</span>, <span class="kw">data_type</span>: TYPE_INT64, <span class="kw">dims</span>: [-<span class="str">1</span>] }]
+
+<span class="com"># 핵심: dynamic_batching</span>
+<span class="kw">dynamic_batching</span> {
+  <span class="com"># 짧은 시간 안에 들어온 요청들을 묶음</span>
+  <span class="kw">max_queue_delay_microseconds</span>: <span class="str">500</span>     <span class="com"># 500μs 후 강제 발사</span>
+
+  <span class="com"># 효율적인 batch size 후보들 (하드웨어별 측정)</span>
+  <span class="kw">preferred_batch_size</span>: [ <span class="str">8</span>, <span class="str">16</span>, <span class="str">32</span>, <span class="str">64</span> ]
+
+  <span class="com"># priority queue (옵션) — 중요 요청 먼저</span>
+  <span class="kw">priority_levels</span>: <span class="str">2</span>
+  <span class="kw">default_priority_level</span>: <span class="str">2</span>
+}
+
+<span class="com"># 인스턴스 수 — GPU 메모리 ÷ 모델 크기로 결정</span>
+<span class="kw">instance_group</span> [{ <span class="kw">count</span>: <span class="str">2</span>, <span class="kw">kind</span>: KIND_GPU }]
+
+<span class="com"># =============================================</span>
+<span class="com"># Python: 실측 기반 튜닝 — preferred_batch_size 찾기</span>
+<span class="com"># =============================================</span>
+
+<span class="kw">import</span> tritonclient.grpc <span class="kw">as</span> grpcclient
+<span class="kw">import</span> time, numpy <span class="kw">as</span> np
+
+client = grpcclient.<span class="fn">InferenceServerClient</span>(<span class="str">"triton:8001"</span>)
+
+<span class="kw">def</span> <span class="fn">measure_throughput</span>(batch_size: <span class="kw">int</span>, n_iters: <span class="kw">int</span> = <span class="str">100</span>) -> <span class="kw">float</span>:
+    <span class="str">"""특정 batch size에서의 throughput 측정 (req/sec)."""</span>
+    inputs = [grpcclient.<span class="fn">InferInput</span>(<span class="str">"input_ids"</span>, [batch_size, <span class="str">512</span>], <span class="str">"INT64"</span>)]
+    inputs[<span class="str">0</span>].<span class="fn">set_data_from_numpy</span>(np.random.<span class="fn">randint</span>(<span class="str">0</span>, <span class="str">32000</span>, (batch_size, <span class="str">512</span>)))
+
+    start = time.<span class="fn">time</span>()
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(n_iters):
+        client.<span class="fn">infer</span>(<span class="str">"llm_inference"</span>, inputs)
+    elapsed = time.<span class="fn">time</span>() - start
+    <span class="kw">return</span> (n_iters * batch_size) / elapsed
+
+<span class="com"># 모든 batch size 후보 sweep — sweet spot 찾기</span>
+<span class="kw">for</span> bs <span class="kw">in</span> [<span class="str">1</span>, <span class="str">2</span>, <span class="str">4</span>, <span class="str">8</span>, <span class="str">16</span>, <span class="str">32</span>, <span class="str">64</span>, <span class="str">128</span>]:
+    tps = <span class="fn">measure_throughput</span>(bs)
+    <span class="fn">print</span>(<span class="str">f"batch={bs:3d}: {tps:6.1f} req/sec"</span>)
+<span class="com"># sweet spot이 plateau 시작점. preferred_batch_size로 설정.</span>
+</pre>
+    <div class="note"><strong>포인트.</strong> <em><code>max_batch_size</code>는 절대 한계, <code>preferred_batch_size</code>는 효율 목표</em>. dynamic batching의 진짜 가치는 <code>max_queue_delay_microseconds</code> + <code>preferred_batch_size</code> 조합. 측정 없이 default로 두면 GPU 자원 30% 이상 낭비.</div>
+  </article>
+
+  <!-- Code: Canary deployment -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>04 · Canary deployment + auto-rollback</h4>
+      <span class="tag">deploy</span>
+    </div>
+<pre><span class="kw">import</span> asyncio, hashlib
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, field
+
+@dataclass
+<span class="kw">class</span> <span class="fn">DeployMetrics</span>:
+    requests: <span class="kw">int</span> = <span class="str">0</span>
+    errors:   <span class="kw">int</span> = <span class="str">0</span>
+    latency_ms: <span class="kw">list</span>[<span class="kw">float</span>] = field(default_factory=<span class="kw">list</span>)
+    recall_overlap: <span class="kw">list</span>[<span class="kw">float</span>] = field(default_factory=<span class="kw">list</span>)
+
+    <span class="kw">def</span> <span class="fn">healthy</span>(self, baseline: <span class="str">"DeployMetrics"</span>) -> <span class="kw">bool</span>:
+        <span class="kw">if</span> self.requests &lt; <span class="str">100</span>: <span class="kw">return</span> <span class="kw">True</span>           <span class="com"># 표본 부족</span>
+        err_rate = self.errors / self.requests
+        avg_p99 = <span class="fn">sorted</span>(self.latency_ms)[<span class="fn">int</span>(<span class="fn">len</span>(self.latency_ms) * <span class="str">0.99</span>)]
+        avg_recall = <span class="fn">sum</span>(self.recall_overlap) / <span class="fn">len</span>(self.recall_overlap)
+        <span class="kw">return</span> (err_rate &lt; baseline.errors/baseline.requests * <span class="str">1.5</span>
+                <span class="kw">and</span> avg_p99 &lt; <span class="fn">sorted</span>(baseline.latency_ms)[<span class="fn">int</span>(<span class="fn">len</span>(baseline.latency_ms) * <span class="str">0.99</span>)] * <span class="str">1.10</span>
+                <span class="kw">and</span> avg_recall &gt; <span class="str">0.95</span>)
+
+<span class="kw">class</span> <span class="fn">CanaryRouter</span>:
+    <span class="str">"""사용자별 stable hash로 cutover · 임계치 위반 시 auto-rollback."""</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, baseline_model, candidate_model):
+        self.baseline = baseline_model
+        self.candidate = candidate_model
+        self.baseline_metrics = <span class="fn">DeployMetrics</span>()
+        self.candidate_metrics = <span class="fn">DeployMetrics</span>()
+        self.cutover_pct = <span class="str">0.0</span>            <span class="com"># 0 → 0.05 → 0.25 → 0.5 → 1.0</span>
+
+    <span class="kw">def</span> <span class="fn">route</span>(self, user_id: <span class="kw">str</span>) -> <span class="kw">str</span>:
+        <span class="com"># stable hash — 같은 사용자는 같은 model로 계속</span>
+        h = <span class="fn">int</span>(hashlib.<span class="fn">md5</span>(user_id.<span class="fn">encode</span>()).<span class="fn">hexdigest</span>(), <span class="str">16</span>)
+        <span class="kw">return</span> <span class="str">"candidate"</span> <span class="kw">if</span> (h % <span class="str">10000</span>) / <span class="str">10000</span> &lt; self.cutover_pct <span class="kw">else</span> <span class="str">"baseline"</span>
+
+    <span class="kw">async def</span> <span class="fn">serve</span>(self, user_id: <span class="kw">str</span>, query):
+        target = self.<span class="fn">route</span>(user_id)
+        model = self.candidate <span class="kw">if</span> target == <span class="str">"candidate"</span> <span class="kw">else</span> self.baseline
+        metrics = self.candidate_metrics <span class="kw">if</span> target == <span class="str">"candidate"</span> <span class="kw">else</span> self.baseline_metrics
+
+        start = time.<span class="fn">monotonic</span>()
+        <span class="kw">try</span>:
+            result = <span class="kw">await</span> model.<span class="fn">predict</span>(query)
+            metrics.requests += <span class="str">1</span>
+            metrics.latency_ms.<span class="fn">append</span>((time.<span class="fn">monotonic</span>() - start) * <span class="str">1000</span>)
+        <span class="kw">except</span> <span class="fn">Exception</span>:
+            metrics.errors += <span class="str">1</span>; <span class="kw">raise</span>
+
+        <span class="com"># 헬스 체크 — 위반 시 즉시 rollback</span>
+        <span class="kw">if</span> target == <span class="str">"candidate"</span> <span class="kw">and</span> <span class="kw">not</span> self.candidate_metrics.<span class="fn">healthy</span>(self.baseline_metrics):
+            <span class="kw">await</span> self.<span class="fn">rollback</span>()
+
+        <span class="kw">return</span> result
+
+    <span class="kw">async def</span> <span class="fn">advance</span>(self):
+        <span class="str">"""정상 시 단계 진행 — 5 → 25 → 50 → 100"""</span>
+        <span class="kw">assert</span> self.candidate_metrics.<span class="fn">healthy</span>(self.baseline_metrics)
+        stages = [<span class="str">0.05</span>, <span class="str">0.25</span>, <span class="str">0.5</span>, <span class="str">1.0</span>]
+        idx = stages.<span class="fn">index</span>(self.cutover_pct) <span class="kw">if</span> self.cutover_pct <span class="kw">in</span> stages <span class="kw">else</span> -<span class="str">1</span>
+        self.cutover_pct = stages[idx + <span class="str">1</span>]
+        <span class="fn">emit</span>(<span class="str">"canary_pct"</span>, self.cutover_pct)
+
+    <span class="kw">async def</span> <span class="fn">rollback</span>(self):
+        self.cutover_pct = <span class="str">0.0</span>
+        <span class="fn">page_oncall</span>(<span class="str">"canary unhealthy — rolled back"</span>)
+</pre>
+    <div class="note"><strong>포인트.</strong> Canary 핵심은 <em>사용자별 stable hash</em> — 같은 사용자가 검색마다 다른 결과 받으면 UX 깨짐. <code>md5(user_id) % 10000</code> 패턴. Auto-rollback 트리거 = <em>error rate · p99 latency · recall regression 셋 모두</em>. 하나만 보면 silent failure 놓침.</div>
+  </article>
+
+</section>
+
+
+<!-- §4 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">04</div>
     <div class="section-titles">
       <div class="section-kicker">Reference Implementation</div>
       <h2 class="section-title">실전 코드</h2>

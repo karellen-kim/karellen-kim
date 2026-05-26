@@ -392,6 +392,14 @@
   .toc-sub a:hover span { color: var(--accent); }
   .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); line-height: 1.6; }
   body.menu-open { overflow: hidden; }
+  /* Code card collapse — collapsed by default, click head to expand */
+  .code-card pre, .code-card .note { display: none; }
+  .code-card.expanded pre, .code-card.expanded .note { display: block; }
+  .code-card .code-head { cursor: pointer; user-select: none; transition: background 0.15s ease; }
+  .code-card .code-head:hover { background: var(--paper); }
+  .expand-indicator { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-faint); transition: transform 0.2s ease; display: inline-block; line-height: 1; }
+  .code-card.expanded .expand-indicator { transform: rotate(90deg); color: var(--accent-deep); }
+
 
   @media (prefers-reduced-motion: no-preference) {
     .section, .point, .diagram-block, .code-card { animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
@@ -944,7 +952,7 @@
     });
   })();
 
-  // Inject copy buttons into every code card
+  // Inject copy buttons + expand toggles into every code card
   (function () {
     document.querySelectorAll('.code-card').forEach(card => {
       const head = card.querySelector('.code-head');
@@ -960,7 +968,8 @@
 
       const reset = () => { btn.textContent = 'copy'; btn.classList.remove('copied', 'failed'); };
 
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
         const code = pre.textContent;
         try {
           if (navigator.clipboard && window.isSecureContext) {
@@ -977,12 +986,18 @@
           btn.textContent = 'copied';
           btn.classList.add('copied');
           setTimeout(reset, 1500);
-        } catch (e) {
+        } catch (err) {
           btn.textContent = 'failed';
           btn.classList.add('failed');
           setTimeout(reset, 2000);
         }
       });
+
+      // Expand indicator (▸ collapsed → rotates 90° when expanded)
+      const caret = document.createElement('span');
+      caret.className = 'expand-indicator';
+      caret.textContent = '▸';
+      caret.setAttribute('aria-hidden', 'true');
 
       if (tag) {
         const wrap = document.createElement('div');
@@ -990,9 +1005,16 @@
         tag.replaceWith(wrap);
         wrap.appendChild(tag);
         wrap.appendChild(btn);
+        wrap.appendChild(caret);
       } else {
         head.appendChild(btn);
+        head.appendChild(caret);
       }
+
+      // Click on head → toggle expand (copy button has stopPropagation)
+      head.addEventListener('click', () => {
+        card.classList.toggle('expanded');
+      });
     });
   })();
 </script>

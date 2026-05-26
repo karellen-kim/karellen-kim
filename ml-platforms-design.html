@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Platforms Design — 학습 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+  /* HERO */
+  .hero { max-width: 1200px; margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); position: relative; }
+  .hero::before { content: ""; position: absolute; top: 2rem; left: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); height: 1px; background: var(--ink); }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.5rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.95; font-weight: 600; margin-top: clamp(2rem, 5vw, 3rem); letter-spacing: -0.035em; color: var(--ink); }
+  .hero-title em { font-style: normal; font-weight: 300; color: var(--accent-deep); }
+  .hero-sub { margin-top: 1.4rem; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: var(--ink-soft); max-width: 42rem; line-height: 1.5; font-weight: 300; }
+  .hero-grid { margin-top: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .hero-grid > div { background: var(--paper); padding: 1.25rem 1.5rem; }
+  .hero-grid .k { display: block; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 0.4rem; }
+  .hero-grid .v { font-size: 1.2rem; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .hero-grid .v small { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; font-weight: 400; }
+
+  /* SECTIONS */
+  .section { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem); position: relative; }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head { display: grid; grid-template-columns: auto 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: baseline; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .section-num { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.85; color: var(--accent); font-weight: 200; letter-spacing: -0.04em; }
+  .section-titles { border-left: 1px solid var(--ink); padding-left: clamp(1rem, 3vw, 2rem); padding-top: 0.5rem; }
+  .section-kicker { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .section-title { font-size: clamp(1.65rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.028em; }
+
+  /* §1 TL;DR */
+  .tldr-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
+  @media (min-width: 720px) { .tldr-grid { grid-template-columns: repeat(12, 1fr); } }
+  .tldr-lead { grid-column: 1 / -1; font-size: clamp(1.2rem, 2.1vw, 1.6rem); line-height: 1.45; color: var(--ink); padding-bottom: 2rem; border-bottom: 1px solid var(--rule); margin-bottom: 2.5rem; font-weight: 300; letter-spacing: -0.012em; }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  .tldr-lead::first-letter { font-size: 3.4em; float: left; line-height: 0.9; padding-right: 0.12em; padding-top: 0.08em; color: var(--accent-deep); font-weight: 200; }
+  @media (min-width: 720px) { .tldr-lead { grid-column: 2 / 12; } }
+  .points { display: contents; }
+  .point { grid-column: 1 / -1; display: grid; grid-template-columns: 4ch 1fr; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 720px) { .point { grid-column: 2 / 12; grid-template-columns: 5ch 1fr; gap: 2rem; } }
+  .point .n { font-size: 1.25rem; color: var(--accent); line-height: 1; font-weight: 300; letter-spacing: 0.05em; text-transform: uppercase; }
+  .point h3 { font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.3; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.015em; }
+  .point p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
+  .point p strong { color: var(--ink); font-weight: 600; }
+  .point p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+
+  /* §2 다이어그램 */
+  .diagram-block { margin-bottom: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .db-text h4 { font-size: clamp(1.3rem, 2.3vw, 1.75rem); line-height: 1.25; margin-bottom: 0.8rem; color: var(--ink); font-weight: 600; letter-spacing: -0.022em; }
+  .db-text h4 .num { display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em; color: var(--accent-deep); vertical-align: middle; background: var(--accent-wash); padding: 0.28rem 0.55rem; border-radius: 999px; margin-right: 0.65rem; font-weight: 600; position: relative; top: -0.15em; }
+  .db-text p { color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.65; font-size: 0.95rem; }
+  .db-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .db-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .db-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas { background: var(--paper-deep); border: 1px solid var(--rule); padding: clamp(1.25rem, 3vw, 2rem); position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .canvas::before { content: attr(data-label); position: absolute; top: 0.7rem; left: 0.9rem; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; }
+  .canvas-tall { min-height: 420px; }
+
+  /* Lifecycle flow */
+  .d-lifecycle { display: grid; grid-template-columns: 1fr; gap: 0.4rem; width: 100%; min-width: 0; }
+  .d-lifecycle .stage { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: 0.7rem; padding: 0.6rem 0.8rem; border: 1px solid var(--rule); background: var(--paper); align-items: baseline; }
+  .d-lifecycle .stage .nr { font-family: var(--mono); font-size: 0.7rem; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; }
+  .d-lifecycle .stage .label { font-size: 0.82rem; font-weight: 600; color: var(--ink); }
+  .d-lifecycle .stage .label small { display: block; color: var(--ink-faint); font-size: 0.7rem; font-weight: 400; margin-top: 0.15rem; line-height: 1.45; }
+  .d-lifecycle .down { justify-self: center; width: 1.5px; height: 0.35rem; background: var(--ink-soft); position: relative; }
+  .d-lifecycle .down::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
+
+  /* Capability matrix */
+  .d-cap { width: 100%; min-width: 0; overflow-x: auto; }
+  .d-cap table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+  .d-cap th, .d-cap td { padding: 0.45rem 0.5rem; border: 1px solid var(--rule); text-align: center; }
+  .d-cap th { background: var(--ink); color: var(--paper); font-weight: 600; font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .d-cap td.platform { background: var(--paper-deep); font-weight: 600; color: var(--ink); text-align: left; padding-left: 0.7rem; }
+  .d-cap td.strong { color: var(--accent-deep); font-weight: 600; }
+  .d-cap td.weak { color: var(--ink-faint); }
+
+  /* Workflow style comparison */
+  .d-styles { display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; min-width: 0; }
+  .d-styles .style {
+    padding: 0.8rem 1rem; border: 1px solid var(--rule); background: var(--paper);
+    display: grid; grid-template-columns: 7rem minmax(0, 1fr) auto; gap: 0.7rem; align-items: baseline;
+  }
+  .d-styles .style.canvas-style { border-color: var(--accent); background: var(--accent-wash); }
+  .d-styles .style .nm { font-size: 0.85rem; font-weight: 600; color: var(--ink); letter-spacing: -0.012em; }
+  .d-styles .style.canvas-style .nm { color: var(--accent-deep); }
+  .d-styles .style .body { font-size: 0.78rem; color: var(--ink-soft); line-height: 1.5; }
+  .d-styles .style .body b { color: var(--ink); font-weight: 600; }
+  .d-styles .style .body code { font-family: var(--mono); font-size: 0.7rem; padding: 0.04rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .d-styles .style.canvas-style .body code { background: var(--paper); }
+  .d-styles .style .tag { font-family: var(--mono); font-size: 0.66rem; color: var(--ink-faint); letter-spacing: 0.06em; white-space: nowrap; }
+  .d-styles .style.canvas-style .tag { color: var(--accent-deep); }
+
+  /* Interface evolution */
+  .d-evo { display: grid; grid-template-columns: 1fr; gap: 0.4rem; width: 100%; min-width: 0; }
+  .d-evo .era { padding: 0.7rem 0.9rem; border: 1px solid var(--rule); background: var(--paper); display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 0.8rem; align-items: baseline; }
+  .d-evo .era.current { border-color: var(--accent); background: var(--accent-wash); }
+  .d-evo .era .when { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-faint); font-weight: 600; letter-spacing: 0.04em; }
+  .d-evo .era.current .when { color: var(--accent-deep); }
+  .d-evo .era .body { font-size: 0.8rem; color: var(--ink); }
+  .d-evo .era .body b { color: var(--ink); font-weight: 600; }
+  .d-evo .era .body small { display: block; color: var(--ink-soft); font-size: 0.7rem; margin-top: 0.2rem; line-height: 1.5; font-weight: 400; }
+
+  /* GenAI convergence */
+  .d-conv { display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; min-width: 0; }
+  .d-conv .layer { padding: 0.7rem 0.9rem; text-align: center; }
+  .d-conv .layer.top { background: var(--paper-deep); border: 1px solid var(--rule); }
+  .d-conv .layer.gw { background: var(--accent); color: var(--paper); border: none; font-weight: 600; }
+  .d-conv .layer.gw small { display: block; font-size: 0.66rem; opacity: 0.85; margin-top: 0.18rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .d-conv .layer.bottom { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.3rem; padding: 0; background: transparent; }
+  .d-conv .layer.bottom .b { padding: 0.55rem 0.4rem; border: 1.5px solid var(--ink); background: var(--paper); font-size: 0.72rem; font-weight: 600; color: var(--ink); }
+  .d-conv .layer.bottom .b small { display: block; font-family: var(--mono); font-size: 0.6rem; color: var(--ink-faint); margin-top: 0.15rem; font-weight: 400; letter-spacing: 0.04em; }
+  .d-conv .arr { justify-self: center; width: 1.5px; height: 0.5rem; background: var(--ink-soft); position: relative; }
+  .d-conv .arr::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
+
+  /* Decision */
+  .decision { margin-top: clamp(3rem, 6vw, 5rem); border-top: 2px solid var(--ink); padding-top: 2.5rem; }
+  .decision h3 { font-size: clamp(1.35rem, 2.4vw, 1.75rem); font-weight: 600; letter-spacing: -0.025em; margin-bottom: 1.4rem; }
+  .decision-table { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  @media (min-width: 760px) { .decision-table { grid-template-columns: 1fr 1fr; } }
+  .decision-table > div { background: var(--paper); padding: 1.5rem; }
+  .decision-table h4 { font-size: 1.1rem; margin-bottom: 0.7rem; color: var(--accent-deep); font-weight: 600; letter-spacing: -0.015em; }
+  .decision-table ul { list-style: none; color: var(--ink-soft); }
+  .decision-table li { padding: 0.35rem 0; padding-left: 1.1rem; position: relative; font-size: 0.92rem; }
+  .decision-table li::before { content: "→"; position: absolute; left: 0; color: var(--accent); font-family: var(--mono); }
+
+  /* Gloss */
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
+
+  /* §3 코드 */
+  .code-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card { margin-bottom: 2.5rem; border: 1px solid var(--rule); background: var(--paper); overflow: hidden; }
+  .code-head { display: flex; align-items: baseline; justify-content: space-between; padding: 1rem 1.4rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; gap: 0.5rem; }
+  .code-head h4 { font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .code-head .tag { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--accent); color: var(--paper); border-radius: 2px; }
+  .code-head .head-right { display: flex; align-items: center; gap: 0.5rem; }
+  .copy-btn { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease; font-weight: 600; }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .copy-btn.failed { background: var(--paper-deep); color: var(--accent-deep); border-color: var(--accent); }
+  .code-card pre { margin: 0; padding: 1.35rem 1.5rem; overflow-x: auto; background: oklch(0.18 0.02 260); color: oklch(0.92 0.015 75); font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note { padding: 1rem 1.4rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper-deep); line-height: 1.6; }
+  .code-card .note strong { color: var(--accent-deep); }
+
+  .margin-note { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; padding: 1.1rem 1.3rem; background: var(--paper-deep); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); margin: 2rem 0; font-weight: 300; }
+  .margin-note::before { content: "노트"; font-weight: 600; color: var(--accent-deep); font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-right: 0.8rem; display: inline-block; padding-right: 0.7rem; border-right: 1px solid var(--rule); }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  /* FOOTER */
+  footer { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: var(--ink-faint); }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+  .footer-sources { display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-end; text-align: right; }
+  .footer-sources a { display: block; font-size: 0.78rem; line-height: 1.4; }
+
+  /* HOME LINK */
+  .home-link { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 60; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0 0.95rem; height: 48px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.04em; transition: background 0.2s ease, color 0.2s ease; }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow { font-family: var(--mono); font-size: 0.95rem; transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  /* HAMBURGER + TOC */
+  .menu-btn { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; transition: background 0.2s ease; }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span { display: block; width: 20px; height: 1.5px; background: var(--ink); transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, background 0.2s ease; transform-origin: center; }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+  .toc-backdrop { position: fixed; inset: 0; background: oklch(0.18 0.015 260 / 0.35); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+  .toc-panel { position: fixed; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--ink); z-index: 55; transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); overflow-y: auto; padding: 6rem 2.5rem 3rem; }
+  .toc-panel.open { transform: translateX(0); }
+  .toc-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .toc-title { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.03em; color: var(--ink); margin-bottom: 2.2rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule); }
+  .toc-list { list-style: none; counter-reset: toc; }
+  .toc-list > li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a { display: grid; grid-template-columns: 2.5rem 1fr; align-items: baseline; text-decoration: none; color: var(--ink); font-weight: 500; font-size: 1.05rem; letter-spacing: -0.012em; transition: color 0.2s ease; }
+  .toc-list > li > a::before { counter-increment: toc; content: counter(toc, decimal-leading-zero); color: var(--accent); font-weight: 300; font-size: 0.85rem; letter-spacing: 0.05em; }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+  .toc-sub { list-style: none; margin-top: 0.6rem; margin-left: 2.5rem; padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a { color: var(--ink-soft); text-decoration: none; font-size: 0.88rem; font-weight: 400; transition: color 0.2s ease; display: flex; align-items: baseline; gap: 0.6rem; }
+  .toc-sub a span { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; min-width: 1.6rem; }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-sub a:hover span { color: var(--accent); }
+  .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); line-height: 1.6; }
+  body.menu-open { overflow: hidden; }
+
+  /* Code card collapse — collapsed by default, click head to expand */
+  .code-card pre, .code-card .note { display: none; }
+  .code-card.expanded pre, .code-card.expanded .note { display: block; }
+  .code-card .code-head { cursor: pointer; user-select: none; transition: background 0.15s ease; }
+  .code-card .code-head:hover { background: var(--paper); }
+  .expand-indicator { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-faint); transition: transform 0.2s ease; display: inline-block; line-height: 1; }
+  .code-card.expanded .expand-indicator { transform: rotate(90deg); color: var(--accent-deep); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card { animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html" aria-label="홈으로 돌아가기">
+  <span class="arrow">←</span><span>notebook</span>
+</a>
+
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+<div class="toc-backdrop" id="tocBackdrop"></div>
+
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#diagrams" data-close>그림으로 보는 구조</a>
+      <ul class="toc-sub">
+        <li><a href="#d-lifecycle" data-close><span>01</span>공통 ML lifecycle</a></li>
+        <li><a href="#d-cap" data-close><span>02</span>6 플랫폼 capability</a></li>
+        <li><a href="#d-styles" data-close><span>03</span>워크플로우 표현 5가지</a></li>
+        <li><a href="#d-evo" data-close><span>04</span>개발자 인터페이스 진화</a></li>
+        <li><a href="#d-conv" data-close><span>05</span>GenAI 시대 수렴 패턴</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+
+  <div class="toc-foot">
+    ML Platforms Design · Multi-platform synthesis<br>학습 노트 · 2026.05
+  </div>
+</aside>
+
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="meta-row">
+    <span>Tech Deep Dive · 2026.05</span>
+    <span>학습 노트 · 읽는 시간 16분</span>
+  </div>
+
+  <h1 class="hero-title">ML Platforms<br><em>Design</em></h1>
+
+  <p class="hero-sub">
+    "빅테크 6개 회사가 같은 ML 문제를 어떻게 다르게 풀었는가 — Uber Canvas · Netflix Metaflow · Meta FBLearner · Lyft Flyte · Airbnb Bighead · LinkedIn Pro-ML."
+  </p>
+
+  <div class="hero-grid">
+    <div>
+      <span class="k">비교 대상</span>
+      <span class="v">6 platforms</span>
+    </div>
+    <div>
+      <span class="k">공통 축</span>
+      <span class="v">5 축<small>· interface · workflow · build · artifacts · deploy</small></span>
+    </div>
+    <div>
+      <span class="k">최대 규모</span>
+      <span class="v">3K+ projects<small>· Netflix</small></span>
+    </div>
+    <div>
+      <span class="k">최대 사용자</span>
+      <span class="v">25%+ eng<small>· Meta</small></span>
+    </div>
+    <div>
+      <span class="k">작성</span>
+      <span class="v">2026<small>.05.27</small></span>
+    </div>
+  </div>
+</header>
+
+
+<!-- §1 TL;DR -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      ML 플랫폼은 모두 같은 목표를 갖는다 — <span class="hl">데이터 사이언티스트가 production-grade 모델을 빠르게 만들 수 있게</span>.
+      하지만 각 회사가 처한 컨텍스트(기존 인프라 · 조직 규모 · 도메인 · 오픈소스 전략)에 따라 답이 완전히 다르다.
+      6개 빅테크의 ML platform을 <em>5가지 축</em>으로 교차 비교 — 어떤 결정이 어떤 trade-off를 만들었는지.
+    </p>
+
+    <div class="points">
+      <article class="point">
+        <div class="n">i</div>
+        <div>
+          <h3>공통 문제 — 같은 6-step lifecycle</h3>
+          <p>모든 ML 플랫폼이 <strong>data → train → eval → deploy → predict → monitor</strong> 같은 lifecycle을 다룬다. Uber Michelangelo가 2017년에 표준화한 이 6단계가 사실상 업계 표준. 회사별 차이는 "stage가 무엇인가"가 아니라 <em>"각 stage를 어떻게 표현·실행하는가"</em>에 있다.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">ii</div>
+        <div>
+          <h3>5가지 비교 축</h3>
+          <p>① <strong>Developer interface</strong> (notebook · CLI · monorepo)
+          ② <strong>Workflow 표현</strong> (YAML · Python class · `@step` 데코레이터 · operator · 타입 DAG)
+          ③ <strong>Build system</strong> (Docker · Bazel · custom)
+          ④ <strong>Artifact 관리</strong> (registry · monorepo · S3)
+          ⑤ <strong>Deployment lifecycle</strong> (shadow · canary · A/B). 같은 stage라도 어떤 축을 어떻게 풀었는지가 platform의 정체성.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iii</div>
+        <div>
+          <h3>Uber Canvas — SWE 워크플로우 차용</h3>
+          <p>2020 launch. <strong>ML Monorepo + Bazel + Docker + CI/CD</strong>가 핵심. ML 자산도 일반 코드처럼 PR/리뷰/test gate. <code>ML Application Framework (MAF)</code>가 DL 등 복잡한 패턴 템플릿 제공. <em>"Jupyter 시대 졸업"</em> 선언. MA Studio가 통합 UI.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iv</div>
+        <div>
+          <h3>Netflix Metaflow — Python 데코레이터 + DAG</h3>
+          <p>2019 오픈소스. <code>@step</code> 데코레이터로 Python 함수를 워크플로우 노드화. <code>self.next()</code>로 edge. <code>@resources(gpu=4)</code>로 컴퓨트 명세. <strong>"DSL을 만들지 마라, 그냥 Python"</strong>이라는 인간 중심 디자인. 3K+ 프로젝트 · 수억 job.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">v</div>
+        <div>
+          <h3>Meta FBLearner / Lyft Flyte / Airbnb Bighead</h3>
+          <p><strong>FBLearner</strong>: Python 데코레이터 + operator → <em>자동 UI 생성</em>. 사내 사용 25%+. <strong>Flyte</strong>: Kubernetes-native, <em>타입 워크플로우</em>, 오픈소스, 월 1M pipelines (Lyft). <strong>Bighead</strong>: <em>Redspot</em> (multi-tenant Jupyter) + <em>Zipline</em> (feature store) — notebook 중심.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">vi</div>
+        <div>
+          <h3>GenAI 시대 — 모든 플랫폼이 같은 곳으로 수렴</h3>
+          <p>2024+ 모든 ML 플랫폼에 <strong>LLM Gateway · Prompt Management · LLM Eval Framework</strong>가 추가됨. Uber Gen AI Gateway, Netflix Metaflow의 LLM module, Meta의 GenAI infra — 거의 동일한 추상화. <em>predictive와 generative를 같은 platform 위에서 운영</em>한다는 공통 결론.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- §2 다이어그램 -->
+<section class="section" id="diagrams">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Cross-platform Comparison</div>
+      <h2 class="section-title">그림으로 보는 구조</h2>
+    </div>
+  </div>
+
+  <!-- 1. Common lifecycle -->
+  <div class="diagram-block" id="d-lifecycle">
+    <div class="db-text">
+      <h4><span class="num">01 · 공통</span>모든 ML 플랫폼이 다루는 6-step lifecycle</h4>
+      <p>
+        Uber Michelangelo가 2017년에 정착시킨 6단계가 <strong>사실상 업계 표준</strong>이 됨.
+        Kubeflow · MLflow · Vertex AI Pipelines · SageMaker Pipelines · Metaflow 등 모두 같은 단계를 다룬다.
+      </p>
+      <p>
+        회사별 차이는 stage 자체가 아니라 <em>"각 stage를 어떤 인터페이스·DSL로 표현하는가"</em>.
+        같은 train 스텝이 Canvas에서는 Python class, Metaflow에서는 <code>@step</code>, Flyte에서는 typed task가 된다.
+      </p>
+      <div class="use-when">
+        <strong>핵심 관찰</strong>
+        <p>새 ML 플랫폼이 이 6단계를 다 다루지 않으면 — 다른 도구로 보완해야 한다. ML lifecycle "전 영역"을 다루는 게 platform이 되느냐 단순 라이브러리가 되느냐의 분기점.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="ML lifecycle · 6 canonical stages">
+      <div class="d-lifecycle">
+        <div class="stage"><span class="nr">[01]</span><div class="label">Manage Data<small>Feature store · pipeline · lineage</small></div></div>
+        <div class="down"></div>
+        <div class="stage"><span class="nr">[02]</span><div class="label">Train Models<small>분산 학습 · 하이퍼파라미터 튜닝</small></div></div>
+        <div class="down"></div>
+        <div class="stage"><span class="nr">[03]</span><div class="label">Evaluate Models<small>holdout · metric · 모델 간 비교</small></div></div>
+        <div class="down"></div>
+        <div class="stage"><span class="nr">[04]</span><div class="label">Deploy Models<small>online RPC · batch · library</small></div></div>
+        <div class="down"></div>
+        <div class="stage"><span class="nr">[05]</span><div class="label">Make Predictions<small>real-time + scheduled batch</small></div></div>
+        <div class="down"></div>
+        <div class="stage"><span class="nr">[06]</span><div class="label">Monitor Predictions<small>data drift · model regression · alerts</small></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Capability matrix -->
+  <div class="diagram-block" id="d-cap">
+    <div class="db-text">
+      <h4><span class="num">02 · 비교</span>6 플랫폼 capability matrix</h4>
+      <p>
+        같은 6 stage를 처리하지만 <strong>각 stage에서 어떤 도구·DSL을 선택했는지</strong>가 platform의 정체성을 만든다.
+        Uber는 SWE 워크플로우 흡수, Netflix는 인간 중심, Meta는 사내 통합, Lyft는 K8s-native, Airbnb는 notebook-first.
+      </p>
+      <p>
+        라이센스도 결정적 차이 — Metaflow와 Flyte는 오픈소스라 다른 회사도 채택 가능,
+        Canvas/FBLearner/Bighead는 사내 전용. <em>오픈소스 전략이 곧 platform의 long-term 영향력</em>.
+      </p>
+      <div class="use-when">
+        <strong>패턴</strong>
+        <p>오픈소스 플랫폼(Metaflow · Flyte)은 외부 생태계가 강함. 사내 플랫폼(Canvas · FBLearner)은 사내 인프라와 깊게 통합 — 외부 채택 불가하지만 사내 성능 최적화는 압도적.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="6 platforms × 5 axes">
+      <div class="d-cap">
+        <table>
+          <thead>
+            <tr>
+              <th>플랫폼</th><th>Interface</th><th>Workflow</th><th>Build</th><th>Artifacts</th><th>Open?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="platform">Uber Canvas + MA Studio</td>
+              <td class="strong">monorepo + Studio</td>
+              <td>Python class · MAF</td>
+              <td class="strong">Bazel + Docker</td>
+              <td class="strong">Artifact Mgmt indexed</td>
+              <td class="weak">사내</td>
+            </tr>
+            <tr>
+              <td class="platform">Netflix Metaflow</td>
+              <td>CLI + Python</td>
+              <td class="strong"><code>@step</code> 데코레이터</td>
+              <td>Docker</td>
+              <td>S3-backed</td>
+              <td class="strong">Apache 2.0</td>
+            </tr>
+            <tr>
+              <td class="platform">Meta FBLearner</td>
+              <td>Web UI (auto-gen)</td>
+              <td>operator + workflow Python</td>
+              <td>사내 빌드 시스템</td>
+              <td>self-contained, versioned</td>
+              <td class="weak">사내</td>
+            </tr>
+            <tr>
+              <td class="platform">Lyft Flyte</td>
+              <td>Web UI + CLI</td>
+              <td class="strong"><b>typed workflow</b></td>
+              <td>Docker on K8s</td>
+              <td>Blob storage + lineage</td>
+              <td class="strong">Apache 2.0</td>
+            </tr>
+            <tr>
+              <td class="platform">Airbnb Bighead</td>
+              <td class="weak"><b>Redspot</b> (Jupyter)</td>
+              <td>Bighead library wrappers</td>
+              <td>Docker</td>
+              <td>Zipline feature store</td>
+              <td class="weak">사내</td>
+            </tr>
+            <tr>
+              <td class="platform">LinkedIn Pro-ML</td>
+              <td>Web UI + libs</td>
+              <td>pipeline + operator</td>
+              <td>사내 빌드</td>
+              <td>Frame feature store</td>
+              <td class="weak">사내</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Workflow styles -->
+  <div class="diagram-block" id="d-styles">
+    <div class="db-text">
+      <h4><span class="num">03 · 워크플로우</span>5가지 워크플로우 표현 방식</h4>
+      <p>
+        ML 워크플로우를 어떻게 <strong>코드로 표현할 것인가</strong>가 platform 디자인의 가장 큰 분기점.
+        Python class · 데코레이터 · operator · 타입 워크플로우 · YAML config 등 5가지 주요 스타일이 있다.
+      </p>
+      <p>
+        선택 기준은 <em>"누가 쓰는가"</em> — 데이터 사이언티스트(Python 친화) vs 플랫폼 엔지니어(타입 안전) vs PM/매니저(UI 친화).
+        Metaflow와 Canvas가 양극단 — Metaflow는 데이터 사이언티스트 친화 데코레이터, Canvas는 SWE 친화 monorepo.
+      </p>
+      <div class="use-when">
+        <strong>고르는 기준</strong>
+        <p>팀이 Python 데이터 사이언티스트 중심이면 → <b>데코레이터</b> (Metaflow/FBLearner). 플랫폼 엔지니어 중심이면 → <b>typed workflow</b> (Flyte). SWE와 통합되어야 하면 → <b>monorepo + class</b> (Canvas).</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Workflow representation · 5 styles">
+      <div class="d-styles">
+        <div class="style">
+          <span class="nm">Python class</span>
+          <div class="body"><b>Uber Canvas (MAF)</b> — 모델·feature·pipeline을 Python class로 정의. SWE 워크플로우 (monorepo + PR + CI)와 통합. ML이 일반 코드와 같은 워크플로우.</div>
+          <span class="tag">canvas</span>
+        </div>
+        <div class="style canvas-style">
+          <span class="nm">데코레이터 + DAG</span>
+          <div class="body"><b>Netflix Metaflow</b> · <b>Meta FBLearner</b> — 함수에 <code>@step</code> 또는 operator 데코레이터. <code>self.next()</code>로 edge. 가장 Python 친화적, 데이터 사이언티스트가 그대로 쓸 수 있음.</div>
+          <span class="tag">metaflow</span>
+        </div>
+        <div class="style">
+          <span class="nm">Typed workflow</span>
+          <div class="body"><b>Lyft Flyte</b> — input/output에 Python 타입 명시. compile-time 검증, lineage 추적, K8s native. 플랫폼 엔지니어가 좋아하는 robustness.</div>
+          <span class="tag">flyte</span>
+        </div>
+        <div class="style">
+          <span class="nm">Notebook-first</span>
+          <div class="body"><b>Airbnb Bighead (Redspot)</b> — multi-tenant Jupyter 호스팅. 데이터 사이언티스트가 실험하기 가장 빠름. 단, production-grade 보장은 별도 노력 필요.</div>
+          <span class="tag">bighead</span>
+        </div>
+        <div class="style">
+          <span class="nm">UI-driven (auto-gen)</span>
+          <div class="body"><b>Meta FBLearner</b> 자동 UI — 파이프라인 정의에서 <em>UI 자동 생성</em>. 비엔지니어(PM·analyst)도 모델 학습 가능. Meta의 25%+ engineering 채택의 비결.</div>
+          <span class="tag">fblearner</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Interface evolution -->
+  <div class="diagram-block" id="d-evo">
+    <div class="db-text">
+      <h4><span class="num">04 · 진화</span>개발자 인터페이스 — 10년 변화</h4>
+      <p>
+        2014년경 <strong>Jupyter notebook 위주</strong>로 시작 → 2017~2019년 <strong>플랫폼 SDK + Web UI</strong> → 2020년 이후 <strong>monorepo + CI/CD + 통합 UI</strong>로 수렴.
+        매 단계 trigger는 <em>"이전 방식으로는 production-grade 보장이 안 됨"</em>이었다.
+      </p>
+      <p>
+        2024+는 <strong>GenAI 통합</strong>이 결정적 변화 — Prompt Toolkit 같은 신규 자산이 등장.
+        다음은 <strong>AutoML + agent</strong>가 SDK의 일부가 될 것 (이미 Uber MA Assistant 등 시도).
+      </p>
+      <div class="use-when">
+        <strong>다음 단계 예측</strong>
+        <p>2026~: 자연어로 ML 작업 의뢰 → 플랫폼이 자동으로 코드 생성 + 학습 + 평가. 사람은 결과 검증만. Cursor for ML 같은 형태.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Interface evolution · 2014→2026">
+      <div class="d-evo">
+        <div class="era">
+          <span class="when">~2016</span>
+          <div class="body"><b>Jupyter Notebook 단독</b><small>각 ML 엔지니어가 자기 노트북에서 실험. production 가는 길 없음. 코드는 ad-hoc.</small></div>
+        </div>
+        <div class="era">
+          <span class="when">2016~2019</span>
+          <div class="body"><b>Platform SDK + Central Web UI</b><small>Uber Michelangelo v1 · Meta FBLearner · Airbnb Bighead Redspot. notebook은 유지하되 SDK가 plumbing 제공.</small></div>
+        </div>
+        <div class="era">
+          <span class="when">2019~2023</span>
+          <div class="body"><b>오픈소스 워크플로우 SDK</b><small>Netflix Metaflow OSS · Lyft Flyte OSS · 데이터 사이언티스트가 Python으로 작성, 회사가 채택. Python 데코레이터가 lingua franca.</small></div>
+        </div>
+        <div class="era current">
+          <span class="when">2024~</span>
+          <div class="body"><b>Monorepo + CI/CD + 통합 UI + GenAI</b><small>Uber Canvas + MA Studio · Meta Michelangelo 2.0 . ML이 SWE 워크플로우와 통합. Prompt도 자산.</small></div>
+        </div>
+        <div class="era">
+          <span class="when">2026~?</span>
+          <div class="body"><b>Agent-driven ML workflow</b><small>자연어로 의뢰 → 플랫폼이 자동 생성. AutoML이 plumbing의 default. 사람은 검증만.</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. GenAI convergence -->
+  <div class="diagram-block" id="d-conv">
+    <div class="db-text">
+      <h4><span class="num">05 · 수렴</span>GenAI 시대 — 모든 플랫폼이 같은 구조로</h4>
+      <p>
+        2024년 이후 모든 ML 플랫폼이 거의 동일한 GenAI 추상화로 수렴 —
+        <strong>Prompt Toolkit + LLM Gateway + Eval Framework</strong>.
+        Uber Gen AI Gateway, Netflix Metaflow LLM module, Meta GenAI infra 모두 같은 모양.
+      </p>
+      <p>
+        이 수렴의 의미: <em>predictive ML과 generative AI가 한 platform 위에서 운영</em>되는 게 표준이 됨.
+        prompt도 일급 자산 (model·feature와 동급), LLM 호출도 거버넌스 대상.
+      </p>
+      <div class="use-when">
+        <strong>가장 큰 변화</strong>
+        <p>"prompt를 code로 관리한다"는 인식. 2023까지는 prompt가 ad-hoc 텍스트였지만, 2024+에는 version control · code review · A/B test 대상.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="GenAI · convergent layer pattern">
+      <div class="d-conv">
+        <div class="layer top">앱 · 에이전트 · 사내 도구<small style="display:block;color:var(--ink-faint);font-size:0.7rem;margin-top:0.15rem;">모든 LLM 호출은 게이트웨이 경유 (직접 SDK 호출 금지)</small></div>
+        <div class="arr"></div>
+        <div class="layer gw">LLM Gateway<small>vendor abstraction + 4 guardrails (log · cost · safety · PII)</small></div>
+        <div class="arr"></div>
+        <div class="layer bottom">
+          <div class="b">Prompt Toolkit<small>versioned · CI/CD</small></div>
+          <div class="b">Model Catalog<small>in-house + 3P</small></div>
+          <div class="b">LLM Eval<small>rubric · A/B</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="margin-note">
+    가장 흥미로운 사실 — <strong>"같은 문제를 다른 회사가 다르게 풀었지만 결국 비슷한 곳으로 수렴 중"</strong>. Uber Canvas와 Netflix Metaflow는 출발 철학이 완전 달랐다(SWE 워크플로우 vs 인간 중심 Python). 그러나 2024+에는 모두 <em>monorepo · CI/CD · GenAI gateway · Prompt toolkit</em> 같은 공통 추상화로 모임. 진화는 발산 후 수렴.
+  </p>
+
+  <!-- Gloss: Metaflow @step -->
+  <div class="gloss">
+    <div class="gloss-head">
+      <span class="gloss-label">참고</span>
+      <h5>Metaflow <code>@step</code> 데코레이터 패턴</h5>
+      <span class="gloss-pron">"step 데코레이터"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>정의.</strong> Python 함수를 워크플로우 노드(step)로 등록하는 Metaflow 핵심 데코레이터. <code>self.next(self.train)</code>으로 다음 step 지정 → 함수 호출이 DAG의 edge.</p>
+      <p><strong>강점.</strong> 새 DSL 학습 비용 0 — Python을 아는 누구나 즉시 작성. <code>@resources(gpu=4, memory=200000)</code>로 컴퓨트 요구 명시. 같은 코드가 로컬 머신 + AWS Batch + K8s 모두에서 실행.</p>
+      <p><strong>2024 신규.</strong> <code>Config</code> 객체 추가 — 배포 시점에 resolve되는 설정 분리. 같은 flow를 환경별로 다르게 구성 가능. 같은 flow의 prod/staging 다른 GPU 할당 등.</p>
+      <p><strong>스케일.</strong> Netflix에서 3K+ 프로젝트 · 수억 job · 수십 PB 데이터 + 모델 운영. ML 엔지니어 SDK의 사실상 표준.</p>
+    </div>
+  </div>
+
+  <!-- Gloss: Canvas Bazel monorepo -->
+  <div class="gloss">
+    <div class="gloss-head">
+      <span class="gloss-label">참고</span>
+      <h5>Canvas Monorepo + Bazel</h5>
+      <span class="gloss-pron">"바젤 모노레포"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>왜 Bazel인가.</strong> Uber 사내 SWE 인프라가 Bazel monorepo 기반. ML 자산을 같은 monorepo에 두면 <b>SWE와 ML 사이 경계가 사라짐</b> — feature 정의가 backend service 코드와 같은 PR에 들어갈 수 있음.</p>
+      <p><strong>구조.</strong> <code>projects/eta_prediction/</code> 디렉토리에 <code>model.py</code> · <code>features.py</code> · <code>BUILD</code> (Bazel target) · <code>app.yaml</code> (배포 config). git PR마다 CI가 sample 학습 + eval gate 자동 통과 검증.</p>
+      <p><strong>운영 효과.</strong> ML 의존성(특정 Python lib 버전 등)을 Bazel이 hermetic하게 격리 — <b>"내 PC에서는 됐는데"</b> 문제 원천 차단. Docker 이미지도 같은 Bazel target에서 빌드.</p>
+      <p><strong>비용.</strong> Bazel 자체 학습 곡선이 가파름. Bazel 운영 인력 없는 회사는 차용 어려움. Uber 같은 monorepo 회사가 아니면 <b>MLflow + git이 더 현실적</b>.</p>
+    </div>
+  </div>
+
+  <div class="decision">
+    <h3>그래서 — 우리 조직은 어떤 platform을?</h3>
+    <div class="decision-table">
+      <div>
+        <h4>Open-source 차용</h4>
+        <ul>
+          <li>ML 모델 50~500개 + 팀 다양 → <b>Metaflow</b> (Python 친화, 적용 쉬움)</li>
+          <li>K8s 인프라 갖춤 + 타입 안전성 중요 → <b>Flyte</b> (production-grade)</li>
+          <li>Python 표준 워크플로우 원함 + 외부 인력 onboarding → <b>Metaflow</b>가 가장 보편적</li>
+        </ul>
+      </div>
+      <div>
+        <h4>자체 구축 시 차용할 패턴</h4>
+        <ul>
+          <li>SWE 워크플로우 통합 → Canvas의 <b>monorepo + CI/CD</b></li>
+          <li>비엔지니어 사용 → FBLearner의 <b>auto-generated UI</b></li>
+          <li>Python 친화 + 분산 학습 → Metaflow의 <b>데코레이터 + @resources</b></li>
+          <li>GenAI 도입 시 → Michelangelo의 <b>Gen AI Gateway + 4 guardrails</b></li>
+          <li>Feature store 필수 → Uber Palette 또는 OSS <b>Feast</b></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- §3 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Reference Implementations</div>
+      <h2 class="section-title">실전 코드 — 같은 ML 작업, 5가지 스타일</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    <em>동일한 ML 작업</em>(데이터 로드 → 학습 → 평가 → 등록)을 각 platform의 DSL로 작성한 비교 코드. 스타일 차이가 곧 platform 철학의 차이.
+  </p>
+
+  <!-- 1. Uber Canvas-style -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>01 · Uber Canvas — Python class + MAF (ML as Code)</h4>
+      <span class="tag">canvas</span>
+    </div>
+<pre><span class="com"># projects/churn_predictor/model.py</span>
+<span class="kw">from</span> michelangelo.maf <span class="kw">import</span> Model
+<span class="kw">from</span> palette.features <span class="kw">import</span> UserActivity30d, DaysSinceLast
+
+<span class="kw">class</span> <span class="fn">ChurnPredictor</span>(Model):
+    <span class="str">"""모델 = 일반 Python class. PR 리뷰 대상, CI/CD 통과해야 머지."""</span>
+
+    name = <span class="str">"churn_v2"</span>
+    framework = <span class="str">"xgboost"</span>
+    tier = <span class="str">1</span>                       <span class="com"># MES 거버넌스 high-impact</span>
+
+    features = [<span class="fn">UserActivity30d</span>(), <span class="fn">DaysSinceLast</span>()]
+
+    <span class="kw">def</span> <span class="fn">train</span>(self, X, y):
+        <span class="kw">import</span> xgboost <span class="kw">as</span> xgb
+        self.booster = xgb.<span class="fn">XGBRegressor</span>(max_depth=<span class="str">6</span>).<span class="fn">fit</span>(X, y)
+
+    <span class="kw">def</span> <span class="fn">predict</span>(self, X):
+        <span class="kw">return</span> self.booster.<span class="fn">predict</span>(X)
+
+<span class="com"># projects/churn_predictor/BUILD (Bazel target)</span>
+<span class="com"># py_binary(name="train", srcs=["model.py"], deps=["//palette/features:user_activity"])</span>
+
+<span class="com"># PR 시점 CI 자동 실행:</span>
+<span class="com"># - bazel test //projects/churn_predictor:train_test</span>
+<span class="com"># - sample dataset 학습 + recall regression 검증</span>
+<span class="com"># - Docker 이미지 빌드 + staging 배포</span>
+</pre>
+    <div class="note"><strong>포인트.</strong> Canvas는 <em>SWE 워크플로우를 ML에 그대로 적용</em>. monorepo + Bazel target + CI gate. 모델·feature·pipeline이 git history에 남음. "Jupyter 시대 졸업"의 실체.</div>
+  </article>
+
+  <!-- 2. Netflix Metaflow -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>02 · Netflix Metaflow — @step 데코레이터 DAG</h4>
+      <span class="tag">metaflow</span>
+    </div>
+<pre><span class="kw">from</span> metaflow <span class="kw">import</span> FlowSpec, step, Parameter, resources, Config
+
+<span class="kw">class</span> <span class="fn">ChurnFlow</span>(FlowSpec):
+    <span class="str">"""@step 함수가 노드, self.next()가 edge. 그게 전부."""</span>
+
+    config = <span class="fn">Config</span>(<span class="str">"hyperparams"</span>, default=<span class="str">"prod.yaml"</span>)
+    n_trees = <span class="fn">Parameter</span>(<span class="str">"n_trees"</span>, default=<span class="str">500</span>)
+
+    @step
+    <span class="kw">def</span> <span class="fn">start</span>(self):
+        <span class="kw">import</span> pandas <span class="kw">as</span> pd
+        self.df = pd.<span class="fn">read_parquet</span>(<span class="str">"s3://data/users.parquet"</span>)
+        self.<span class="fn">next</span>(self.train)
+
+    @<span class="fn">resources</span>(gpu=<span class="str">4</span>, memory=<span class="str">200_000</span>)        <span class="com"># 컴퓨트 명세</span>
+    @step
+    <span class="kw">def</span> <span class="fn">train</span>(self):
+        <span class="kw">import</span> xgboost <span class="kw">as</span> xgb
+        X, y = self.df[self.features], self.df[<span class="str">"churn"</span>]
+        self.model = xgb.<span class="fn">XGBRegressor</span>(
+            n_estimators=self.n_trees,
+            max_depth=self.config.max_depth,
+        ).<span class="fn">fit</span>(X, y)
+        self.<span class="fn">next</span>(self.evaluate)
+
+    @step
+    <span class="kw">def</span> <span class="fn">evaluate</span>(self):
+        <span class="com"># self.model · self.df 같은 인스턴스 변수가 자동으로 artifact 저장</span>
+        self.auc = <span class="fn">compute_auc</span>(self.model, self.df)
+        self.<span class="fn">next</span>(self.end)
+
+    @step
+    <span class="kw">def</span> <span class="fn">end</span>(self):
+        <span class="fn">print</span>(<span class="str">f"trained model auc={self.auc:.3f}"</span>)
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    <span class="fn">ChurnFlow</span>()
+
+<span class="com"># 실행: python churn_flow.py run --n-trees 1000</span>
+<span class="com">#       python churn_flow.py run --with batch  # AWS Batch에서 실행</span>
+<span class="com">#       python churn_flow.py run --with kubernetes  # K8s에서 실행</span>
+</pre>
+    <div class="note"><strong>포인트.</strong> Metaflow의 매력 = <em>"같은 코드가 로컬·AWS Batch·K8s 모두에서 실행"</em>. <code>--with batch</code>만 추가하면 클라우드. 데이터 사이언티스트가 인프라 변경 없이 scale. self.* 인스턴스 변수는 자동 artifact화 (S3 저장 + 검색 가능).</div>
+  </article>
+
+  <!-- 3. Meta FBLearner -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>03 · Meta FBLearner — Operator + Auto UI</h4>
+      <span class="tag">fblearner</span>
+    </div>
+<pre><span class="kw">from</span> fblearner.flow <span class="kw">import</span> operator, workflow, types
+
+@operator
+<span class="kw">def</span> <span class="fn">load_data</span>(table_name: types.<span class="fn">String</span>) -> types.DataFrame:
+    <span class="str">"""각 operator가 input/output 타입을 명시 — auto UI가 form 생성."""</span>
+    <span class="kw">return</span> hive.<span class="fn">query</span>(<span class="str">f"SELECT * FROM {table_name}"</span>)
+
+@operator
+<span class="kw">def</span> <span class="fn">train_model</span>(df: types.DataFrame,
+                n_estimators: types.<span class="fn">Int</span> = <span class="str">500</span>) -> types.Model:
+    <span class="kw">return</span> xgb.<span class="fn">XGBRegressor</span>(n_estimators=n_estimators).<span class="fn">fit</span>(...)
+
+@operator
+<span class="kw">def</span> <span class="fn">evaluate_model</span>(model: types.Model,
+                   eval_df: types.DataFrame) -> types.<span class="fn">Float</span>:
+    <span class="kw">return</span> <span class="fn">compute_auc</span>(model, eval_df)
+
+@workflow
+<span class="kw">def</span> <span class="fn">churn_pipeline</span>(table: types.<span class="fn">String</span>):
+    <span class="str">"""workflow는 operator들의 조합. Python futures로 자동 병렬화."""</span>
+    train_df = <span class="fn">load_data</span>(table)
+    eval_df  = <span class="fn">load_data</span>(<span class="str">"churn_eval"</span>)
+    model    = <span class="fn">train_model</span>(train_df, n_estimators=<span class="str">1000</span>)
+    auc      = <span class="fn">evaluate_model</span>(model, eval_df)
+    <span class="kw">return</span> auc
+
+<span class="com"># --- 실행 ---</span>
+<span class="com"># FBLearner UI에서:</span>
+<span class="com">#   - workflow 자동으로 form 생성 (table 입력, 하이퍼파라미터 슬라이더)</span>
+<span class="com">#   - 비엔지니어(PM)도 실행 가능</span>
+<span class="com">#   - 결과는 자동 시각화 (operator 타입 기반)</span>
+</pre>
+    <div class="note"><strong>포인트.</strong> FBLearner의 차별점 = <em>auto-generated UI</em>. operator의 input/output 타입을 기반으로 form/visualization 자동 생성 — Meta 사내 25%+ engineer가 사용할 수 있는 이유. Python futures로 데이터 의존성 분석해 자동 병렬화. 사내 전용이라 외부 채택 불가.</div>
+  </article>
+
+  <!-- 4. Lyft Flyte -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>04 · Lyft Flyte — Typed Workflow + K8s native</h4>
+      <span class="tag">flyte</span>
+    </div>
+<pre><span class="kw">from</span> flytekit <span class="kw">import</span> task, workflow, Resources
+<span class="kw">from</span> typing <span class="kw">import</span> NamedTuple
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+
+<span class="com"># 타입을 NamedTuple로 명시 — compile-time 검증</span>
+TrainOutput = <span class="fn">NamedTuple</span>(<span class="str">"TrainOutput"</span>, model=<span class="kw">bytes</span>, auc=<span class="kw">float</span>)
+
+@<span class="fn">task</span>(requests=<span class="fn">Resources</span>(cpu=<span class="str">"4"</span>, mem=<span class="str">"8Gi"</span>, gpu=<span class="str">"1"</span>))
+<span class="kw">def</span> <span class="fn">train_task</span>(df: pd.DataFrame, n_trees: <span class="kw">int</span>) -> TrainOutput:
+    <span class="str">"""task는 Docker 컨테이너로 실행. Flyte가 K8s pod 자동 생성."""</span>
+    model = xgb.<span class="fn">XGBRegressor</span>(n_estimators=n_trees).<span class="fn">fit</span>(...)
+    <span class="kw">return</span> <span class="fn">TrainOutput</span>(model=<span class="fn">pickle</span>(model), auc=<span class="fn">eval</span>(model))
+
+@<span class="fn">task</span>(requests=<span class="fn">Resources</span>(cpu=<span class="str">"2"</span>, mem=<span class="str">"4Gi"</span>))
+<span class="kw">def</span> <span class="fn">register_task</span>(model_bytes: <span class="kw">bytes</span>, auc: <span class="kw">float</span>) -> <span class="kw">str</span>:
+    <span class="kw">if</span> auc &lt; <span class="str">0.85</span>:
+        <span class="kw">raise</span> <span class="fn">ValueError</span>(<span class="str">f"recall regression: auc={auc:.3f}"</span>)
+    <span class="kw">return</span> model_registry.<span class="fn">register</span>(model_bytes, auc=auc)
+
+@workflow
+<span class="kw">def</span> <span class="fn">churn_workflow</span>(table: <span class="kw">str</span>, n_trees: <span class="kw">int</span> = <span class="str">500</span>) -> <span class="kw">str</span>:
+    <span class="str">"""workflow도 typed — compile-time 의존성 검증."""</span>
+    df = <span class="fn">load_data</span>(table=table)
+    out = <span class="fn">train_task</span>(df=df, n_trees=n_trees)
+    model_id = <span class="fn">register_task</span>(model_bytes=out.model, auc=out.auc)
+    <span class="kw">return</span> model_id
+
+<span class="com"># 실행: pyflyte run churn_workflow.py churn_workflow --table users</span>
+<span class="com"># Flyte가 자동으로 K8s pod 스케줄링, 의존성 따라 병렬 실행</span>
+<span class="com"># lineage UI에서 task 간 흐름 시각화</span>
+</pre>
+    <div class="note"><strong>포인트.</strong> Flyte는 <em>"production grade가 default"</em>. NamedTuple 타입으로 input/output 명시 → compile-time 의존성 검증. <code>@task</code>마다 Docker container + K8s pod. 월 1M pipelines (Lyft)에서 검증된 robust한 아키텍처. Metaflow보다 진입 장벽 높지만 typed safety는 압도적.</div>
+  </article>
+
+  <!-- 5. Airbnb Bighead -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>05 · Airbnb Bighead — Notebook + Redspot + Wrappers</h4>
+      <span class="tag">bighead</span>
+    </div>
+<pre><span class="com"># Redspot의 multi-tenant Jupyter notebook에서 작성</span>
+<span class="com"># 동료들과 공유 가능, 같은 환경에서 실행</span>
+
+<span class="kw">from</span> bighead <span class="kw">import</span> ml_pipeline, deepthought
+<span class="kw">from</span> zipline <span class="kw">import</span> Feature
+
+<span class="com"># Zipline feature store에서 feature 정의·조회</span>
+user_activity = Feature.<span class="fn">load</span>(<span class="str">"user.activity_30d_v2"</span>)
+days_since_last = Feature.<span class="fn">load</span>(<span class="str">"user.days_since_last_session"</span>)
+
+<span class="com"># Bighead library가 sklearn/xgboost wrapper 제공</span>
+<span class="kw">from</span> bighead.models <span class="kw">import</span> XGBoostWrapper
+
+model = <span class="fn">XGBoostWrapper</span>(
+    features=[user_activity, days_since_last],
+    target=<span class="str">"churn"</span>,
+    hyperparams={<span class="str">"max_depth"</span>: <span class="str">6</span>, <span class="str">"n_estimators"</span>: <span class="str">500</span>},
+)
+
+<span class="com"># 학습 — notebook에서 즉시 결과 볼 수 있음</span>
+model.<span class="fn">fit</span>(train_set=<span class="str">"2024-01-01"</span>, eval_set=<span class="str">"2024-02-01"</span>)
+model.<span class="fn">plot_feature_importance</span>()
+
+<span class="com"># Deepthought (deployment UI)로 staging 배포</span>
+<span class="fn">deepthought</span>.<span class="fn">deploy</span>(model, name=<span class="str">"churn_v2"</span>, env=<span class="str">"staging"</span>)
+
+<span class="com"># notebook 자체를 production pipeline화 가능 (ml_pipeline decorator)</span>
+@<span class="fn">ml_pipeline</span>(schedule=<span class="str">"daily"</span>, owner=<span class="str">"growth-team"</span>)
+<span class="kw">def</span> <span class="fn">churn_daily</span>():
+    <span class="kw">return</span> <span class="fn">XGBoostWrapper</span>(...).<span class="fn">fit_and_deploy</span>(<span class="str">"churn_v2"</span>)
+</pre>
+    <div class="note"><strong>포인트.</strong> Bighead의 철학 = <em>"notebook이 빠른 실험의 최선"</em>. Redspot의 multi-tenant Jupyter로 협업 + 환경 일관성. wrapper 라이브러리로 production화. 실험은 빠르지만 SWE 규율(PR review, CI)이 약함 — 그 절충안.</div>
+  </article>
+
+  <p class="margin-note">
+    위 5개 코드는 같은 작업(churn 모델 학습+평가+등록)을 5가지 다른 platform DSL로 작성한 것. 코드 줄 수는 비슷하지만 <strong>"누가 어떻게 쓰는가"는 완전히 다르다</strong>. Canvas는 SWE 협업, Metaflow는 개인 실험 + 자동 클라우드, FBLearner는 비엔지니어 UI, Flyte는 typed production, Bighead는 notebook 협업. <em>"좋은 DSL은 사용자가 자연스럽게 쓰는 코드 모양과 같다"</em>는 디자인 원리.
+  </p>
+</section>
+
+
+<footer>
+  <div>학습 노트 · ML Platforms Design</div>
+  <div class="footer-sources">
+    <a href="https://www.uber.com/blog/from-predictive-to-generative-ai/" target="_blank" rel="noopener">Uber Michelangelo 2.0 / Canvas / MA Studio</a>
+    <a href="https://netflixtechblog.com/open-sourcing-metaflow-a-human-centric-framework-for-data-science-fa72e04a5d9" target="_blank" rel="noopener">Netflix Metaflow Launch</a>
+    <a href="https://engineering.fb.com/2016/05/09/core-infra/introducing-fblearner-flow-facebook-s-ai-backbone/" target="_blank" rel="noopener">Meta FBLearner Flow</a>
+    <a href="https://flyte.org/" target="_blank" rel="noopener">Lyft Flyte (open source)</a>
+    <a href="https://medium.com/airbnb-engineering/bighead-airbnbs-end-to-end-machine-learning-platform-8f9cb8ba71d8" target="_blank" rel="noopener">Airbnb Bighead</a>
+    <a href="https://www.evidentlyai.com/blog/how-to-build-ml-platform" target="_blank" rel="noopener">ML platform lessons from 10 companies</a>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    const btn = document.getElementById('menuBtn');
+    const panel = document.getElementById('tocPanel');
+    const backdrop = document.getElementById('tocBackdrop');
+    const body = document.body;
+
+    function setOpen(open) {
+      btn.classList.toggle('open', open);
+      panel.classList.toggle('open', open);
+      backdrop.classList.toggle('open', open);
+      body.classList.toggle('menu-open', open);
+      btn.setAttribute('aria-expanded', String(open));
+      panel.setAttribute('aria-hidden', String(!open));
+      btn.setAttribute('aria-label', open ? '목차 닫기' : '목차 열기');
+    }
+
+    btn.addEventListener('click', () => setOpen(!panel.classList.contains('open')));
+    backdrop.addEventListener('click', () => setOpen(false));
+    document.querySelectorAll('[data-close]').forEach(a => a.addEventListener('click', () => setOpen(false)));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && panel.classList.contains('open')) setOpen(false);
+    });
+  })();
+
+  // Inject copy buttons + expand toggles into every code card
+  (function () {
+    document.querySelectorAll('.code-card').forEach(card => {
+      const head = card.querySelector('.code-head');
+      const pre  = card.querySelector('pre');
+      if (!head || !pre) return;
+
+      const tag = head.querySelector('.tag');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy-btn';
+      btn.textContent = 'copy';
+      btn.setAttribute('aria-label', '코드 복사');
+
+      const reset = () => { btn.textContent = 'copy'; btn.classList.remove('copied', 'failed'); };
+
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const code = pre.textContent;
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(code);
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = code;
+            ta.style.position = 'fixed'; ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          btn.textContent = 'copied';
+          btn.classList.add('copied');
+          setTimeout(reset, 1500);
+        } catch (err) {
+          btn.textContent = 'failed';
+          btn.classList.add('failed');
+          setTimeout(reset, 2000);
+        }
+      });
+
+      // Expand indicator (▸ collapsed → rotates 90° when expanded)
+      const caret = document.createElement('span');
+      caret.className = 'expand-indicator';
+      caret.textContent = '▸';
+      caret.setAttribute('aria-hidden', 'true');
+
+      if (tag) {
+        const wrap = document.createElement('div');
+        wrap.className = 'head-right';
+        tag.replaceWith(wrap);
+        wrap.appendChild(tag);
+        wrap.appendChild(btn);
+        wrap.appendChild(caret);
+      } else {
+        head.appendChild(btn);
+        head.appendChild(caret);
+      }
+
+      // Click on head → toggle expand (copy button has stopPropagation)
+      head.addEventListener('click', () => {
+        card.classList.toggle('expanded');
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

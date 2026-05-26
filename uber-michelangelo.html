@@ -240,6 +240,59 @@
   .d-deploy .down { justify-self: center; width: 1.5px; height: 0.4rem; background: var(--ink-soft); position: relative; }
   .d-deploy .down::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
 
+  /* SVG architecture */
+  .svg-arch { margin-bottom: clamp(2.5rem, 5vw, 4rem); border: 1px solid var(--rule); background: var(--paper); overflow: hidden; }
+  .svg-arch .head {
+    display: flex; align-items: baseline; gap: 0.8rem; padding: 1rem 1.4rem;
+    background: var(--paper-deep); border-bottom: 1px solid var(--rule); flex-wrap: wrap;
+  }
+  .svg-arch .head .year {
+    font-family: var(--mono); font-size: 0.7rem;
+    color: var(--paper); background: var(--accent); padding: 0.25rem 0.6rem;
+    font-weight: 600; letter-spacing: 0.08em; border-radius: 2px;
+  }
+  .svg-arch .head h4 {
+    font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em;
+  }
+  .svg-arch .head .tag {
+    margin-left: auto;
+    font-family: var(--mono); font-size: 0.66rem; color: var(--ink-faint);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .svg-arch .canvas-svg {
+    padding: 1rem; background: var(--paper-deep);
+    display: flex; justify-content: center; align-items: center; overflow-x: auto;
+  }
+  .svg-arch svg { width: 100%; height: auto; max-width: 100%; display: block; }
+  .svg-arch .legend {
+    padding: 1rem 1.4rem; border-top: 1px solid var(--rule);
+    background: var(--paper); font-size: 0.85rem; color: var(--ink-soft);
+    line-height: 1.6;
+  }
+  .svg-arch .legend b { color: var(--ink); font-weight: 600; }
+  .svg-arch .legend code {
+    font-family: var(--mono); font-size: 0.78rem; padding: 0.05rem 0.3rem;
+    background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px;
+    color: var(--accent-deep);
+  }
+
+  /* Comparison table */
+  .arch-compare {
+    margin-top: clamp(2rem, 4vw, 3rem);
+    border: 1px solid var(--rule);
+  }
+  .arch-compare table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+  .arch-compare th, .arch-compare td {
+    padding: 0.6rem 0.8rem; border: 1px solid var(--rule); text-align: left; vertical-align: top;
+  }
+  .arch-compare th {
+    background: var(--ink); color: var(--paper); font-weight: 600;
+    font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .arch-compare td.aspect { background: var(--paper-deep); font-weight: 600; color: var(--ink); }
+  .arch-compare td b { color: var(--ink); font-weight: 600; }
+  .arch-compare td code { font-family: var(--mono); font-size: 0.78rem; color: var(--accent-deep); }
+
   /* Decision */
   .decision { margin-top: clamp(3rem, 6vw, 5rem); border-top: 2px solid var(--ink); padding-top: 2.5rem; }
   .decision h3 { font-size: clamp(1.35rem, 2.4vw, 1.75rem); font-weight: 600; letter-spacing: -0.025em; margin-bottom: 1.4rem; }
@@ -369,6 +422,7 @@
       </ul>
     </li>
     <li><a href="#scale" data-close>대용량 처리 체크포인트</a></li>
+    <li><a href="#arch-svg" data-close>아키텍처 진화</a></li>
     <li><a href="#code" data-close>실전 코드</a></li>
   </ol>
 
@@ -1368,10 +1422,307 @@ client = grpcclient.<span class="fn">InferenceServerClient</span>(<span class="s
 </section>
 
 
-<!-- §4 실전 코드 -->
-<section class="section" id="code">
+<!-- §4 아키텍처 진화 -->
+<section class="section" id="arch-svg">
   <div class="section-head">
     <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Architecture Evolution</div>
+      <h2 class="section-title">아키텍처 진화 — 2017 vs 2024-2025</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    <em>같은 시스템이 8년 동안 어떻게 변형되었는가</em> — 2017 모놀리식 단일 파이프라인에서, 2024-2025 5-layer hierarchical federation으로. 각 박스가 추가/대체된 이유는 §02 타임라인에 자세히.
+  </p>
+
+  <!-- SVG 1: 2017 Linear Pipeline -->
+  <div class="svg-arch">
+    <div class="head">
+      <span class="year">2017</span>
+      <h4>Linear Pipeline — 모놀리식 v1.0</h4>
+      <span class="tag">single platform · all-in-one</span>
+    </div>
+    <div class="canvas-svg">
+      <svg viewBox="0 0 720 600" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Sans KR, system-ui, sans-serif">
+        <defs>
+          <marker id="arr2017" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#4d556c"/>
+          </marker>
+        </defs>
+
+        <text x="20" y="28" font-size="14" font-weight="600" fill="#1a1f2e">2017 · Linear Pipeline</text>
+        <text x="700" y="28" text-anchor="end" font-size="10" fill="#80869e" font-family="JetBrains Mono, monospace">v1.0 monolithic</text>
+
+        <!-- DATA LAYER -->
+        <rect x="20" y="50" width="680" height="85" fill="#f8f8fa" stroke="#d9dbe2" rx="4"/>
+        <text x="32" y="70" font-size="10" font-weight="600" fill="#8a4424" letter-spacing="2">DATA LAYER</text>
+        <rect x="50" y="88" width="140" height="34" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="120" y="105" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">Kafka</text>
+        <text x="120" y="118" text-anchor="middle" font-size="9" fill="#80869e">streaming events</text>
+        <line x1="190" y1="105" x2="230" y2="105" stroke="#4d556c" stroke-width="1.5" marker-end="url(#arr2017)"/>
+        <rect x="230" y="88" width="140" height="34" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="300" y="105" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">HDFS</text>
+        <text x="300" y="118" text-anchor="middle" font-size="9" fill="#80869e">batch lake</text>
+        <line x1="370" y1="105" x2="410" y2="105" stroke="#4d556c" stroke-width="1.5" marker-end="url(#arr2017)"/>
+        <rect x="410" y="88" width="260" height="34" fill="#f5e7da" stroke="#b85c2e" stroke-width="1.5" rx="3"/>
+        <text x="540" y="103" text-anchor="middle" font-size="11" fill="#8a4424" font-weight="600">Palette Feature Store</text>
+        <text x="540" y="116" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">Cassandra · 10K+ features · offline + online</text>
+
+        <line x1="360" y1="140" x2="360" y2="165" stroke="#4d556c" stroke-width="1.5" marker-end="url(#arr2017)"/>
+
+        <!-- TRAINING LAYER -->
+        <rect x="20" y="170" width="680" height="85" fill="#f8f8fa" stroke="#d9dbe2" rx="4"/>
+        <text x="32" y="190" font-size="10" font-weight="600" fill="#8a4424" letter-spacing="2">TRAINING LAYER</text>
+        <rect x="50" y="208" width="170" height="34" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="135" y="223" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">DSL Spec</text>
+        <text x="135" y="236" text-anchor="middle" font-size="9" fill="#80869e">YAML config · Scala API</text>
+        <line x1="220" y1="225" x2="260" y2="225" stroke="#4d556c" stroke-width="1.5" marker-end="url(#arr2017)"/>
+        <rect x="260" y="208" width="210" height="34" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="365" y="223" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">Distributed Training</text>
+        <text x="365" y="236" text-anchor="middle" font-size="9" fill="#80869e">Spark MLLib · XGBoost · TF</text>
+        <line x1="470" y1="225" x2="510" y2="225" stroke="#4d556c" stroke-width="1.5" marker-end="url(#arr2017)"/>
+        <rect x="510" y="208" width="160" height="34" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="590" y="223" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">Model Registry</text>
+        <text x="590" y="236" text-anchor="middle" font-size="9" fill="#80869e">Protobuf (rigid)</text>
+
+        <line x1="360" y1="260" x2="360" y2="285" stroke="#4d556c" stroke-width="1.5" marker-end="url(#arr2017)"/>
+
+        <!-- SERVING LAYER -->
+        <rect x="20" y="290" width="680" height="115" fill="#f8f8fa" stroke="#d9dbe2" rx="4"/>
+        <text x="32" y="310" font-size="10" font-weight="600" fill="#8a4424" letter-spacing="2">SERVING LAYER · 3 modes parallel</text>
+        <rect x="50" y="325" width="200" height="60" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="150" y="347" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">Offline Batch</text>
+        <text x="150" y="362" text-anchor="middle" font-size="9" fill="#80869e">Spark batch job</text>
+        <text x="150" y="375" text-anchor="middle" font-size="9" fill="#80869e">HDFS output</text>
+        <rect x="260" y="325" width="200" height="60" fill="#f5e7da" stroke="#b85c2e" stroke-width="1.5" rx="3"/>
+        <text x="360" y="347" text-anchor="middle" font-size="11" fill="#8a4424" font-weight="600">Online RPC</text>
+        <text x="360" y="362" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">gRPC · P95 &lt; 10ms</text>
+        <text x="360" y="375" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">100s of nodes · LB</text>
+        <rect x="470" y="325" width="200" height="60" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="570" y="347" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">Library Mode</text>
+        <text x="570" y="362" text-anchor="middle" font-size="9" fill="#80869e">embedded JVM</text>
+        <text x="570" y="375" text-anchor="middle" font-size="9" fill="#80869e">in-process inference</text>
+
+        <line x1="360" y1="410" x2="360" y2="435" stroke="#4d556c" stroke-width="1.5" marker-end="url(#arr2017)"/>
+
+        <!-- MONITORING LAYER -->
+        <rect x="20" y="440" width="680" height="80" fill="#f8f8fa" stroke="#d9dbe2" rx="4"/>
+        <text x="32" y="460" font-size="10" font-weight="600" fill="#8a4424" letter-spacing="2">MONITORING LAYER</text>
+        <rect x="50" y="475" width="190" height="32" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="145" y="495" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">Batch Join</text>
+        <line x1="240" y1="491" x2="280" y2="491" stroke="#4d556c" stroke-width="1.5" marker-end="url(#arr2017)"/>
+        <rect x="280" y="475" width="200" height="32" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="380" y="495" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">Metrics Dashboard</text>
+        <line x1="480" y1="491" x2="520" y2="491" stroke="#4d556c" stroke-width="1.5" marker-end="url(#arr2017)"/>
+        <rect x="520" y="475" width="150" height="32" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="595" y="495" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">Alerts</text>
+
+        <!-- MGMT LAYER -->
+        <rect x="20" y="535" width="680" height="50" fill="#1a1f2e" rx="4"/>
+        <text x="360" y="557" text-anchor="middle" font-size="11" font-weight="600" fill="#ffffff">Michelangelo Web UI</text>
+        <text x="360" y="574" text-anchor="middle" font-size="9" fill="#ffffff" opacity="0.7">Single monolithic interface for all workflows</text>
+      </svg>
+    </div>
+    <div class="legend">
+      <p><b>특징.</b> 5-layer 선형 파이프라인 (data → train → serve → monitor → UI). 모든 컴포넌트가 단일 platform 위 — separate ML 시스템이 없던 시대. Online serving은 <code>gRPC · P95 &lt; 10ms</code>로 이미 production-grade. <b>병목:</b> 단일 monolithic UI · Scala/JVM 단일 환경 · Spark 외 알고리즘 추가 어려움 · protobuf 모델 표현이 신규 transformer 막음. → 2018 PyML과 2019 Spark ML 표준화로 분기.</p>
+    </div>
+  </div>
+
+  <!-- SVG 2: 2024-2025 Hierarchical Federation -->
+  <div class="svg-arch">
+    <div class="head">
+      <span class="year">2024-2025</span>
+      <h4>Hierarchical Federation — v2.0 + GenAI + Ray on K8s</h4>
+      <span class="tag">5 layers · multi-region · multi-tenant</span>
+    </div>
+    <div class="canvas-svg">
+      <svg viewBox="0 0 720 880" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Sans KR, system-ui, sans-serif">
+        <defs>
+          <marker id="arr2025" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#4d556c"/>
+          </marker>
+        </defs>
+
+        <text x="20" y="28" font-size="14" font-weight="600" fill="#1a1f2e">2024-2025 · Hierarchical Federation</text>
+        <text x="700" y="28" text-anchor="end" font-size="10" fill="#80869e" font-family="JetBrains Mono, monospace">v2.0 + GenAI + KubeRay</text>
+
+        <!-- L5: DEVELOPER -->
+        <rect x="20" y="50" width="680" height="90" fill="#f8f8fa" stroke="#d9dbe2" rx="4"/>
+        <text x="32" y="70" font-size="10" font-weight="600" fill="#8a4424" letter-spacing="2">L5 · DEVELOPER INTERFACE</text>
+        <rect x="50" y="88" width="200" height="42" fill="#1a1f2e" rx="3"/>
+        <text x="150" y="106" text-anchor="middle" font-size="11" fill="#fff" font-weight="600">MA Studio</text>
+        <text x="150" y="121" text-anchor="middle" font-size="9" fill="#fff" opacity="0.75">unified web UI · version control</text>
+        <rect x="260" y="88" width="200" height="42" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="360" y="106" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">Canvas</text>
+        <text x="360" y="121" text-anchor="middle" font-size="9" fill="#80869e">ML as code · monorepo · CI/CD</text>
+        <rect x="470" y="88" width="200" height="42" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="570" y="106" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">Prompt Toolkit</text>
+        <text x="570" y="121" text-anchor="middle" font-size="9" fill="#80869e">prompt as code · versioned</text>
+
+        <line x1="360" y1="145" x2="360" y2="170" stroke="#4d556c" stroke-width="1.5" marker-end="url(#arr2025)"/>
+
+        <!-- L4: GENAI PLANE -->
+        <rect x="20" y="175" width="680" height="105" fill="#f5e7da" stroke="#b85c2e" rx="4"/>
+        <text x="32" y="195" font-size="10" font-weight="600" fill="#8a4424" letter-spacing="2">L4 · GENAI PLANE  (2024 추가)</text>
+        <rect x="50" y="210" width="200" height="60" fill="#b85c2e" rx="3"/>
+        <text x="150" y="230" text-anchor="middle" font-size="11" fill="#fff" font-weight="600">Gen AI Gateway</text>
+        <text x="150" y="247" text-anchor="middle" font-size="9" fill="#fff" opacity="0.85">4 guardrails:</text>
+        <text x="150" y="260" text-anchor="middle" font-size="9" fill="#fff" opacity="0.85">log · cost · safety · PII</text>
+        <rect x="260" y="210" width="200" height="60" fill="#fff" stroke="#b85c2e" stroke-width="1.5" rx="3"/>
+        <text x="360" y="232" text-anchor="middle" font-size="11" fill="#8a4424" font-weight="600">Model Catalog</text>
+        <text x="360" y="248" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">in-house + 3P LLMs</text>
+        <text x="360" y="262" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">fine-tuned · OCI · GCP · OpenAI</text>
+        <rect x="470" y="210" width="200" height="60" fill="#fff" stroke="#b85c2e" stroke-width="1.5" rx="3"/>
+        <text x="570" y="232" text-anchor="middle" font-size="11" fill="#8a4424" font-weight="600">LLM Eval Framework</text>
+        <text x="570" y="248" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">in-house vs 3P · rubric</text>
+        <text x="570" y="262" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">require / optimize split</text>
+
+        <line x1="360" y1="285" x2="360" y2="310" stroke="#4d556c" stroke-width="1.5" marker-end="url(#arr2025)"/>
+
+        <!-- L3: FEDERATION -->
+        <rect x="20" y="315" width="680" height="135" fill="#f8f8fa" stroke="#d9dbe2" rx="4"/>
+        <text x="32" y="335" font-size="10" font-weight="600" fill="#8a4424" letter-spacing="2">L3 · FEDERATION / CONTROL PLANE</text>
+        <rect x="50" y="350" width="620" height="85" fill="#1a1f2e" rx="3"/>
+        <text x="360" y="372" text-anchor="middle" font-size="13" fill="#fff" font-weight="600">MAJC · Michelangelo Job Controller</text>
+        <text x="360" y="386" text-anchor="middle" font-size="9" fill="#fff" opacity="0.7">single submit interface · K8s cluster abstraction · uOwn org hierarchy</text>
+        <rect x="70" y="398" width="140" height="26" fill="#ffffff" rx="2"/>
+        <text x="140" y="415" text-anchor="middle" font-size="9" fill="#1a1f2e" font-weight="600">Load Aware</text>
+        <rect x="220" y="398" width="140" height="26" fill="#ffffff" rx="2"/>
+        <text x="290" y="415" text-anchor="middle" font-size="9" fill="#1a1f2e" font-weight="600">Bin-Pack</text>
+        <rect x="370" y="398" width="140" height="26" fill="#ffffff" rx="2"/>
+        <text x="440" y="415" text-anchor="middle" font-size="9" fill="#1a1f2e" font-weight="600">Compute Affinity</text>
+        <rect x="520" y="398" width="140" height="26" fill="#ffffff" rx="2"/>
+        <text x="590" y="415" text-anchor="middle" font-size="9" fill="#1a1f2e" font-weight="600">Data Affinity</text>
+
+        <line x1="360" y1="455" x2="360" y2="480" stroke="#4d556c" stroke-width="1.5" marker-end="url(#arr2025)"/>
+
+        <!-- L2: ORCHESTRATION -->
+        <rect x="20" y="485" width="680" height="115" fill="#f8f8fa" stroke="#d9dbe2" rx="4"/>
+        <text x="32" y="505" font-size="10" font-weight="600" fill="#8a4424" letter-spacing="2">L2 · ORCHESTRATION  (2025 Ray on K8s 전환)</text>
+        <rect x="50" y="520" width="200" height="65" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="150" y="540" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">KubeRay Operator</text>
+        <text x="150" y="555" text-anchor="middle" font-size="9" fill="#80869e">RayCluster CRD</text>
+        <text x="150" y="568" text-anchor="middle" font-size="9" fill="#80869e">cluster lifecycle</text>
+        <text x="150" y="580" text-anchor="middle" font-size="9" fill="#80869e">scale on demand</text>
+        <rect x="260" y="520" width="200" height="65" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="360" y="540" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">Ray Head + Worker</text>
+        <text x="360" y="555" text-anchor="middle" font-size="9" fill="#80869e">distributed training</text>
+        <text x="360" y="568" text-anchor="middle" font-size="9" fill="#80869e">Horovod · DeepSpeed</text>
+        <text x="360" y="580" text-anchor="middle" font-size="9" fill="#80869e">1.5~4× faster</text>
+        <rect x="470" y="520" width="200" height="65" fill="#f5e7da" stroke="#b85c2e" stroke-width="1.5" rx="3"/>
+        <text x="570" y="540" text-anchor="middle" font-size="11" fill="#8a4424" font-weight="600">Triton Server</text>
+        <text x="570" y="555" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">inference serving</text>
+        <text x="570" y="568" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">dynamic batching</text>
+        <text x="570" y="580" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">tensor core (FP16)</text>
+
+        <line x1="360" y1="605" x2="360" y2="630" stroke="#4d556c" stroke-width="1.5" marker-end="url(#arr2025)"/>
+
+        <!-- L1: HARDWARE -->
+        <rect x="20" y="635" width="680" height="100" fill="#f8f8fa" stroke="#d9dbe2" rx="4"/>
+        <text x="32" y="655" font-size="10" font-weight="600" fill="#8a4424" letter-spacing="2">L1 · HARDWARE · multi-region · 5K+ GPUs · 17 SKUs</text>
+        <rect x="50" y="670" width="190" height="55" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="145" y="690" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">K8s · us-west</text>
+        <text x="145" y="705" text-anchor="middle" font-size="9" fill="#80869e">on-prem A100</text>
+        <text x="145" y="718" text-anchor="middle" font-size="9" fill="#80869e">primary training</text>
+        <rect x="265" y="670" width="190" height="55" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="360" y="690" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">K8s · us-east</text>
+        <text x="360" y="705" text-anchor="middle" font-size="9" fill="#80869e">on-prem H100</text>
+        <text x="360" y="718" text-anchor="middle" font-size="9" fill="#80869e">DR + LLM training</text>
+        <rect x="480" y="670" width="190" height="55" fill="#fff" stroke="#1a1f2e" stroke-width="1.5" rx="3"/>
+        <text x="575" y="690" text-anchor="middle" font-size="11" fill="#1a1f2e" font-weight="500">K8s · cloud</text>
+        <text x="575" y="705" text-anchor="middle" font-size="9" fill="#80869e">GCP H100 · OCI</text>
+        <text x="575" y="718" text-anchor="middle" font-size="9" fill="#80869e">burst capacity</text>
+
+        <!-- DATA · PALETTE META STORE (separate band) -->
+        <rect x="20" y="750" width="680" height="100" fill="#f5e7da" stroke="#b85c2e" stroke-width="1.5" rx="4"/>
+        <text x="32" y="770" font-size="10" font-weight="600" fill="#8a4424" letter-spacing="2">DATA · PALETTE META STORE  (2024 재구축)</text>
+        <rect x="50" y="785" width="200" height="55" fill="#fff" stroke="#b85c2e" stroke-width="1" rx="3"/>
+        <text x="150" y="805" text-anchor="middle" font-size="10" fill="#8a4424" font-weight="600">Object Model</text>
+        <text x="150" y="818" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">FeatureGroup · Feature</text>
+        <text x="150" y="830" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">Dataset · Storage</text>
+        <rect x="260" y="785" width="200" height="55" fill="#fff" stroke="#b85c2e" stroke-width="1" rx="3"/>
+        <text x="360" y="805" text-anchor="middle" font-size="10" fill="#8a4424" font-weight="600">K8s Controller Sync</text>
+        <text x="360" y="818" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">ObjectConfig cache</text>
+        <text x="360" y="830" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">FeatureSpec repo</text>
+        <rect x="470" y="785" width="200" height="55" fill="#fff" stroke="#b85c2e" stroke-width="1" rx="3"/>
+        <text x="570" y="805" text-anchor="middle" font-size="10" fill="#8a4424" font-weight="600">20K+ features</text>
+        <text x="570" y="818" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">HDFS (offline) + Cassandra (online)</text>
+        <text x="570" y="830" text-anchor="middle" font-size="9" fill="#8a4424" opacity="0.75">training-serving consistent</text>
+      </svg>
+    </div>
+    <div class="legend">
+      <p><b>특징.</b> 5-layer 계층 분리 — Developer / GenAI / Federation / Orchestration / Hardware + 별도 Data layer (Palette Meta Store). <b>L4 GenAI Plane</b>은 2024 신규 — predictive와 같은 platform 위. <b>L3 MAJC</b>가 multi-region K8s 클러스터들을 abstract (4 policies). <b>L2 Orchestration</b>은 2025에 <code>Mesos/Peloton → KubeRay</code> 전환 (학습 1.5-4× 빠름). 각 layer가 다음 layer의 복잡도를 감추는 <em>"layered platform"</em> 디자인 원리의 적용.</p>
+    </div>
+  </div>
+
+  <!-- Comparison table -->
+  <div class="arch-compare">
+    <table>
+      <thead>
+        <tr><th>측면</th><th>2017 (v1)</th><th>2024-2025 (v2.0 + GenAI + Ray)</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="aspect">전체 구조</td>
+          <td>단일 monolithic stack (data → train → serve → monitor)</td>
+          <td><b>5-layer hierarchical</b> — Developer / GenAI / Federation / Orchestration / Hardware</td>
+        </tr>
+        <tr>
+          <td class="aspect">개발자 인터페이스</td>
+          <td>단일 Web UI</td>
+          <td><b>MA Studio</b> (통합 UI) + <b>Canvas</b> (ML as code) + <b>Prompt Toolkit</b></td>
+        </tr>
+        <tr>
+          <td class="aspect">컴퓨트</td>
+          <td>Spark + 단일 cluster (implicit)</td>
+          <td><b>KubeRay</b> · Ray Head/Worker · 다중 region K8s 클러스터</td>
+        </tr>
+        <tr>
+          <td class="aspect">스케줄링</td>
+          <td>Mesos + Peloton (sketched)</td>
+          <td><b>MAJC</b> federation · 4 policies (load · bin-pack · compute · data affinity) · uOwn 통합</td>
+        </tr>
+        <tr>
+          <td class="aspect">하드웨어</td>
+          <td>generic · 단일 region 가정</td>
+          <td>multi-region <b>on-prem A100 + GCP H100 + OCI</b> · 5K+ GPUs · 17 SKUs</td>
+        </tr>
+        <tr>
+          <td class="aspect">서빙</td>
+          <td>3 modes (offline · online RPC · library)</td>
+          <td><b>Triton</b> dynamic batching + tensor core + elastic GPU allocation</td>
+        </tr>
+        <tr>
+          <td class="aspect">Feature Store</td>
+          <td>Palette · 10K+ features · protobuf 모델</td>
+          <td><b>Palette Meta Store</b> 재구축 · 20K+ features · 객체 모델 · 온보딩 95%↓</td>
+        </tr>
+        <tr>
+          <td class="aspect">Generative AI</td>
+          <td>없음</td>
+          <td><b>L4 GenAI Plane</b> 신규 — Gen AI Gateway (4 guardrails) · Prompt Toolkit · LLM Eval</td>
+        </tr>
+        <tr>
+          <td class="aspect">Multi-tenancy</td>
+          <td>전사 공유 (governance 없음)</td>
+          <td><b>uOwn 조직 계층</b> — project → org → shared pool · MES tiering · cost attribution</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="margin-note">
+    가장 중요한 구조적 변화 — <strong>"단일 stack에서 layered control plane으로의 전환"</strong>. 2017 아키텍처는 한 시스템이 모든 책임을 짊. 2024-2025 아키텍처는 각 layer가 단일 책임 (Developer 인터페이스 · GenAI 게이트웨이 · Federation · Orchestration · Hardware). <em>"각 layer가 다음 layer의 복잡도를 감춘다"</em>는 platform design 원리의 교과서적 적용 — 위 layer는 아래 layer의 추상화된 API만 봄.
+  </p>
+
+</section>
+
+
+<!-- §5 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">05</div>
     <div class="section-titles">
       <div class="section-kicker">Reference Implementation</div>
       <h2 class="section-title">실전 코드</h2>

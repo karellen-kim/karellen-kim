@@ -64,12 +64,24 @@
 
 ### 5. 다이어그램 작성 규칙
 
-- 이미지·SVG 라이브러리 사용 금지. 모든 다이어그램은 **순수 HTML + CSS Grid/Flex**로
+**§02 그림으로 보는 구조 — 간단한 CSS 다이어그램 (default)**
+
+- 이미지·외부 SVG 라이브러리 사용 금지. **순수 HTML + CSS Grid/Flex**로
 - 캔버스: `min-height: 260px`, `overflow: hidden`, 좌상단에 `data-label`로 패턴 라벨
 - 박스: `min-width: 0` + `max-width: 100%` + `flex-direction: column` 기본 — 그리드 셀 안에서 안전하게 줄어들도록
 - 그리드 컬럼 폭에는 `minmax(0, 1fr)` 사용 — 단순 `1fr`은 오버플로우 일으킴
 - 인덱스 박스 (라우터·허브 등)는 `display: flex` 명시 (inline-flex는 width 적용 안 됨)
 - 다이어그램 옆 텍스트: 본문 설명 + `.use-when` 박스 (좌측 액센트 보더, "언제 쓰나" 라벨)
+- **§02는 의도적으로 간단하게** — 한 다이어그램이 한 개념만 보여줘야 함. 디테일 누적하지 말 것.
+
+**상세 아키텍처는 SVG 별도 섹션으로**
+
+- 시스템 전체 토폴로지, 다층 컨트롤 플레인, 진화 비교 같은 <strong>디테일이 필요한 도해</strong>는 §02에 우겨넣지 말고 별도 섹션으로 분리하라
+- 이 경우 <strong>inline SVG 사용</strong> (CSS 박스 layout으로는 디테일 표현 한계)
+- SVG 컴포넌트 스타일: `.svg-arch` 컨테이너 안에 `<svg viewBox="0 0 W H">` 인라인. 색은 디자인 시스템 hex 값 매핑 (ink `#1a1f2e`, accent `#b85c2e`, accent-wash `#f5e7da`, rule `#d9dbe2` 등). `font-family="IBM Plex Sans KR"` 지정.
+- 화살표는 `<marker>` defs로 정의. layer 단위로 `<rect>` 그룹화. label은 `<text>` 좌상단에 `letter-spacing="2"` uppercase로
+- 섹션 제목은 "아키텍처 진화" "전체 아키텍처" 같이 자연어로 — "(SVG)" 같은 기술적 suffix 붙이지 말 것
+- 각 SVG 카드: `.head` (year/title/tag) + `.canvas-svg` (SVG) + `.legend` (한 문단 설명) 구조. 필요하면 `.arch-compare` 표로 변화 요약
 
 ### 6. 코드 카드 규칙
 

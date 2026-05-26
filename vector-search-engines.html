@@ -139,6 +139,141 @@
   .d-prem .lvl .ttl small { display: block; color: var(--ink-faint); font-size: 0.7rem; font-weight: 400; margin-top: 0.15rem; line-height: 1.4; }
   .d-prem .lvl .when { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-soft); letter-spacing: 0.04em; white-space: nowrap; }
 
+  /* GPU fit comparison */
+  .d-gpu-fit { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; width: 100%; min-width: 0; }
+  .d-gpu-fit .col { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+  .d-gpu-fit .col .ttl { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; padding-bottom: 0.45rem; border-bottom: 1px solid var(--rule); margin-bottom: 0.1rem; }
+  .d-gpu-fit .col.win .ttl { color: var(--accent-deep); }
+  .d-gpu-fit .col.lose .ttl { color: var(--ink-faint); }
+  .d-gpu-fit .col .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    align-items: center;
+    font-size: 0.76rem;
+  }
+  .d-gpu-fit .col.win .row { border-color: var(--accent); background: var(--accent-wash); }
+  .d-gpu-fit .col .row .lbl { color: var(--ink); font-weight: 500; min-width: 0; }
+  .d-gpu-fit .col .row .lbl small { display: block; color: var(--ink-faint); font-size: 0.65rem; font-weight: 400; margin-top: 0.15rem; line-height: 1.35; }
+  .d-gpu-fit .col.win .row .lbl { color: var(--accent-deep); }
+  .d-gpu-fit .col.win .row .lbl small { color: var(--accent-deep); opacity: 0.75; }
+  .d-gpu-fit .col .row .perf { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-soft); letter-spacing: 0.04em; white-space: nowrap; }
+  .d-gpu-fit .col.win .row .perf { color: var(--accent-deep); font-weight: 600; }
+
+  /* GPU 3 tech rows */
+  .d-gpu-tech { display: grid; grid-template-columns: 1fr; gap: 0.45rem; width: 100%; min-width: 0; }
+  .d-gpu-tech .tech {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 0.85rem 0.95rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    align-items: baseline;
+  }
+  .d-gpu-tech .tech.hero { border-color: var(--accent); background: var(--accent-wash); }
+  .d-gpu-tech .tech .nm { font-size: 0.95rem; font-weight: 600; color: var(--ink); letter-spacing: -0.012em; }
+  .d-gpu-tech .tech.hero .nm { color: var(--accent-deep); }
+  .d-gpu-tech .tech .nm small { display: block; font-family: var(--mono); font-size: 0.62rem; color: var(--ink-faint); letter-spacing: 0.06em; margin-top: 0.15rem; font-weight: 400; }
+  .d-gpu-tech .tech.hero .nm small { color: var(--accent-deep); opacity: 0.75; }
+  .d-gpu-tech .tech .body { font-size: 0.82rem; color: var(--ink-soft); line-height: 1.5; }
+  .d-gpu-tech .tech .body b { color: var(--ink); font-weight: 600; }
+  .d-gpu-tech .tech.hero .body { color: var(--ink); }
+  .d-gpu-tech .tech .body code { font-family: var(--mono); font-size: 0.76rem; padding: 0.04rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .d-gpu-tech .tech.hero .body code { background: var(--paper); border-color: var(--rule); }
+
+  /* GPU tier */
+  .d-gpu-arch { display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; min-width: 0; }
+  .d-gpu-arch .gw { padding: 0.8rem 1rem; background: var(--ink); color: var(--paper); text-align: center; font-weight: 600; font-size: 0.88rem; }
+  .d-gpu-arch .gw small { display: block; font-size: 0.68rem; opacity: 0.7; margin-top: 0.18rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .d-gpu-arch .tiers { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; }
+  .d-gpu-arch .tier { padding: 0.75rem 0.7rem; text-align: center; font-size: 0.85rem; font-weight: 600; }
+  .d-gpu-arch .tier.hot { border: 1.5px solid var(--accent); background: var(--accent-wash); color: var(--accent-deep); }
+  .d-gpu-arch .tier.cold { border: 1.5px solid var(--ink); background: var(--paper); color: var(--ink); }
+  .d-gpu-arch .tier small { display: block; font-size: 0.68rem; color: var(--ink-soft); margin-top: 0.25rem; font-weight: 400; letter-spacing: 0.04em; line-height: 1.5; }
+  .d-gpu-arch .tier.hot small { color: var(--accent-deep); opacity: 0.85; }
+  .d-gpu-arch .storage { padding: 0.65rem 0.85rem; background: var(--paper-deep); border: 1px dashed var(--rule); text-align: center; font-size: 0.74rem; color: var(--ink-soft); margin-top: 0.25rem; }
+  .d-gpu-arch .arr { justify-self: center; width: 1.5px; height: 0.55rem; background: var(--ink-soft); position: relative; }
+  .d-gpu-arch .arr::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
+
+  /* Memory budget table */
+  .d-mem-budget { width: 100%; min-width: 0; overflow-x: auto; }
+  .d-mem-budget table { width: 100%; border-collapse: collapse; font-size: 0.74rem; }
+  .d-mem-budget th, .d-mem-budget td { padding: 0.5rem 0.55rem; border: 1px solid var(--rule); text-align: center; }
+  .d-mem-budget th { background: var(--ink); color: var(--paper); font-weight: 600; font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .d-mem-budget td.algo { background: var(--paper-deep); font-weight: 600; color: var(--ink); text-align: left; }
+  .d-mem-budget td.formula { font-family: var(--mono); font-size: 0.7rem; color: var(--accent-deep); }
+  .d-mem-budget td.size { font-family: var(--mono); }
+  .d-mem-budget td.fit { color: var(--accent-deep); font-weight: 600; }
+  .d-mem-budget td.toobig { color: var(--ink-faint); }
+
+  /* FAISS guideline ladder */
+  .d-faiss-guide { display: grid; grid-template-columns: 1fr; gap: 0.4rem; width: 100%; min-width: 0; }
+  .d-faiss-guide .step {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    gap: 0.7rem;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    align-items: baseline;
+  }
+  .d-faiss-guide .step.highlight { border-color: var(--accent); background: var(--accent-wash); }
+  .d-faiss-guide .step .range { font-family: var(--mono); font-size: 0.74rem; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; }
+  .d-faiss-guide .step.highlight .range { color: var(--accent-deep); }
+  .d-faiss-guide .step .body { font-size: 0.78rem; color: var(--ink-soft); line-height: 1.5; }
+  .d-faiss-guide .step .body code { font-family: var(--mono); font-size: 0.7rem; padding: 0.04rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .d-faiss-guide .step.highlight .body code { background: var(--paper); }
+  .d-faiss-guide .step .body b { color: var(--ink); font-weight: 600; }
+
+  /* Backpressure / control loop */
+  .d-backp { display: grid; grid-template-columns: 1fr; gap: 0.4rem; width: 100%; min-width: 0; }
+  .d-backp .step {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    align-items: baseline;
+  }
+  .d-backp .step .nr { font-family: var(--mono); color: var(--accent); font-weight: 600; font-size: 0.72rem; letter-spacing: 0.04em; }
+  .d-backp .step .label { font-size: 0.82rem; color: var(--ink); font-weight: 500; }
+  .d-backp .step .label small { display: block; color: var(--ink-faint); font-size: 0.7rem; font-weight: 400; margin-top: 0.18rem; line-height: 1.45; }
+
+  /* Shadow traffic */
+  .d-shadow { display: grid; grid-template-columns: 1fr; gap: 0.45rem; width: 100%; min-width: 0; }
+  .d-shadow .src {
+    padding: 0.7rem 0.9rem;
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .d-shadow .src small { display: block; color: var(--ink-faint); font-size: 0.7rem; margin-top: 0.18rem; font-weight: 400; letter-spacing: 0.04em; }
+  .d-shadow .split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; }
+  .d-shadow .split .pane { padding: 0.75rem 0.7rem; text-align: center; font-size: 0.82rem; font-weight: 600; }
+  .d-shadow .split .blue { background: var(--paper); border: 1.5px solid var(--ink); color: var(--ink); }
+  .d-shadow .split .green { background: var(--accent-wash); border: 1.5px solid var(--accent); color: var(--accent-deep); }
+  .d-shadow .split .pane small { display: block; font-size: 0.66rem; margin-top: 0.25rem; font-weight: 400; opacity: 0.85; line-height: 1.45; letter-spacing: 0.04em; }
+  .d-shadow .compare {
+    padding: 0.7rem 0.9rem;
+    border: 1px dashed var(--accent);
+    background: var(--paper);
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+  .d-shadow .compare small { display: block; font-size: 0.68rem; color: var(--ink-soft); margin-top: 0.2rem; font-weight: 400; }
+  .d-shadow .arrow { justify-self: center; width: 1.5px; height: 0.55rem; background: var(--ink-soft); position: relative; }
+  .d-shadow .arrow::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
+
   /* Decision */
   .decision { margin-top: clamp(3rem, 6vw, 5rem); border-top: 2px solid var(--ink); padding-top: 2.5rem; }
   .decision h3 { font-size: clamp(1.35rem, 2.4vw, 1.75rem); font-weight: 600; letter-spacing: -0.025em; margin-bottom: 1.4rem; }
@@ -299,6 +434,8 @@
         <li><a href="#d-prem" data-close><span>06</span>Pre-mortem</a></li>
       </ul>
     </li>
+    <li><a href="#gpu" data-close>GPU 최적화</a></li>
+    <li><a href="#scale" data-close>대용량 처리 체크포인트</a></li>
     <li><a href="#code" data-close>실전 코드</a></li>
   </ol>
 
@@ -567,7 +704,8 @@
             <tr><td class="name">Qdrant</td><td>HNSW</td><td class="par">△</td><td class="yes">✓✓</td><td class="yes">✓</td><td class="yes">✓</td><td>Apache 2</td><td>self/managed</td></tr>
             <tr><td class="name">Weaviate</td><td>HNSW +module</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="par">○</td><td>BSD</td><td>self/managed</td></tr>
             <tr><td class="name">Vespa</td><td>HNSW</td><td class="yes">✓✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td>Apache 2</td><td>self/Yahoo</td></tr>
-            <tr><td class="name">OpenSearch / ES</td><td>HNSW Lucene</td><td class="yes">✓✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="par">△ NRT</td><td>SSPL/Apache</td><td>self/AWS</td></tr>
+            <tr><td class="name">OpenSearch</td><td>HNSW + IVF (FAISS)</td><td class="yes">✓✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="par">△ NRT</td><td>Apache 2</td><td>self/AWS</td></tr>
+            <tr><td class="name">Elasticsearch</td><td>HNSW only (Lucene)</td><td class="yes">✓✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="par">△ NRT</td><td>ELv2/SSPL</td><td>self/Elastic</td></tr>
             <tr><td class="name">pgvector</td><td>HNSW/IVF</td><td class="par">△</td><td class="yes">✓</td><td class="par">△</td><td class="yes">✓ ACID</td><td>PG</td><td>DB 통합</td></tr>
             <tr><td class="name">LanceDB</td><td>IVF-PQ</td><td class="par">○</td><td class="yes">✓</td><td class="par">△</td><td class="yes">✓</td><td>Apache 2</td><td>embed/cloud</td></tr>
             <tr><td class="name">ChromaDB</td><td>HNSW</td><td class="no">×</td><td class="yes">✓</td><td class="par">△</td><td class="par">○</td><td>Apache 2</td><td>RAG-focused</td></tr>
@@ -814,10 +952,673 @@
 </section>
 
 
-<!-- §3 실전 코드 -->
-<section class="section" id="code">
+<!-- §3 GPU 최적화 -->
+<section class="section" id="gpu">
   <div class="section-head">
     <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">GPU Acceleration</div>
+      <h2 class="section-title">GPU 최적화</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    GPU 최적화는 "더 빠른 하드웨어" 문제가 아니라 <em>알고리즘 선택 자체를 바꾸는 일</em>이다.
+    CPU에서 좋은 HNSW가 GPU에서는 비효율, GPU-native CAGRA는 CPU에서 의미 없음.
+    어떤 작업에 GPU를 쓰느냐부터가 결정.
+  </p>
+
+  <!-- 1. 적합도 -->
+  <div class="diagram-block" id="gpu-fit">
+    <div class="db-text">
+      <h4><span class="num">01 · 적합도</span>GPU가 빠른 곳 vs 해로운 곳</h4>
+      <p>
+        벡터 검색의 모든 작업이 GPU에서 빠른 건 아니다.
+        <strong>brute-force와 batched matrix 연산은 GPU의 동네</strong>,
+        <strong>branchy graph traversal과 단일 쿼리는 CPU의 동네</strong>.
+      </p>
+      <p>
+        결정 규칙: 작업이 <em>"많은 데이터에 동일한 연산을 동시 적용"</em>으로 환원되면 GPU,
+        <em>"분기·포인터 추적이 많고 작은 작업 단위"</em>면 CPU.
+      </p>
+      <div class="use-when">
+        <strong>가장 큰 함정</strong>
+        <p>PCIe transfer ~50μs + kernel launch ~10μs. 단일 쿼리에서는 이 오버헤드가 계산보다 크다 — GPU가 오히려 더 느림.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="GPU fit · win vs lose">
+      <div class="d-gpu-fit">
+        <div class="col win">
+          <div class="ttl">압도적으로 빠름</div>
+          <div class="row">
+            <div class="lbl">Brute-force k-NN<small>순수 GEMM, HBM 대역폭</small></div>
+            <span class="perf">10~100×</span>
+          </div>
+          <div class="row">
+            <div class="lbl">인덱스 빌드<small>k-means · PQ codebook 학습</small></div>
+            <span class="perf">5~20×</span>
+          </div>
+          <div class="row">
+            <div class="lbl">배치 쿼리 (&gt;100)<small>query × corpus 행렬곱</small></div>
+            <span class="perf">10~50×</span>
+          </div>
+          <div class="row">
+            <div class="lbl">큰 후보 재랭킹<small>N=10K 정확 거리 계산</small></div>
+            <span class="perf">5~10×</span>
+          </div>
+        </div>
+        <div class="col lose">
+          <div class="ttl">해롭거나 무의미</div>
+          <div class="row">
+            <div class="lbl">HNSW graph traversal<small>branchy + irregular access</small></div>
+            <span class="perf">CPU 우위</span>
+          </div>
+          <div class="row">
+            <div class="lbl">단일 query / low QPS<small>PCIe + launch 오버헤드</small></div>
+            <span class="perf">CPU 우위</span>
+          </div>
+          <div class="row">
+            <div class="lbl">작은 코퍼스 (&lt;1M)<small>CPU SIMD로 충분</small></div>
+            <span class="perf">≈ 동등</span>
+          </div>
+          <div class="row">
+            <div class="lbl">빈번한 인덱스 업데이트<small>호스트↔디바이스 이동 비용</small></div>
+            <span class="perf">CPU 우위</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 핵심 기술 -->
+  <div class="diagram-block" id="gpu-tech">
+    <div class="db-text">
+      <h4><span class="num">02 · 핵심 기술</span>CAGRA · FAISS GPU · Tensor core</h4>
+      <p>
+        GPU 벡터 검색의 세 기둥. <strong>알고리즘(CAGRA)</strong>, <strong>라이브러리(FAISS GPU)</strong>,
+        <strong>하드웨어 가속(Tensor core + 양자화)</strong>의 조합.
+      </p>
+      <p>
+        도입 순서 권장: FAISS GPU로 기존 IVF-PQ를 GPU로 올려 검증 → CAGRA로 알고리즘 자체 교체 → Tensor core mixed precision으로 가속.
+      </p>
+      <div class="use-when">
+        <strong>가장 큰 효과</strong>
+        <p>CAGRA + INT8 양자화 + Tensor core 조합 시 single H100이 CPU 32 cores를 능가하는 경우가 흔하다. 운영 단순화도 같이 따라옴.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="GPU tech · 3 pillars">
+      <div class="d-gpu-tech">
+        <div class="tech hero">
+          <div class="nm">CAGRA<small>cuVS · 2023~</small></div>
+          <div class="body">
+            <b>GPU-native graph ANN</b>. HNSW의 layer 구조 제거 + reverse-cuthill-mckee 정렬로 메모리 coalescing.
+            Build <b>10×</b>, query <b>10~100×</b> 빠름 (vs CPU HNSW). Milvus 2.4+, Lucene 10+ 통합.
+            약점 — 단일 쿼리는 여전히 CPU HNSW가 더 낮은 latency.
+          </div>
+        </div>
+        <div class="tech">
+          <div class="nm">FAISS GPU<small>검증된 옵션</small></div>
+          <div class="body">
+            <code>IndexFlatL2</code> → <code>GpuIndexFlatL2</code>, <code>IndexIVFPQ</code> → <code>GpuIndexIVFPQ</code> 단순 교체.
+            Multi-GPU sharding (<code>index_cpu_to_gpu_multiple</code>) 지원. 학습은 <b>5~20×</b> 빠름.
+            마이그레이션 비용 낮음 — 가장 안전한 첫 도입.
+          </div>
+        </div>
+        <div class="tech">
+          <div class="nm">Tensor core<small>+ 양자화</small></div>
+          <div class="body">
+            H100/A100의 tensor core는 FP16/BF16/INT8 GEMM이 FP32보다 <b>4~16×</b> 빠름.
+            <b>Mixed precision</b> (FP16 곱 + FP32 누적)으로 정확도 보존. INT8 PQ로 메모리 <b>4×</b> 절감.
+            FAISS <code>useFloat16=True</code>, cuVS INT8 metric_type.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Hot + Cold tier -->
+  <div class="diagram-block" id="gpu-arch">
+    <div class="db-text">
+      <h4><span class="num">03 · 아키텍처</span>Hot GPU + Cold CPU 계층</h4>
+      <p>
+        Billion-scale에 단일 GPU HBM은 부족 (H100 80GB / 141GB).
+        <strong>Hot 코퍼스만 GPU에 두고, cold/long-tail은 CPU HNSW로 분리</strong>하는 게 비용 효율의 80%.
+      </p>
+      <p>
+        Hot tier — high-QPS endpoint + 큰 배치 쿼리 담당.
+        Cold tier — catalog 전체 보유, low-QPS 또는 fallback 쿼리 담당.
+        둘 다 같은 SSD/object store에서 인덱스 매개체 공유.
+      </p>
+      <div class="use-when">
+        <strong>비용 효과</strong>
+        <p>전체를 GPU에 두면 H100 8개+. 핵심 20%만 GPU + 나머지 CPU면 H100 2개 + CPU node로 90% 성능. TCO 절감 폭이 큼.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="GPU+CPU · tiered serving">
+      <div class="d-gpu-arch">
+        <div class="gw">Query Gateway<small>routing by QPS · batch size · freshness</small></div>
+        <div class="arr"></div>
+        <div class="tiers">
+          <div class="tier hot">GPU tier
+            <small>CAGRA / FAISS GPU IVF-PQ<br>hot 코퍼스 (최근·인기)<br>high-QPS · 큰 배치</small>
+          </div>
+          <div class="tier cold">CPU tier
+            <small>HNSW (전체)<br>cold/long-tail<br>low-QPS · 일반 쿼리</small>
+          </div>
+        </div>
+        <div class="storage">↓ Remote Storage · 인덱스 매개체 공유 (HDFS / S3 / GCS)</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="margin-note">
+    가장 흔한 실수 세 가지 — ① <strong>단일 쿼리 latency 줄이려고 GPU 도입</strong>: PCIe transfer + kernel launch가 계산보다 큼. 배치 없으면 GPU는 의미 없음. ② <strong>HNSW를 그대로 GPU로 옮기려는 시도</strong>: graph traversal은 GPU 비효율. CAGRA로 알고리즘 자체를 바꿔야. ③ <strong>FP32 그대로 사용</strong>: tensor core 활용 못해 GPU 성능의 1/8만 사용. 최소 FP16, 가능하면 INT8 양자화로 끌어올려야.
+  </p>
+
+  <div class="decision">
+    <h3>그래서 — 언제 GPU를 도입할까?</h3>
+    <div class="decision-table">
+      <div>
+        <h4>도입 권장</h4>
+        <ul>
+          <li>QPS &gt; 1000 + 큰 배치 (TCO 회수 가능)</li>
+          <li>인덱스 빌드가 시간 단위로 길다</li>
+          <li>코퍼스 100M~1B + 메모리 압박 (CAGRA · GPU IVF-PQ)</li>
+          <li>관리형 GPU 옵션 가능 (Pinecone · Zilliz)</li>
+          <li>임베딩 모델 자주 갱신 → 재빌드 GPU만 사용도 OK</li>
+        </ul>
+      </div>
+      <div>
+        <h4>도입 자제</h4>
+        <ul>
+          <li>단일 쿼리 latency 결정적 — CPU HNSW가 더 빠를 수 있음</li>
+          <li>QPS &lt; 100 또는 코퍼스 &lt; 10M (TCO 안 나옴)</li>
+          <li>운영 인력의 GPU/CUDA 경험 없음</li>
+          <li>real-time insert가 매우 빈번 (PCIe 이동 비용)</li>
+          <li>예산 제약 (GPU 인스턴스 5~10× 비쌈)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Code: CAGRA -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>01 · CAGRA — GPU-native graph ANN (cuVS)</h4>
+      <span class="tag">cagra</span>
+    </div>
+<pre><span class="kw">from</span> cuvs.neighbors <span class="kw">import</span> cagra
+<span class="kw">import</span> cupy <span class="kw">as</span> cp
+
+<span class="com"># 데이터셋 — GPU 메모리 (HBM)에 직접 로드</span>
+dataset = cp.random.<span class="fn">randn</span>(<span class="str">1_000_000</span>, <span class="str">768</span>).<span class="fn">astype</span>(cp.float32)
+
+<span class="com"># Build params — HNSW와 비슷한 의미 (degree · pool size)</span>
+build_params = cagra.<span class="fn">IndexParams</span>(
+    metric=<span class="str">"sqeuclidean"</span>,
+    intermediate_graph_degree=<span class="str">128</span>,    <span class="com"># 빌드 시 큰 그래프</span>
+    graph_degree=<span class="str">64</span>,                   <span class="com"># 최종 노드당 edge (HNSW의 M에 해당)</span>
+    build_algo=<span class="str">"nn_descent"</span>,
+)
+index = cagra.<span class="fn">build</span>(build_params, dataset)   <span class="com"># GPU에서 빌드 · HNSW 대비 10x</span>
+
+<span class="com"># Search — 배치 클수록 GPU 우위 폭주</span>
+search_params = cagra.<span class="fn">SearchParams</span>(
+    itopk_size=<span class="str">64</span>,                <span class="com"># 후보 큐 (HNSW의 ef_search 유사)</span>
+    max_iterations=<span class="str">0</span>,             <span class="com"># 0 = 자동</span>
+)
+queries = cp.random.<span class="fn">randn</span>(<span class="str">10_000</span>, <span class="str">768</span>).<span class="fn">astype</span>(cp.float32)
+distances, indices = cagra.<span class="fn">search</span>(search_params, index, queries, k=<span class="str">10</span>)
+
+<span class="com"># 결과는 cupy array · CPU 이동 필요 시 .get()</span>
+top_ids = indices.<span class="fn">get</span>()           <span class="com"># numpy로 변환</span>
+</pre>
+    <div class="note"><strong>포인트.</strong> CAGRA는 <em>HNSW의 GPU 대체</em>로 설계됨. <code>graph_degree</code>가 HNSW의 <code>M</code>에 해당, <code>itopk_size</code>가 <code>ef_search</code>에 해당. cupy로 GPU에 데이터를 미리 올려두면 PCIe 비용 0. 큰 배치(&gt;1000)에서 진가 발휘.</div>
+  </article>
+
+  <!-- Code: FAISS GPU -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>02 · FAISS GPU + multi-shard</h4>
+      <span class="tag">faiss-gpu</span>
+    </div>
+<pre><span class="kw">import</span> faiss
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+dim, nlist, m, nbits = <span class="str">768</span>, <span class="str">4096</span>, <span class="str">96</span>, <span class="str">8</span>
+
+<span class="com"># CPU 인덱스 정의 — GPU로 옮기기 전 청사진</span>
+quantizer = faiss.<span class="fn">IndexFlatL2</span>(dim)
+cpu_index = faiss.<span class="fn">IndexIVFPQ</span>(quantizer, dim, nlist, m, nbits)
+
+<span class="com"># GPU 리소스 + multi-GPU sharding 설정</span>
+gpu_count = faiss.<span class="fn">get_num_gpus</span>()
+resources = [faiss.<span class="fn">StandardGpuResources</span>() <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(gpu_count)]
+co = faiss.<span class="fn">GpuMultipleClonerOptions</span>()
+co.useFloat16 = <span class="kw">True</span>          <span class="com"># 핵심: tensor core 활용 (FP16 GEMM)</span>
+co.shard = <span class="kw">True</span>               <span class="com"># 인덱스 자체를 N개 GPU로 sharding</span>
+gpu_index = faiss.<span class="fn">index_cpu_to_gpu_multiple_py</span>(
+    resources, cpu_index, co
+)
+
+<span class="com"># 학습 — GPU에서 5~20x 빠름</span>
+training = np.random.<span class="fn">randn</span>(<span class="str">100_000</span>, dim).<span class="fn">astype</span>(<span class="str">"float32"</span>)
+gpu_index.<span class="fn">train</span>(training)
+gpu_index.<span class="fn">add</span>(training)
+
+<span class="com"># nprobe 런타임 조절 — recall/latency 곡선 그리기</span>
+gpu_index.nprobe = <span class="str">16</span>
+queries = np.random.<span class="fn">randn</span>(<span class="str">10_000</span>, dim).<span class="fn">astype</span>(<span class="str">"float32"</span>)
+D, I = gpu_index.<span class="fn">search</span>(queries, k=<span class="str">10</span>)
+
+<span class="com"># 인덱스를 다시 CPU로 (snapshot 저장 등) 가능</span>
+back_to_cpu = faiss.<span class="fn">index_gpu_to_cpu</span>(gpu_index)
+faiss.<span class="fn">write_index</span>(back_to_cpu, <span class="str">"snapshot.faiss"</span>)
+</pre>
+    <div class="note"><strong>포인트.</strong> <code>useFloat16=True</code>가 핵심 — tensor core 활용 안 하면 GPU 성능의 1/8만 사용. <code>shard=True</code>로 N개 GPU에 인덱스 자동 분할. 학습 단계만 GPU 사용하고 서빙은 CPU로 옮기는 패턴도 흔함(<code>index_gpu_to_cpu</code>). FAISS GPU는 마이그레이션 비용이 가장 낮은 첫 선택.</div>
+  </article>
+
+</section>
+
+
+<!-- §4 대용량 처리 체크포인트 -->
+<section class="section" id="scale">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Scale Checkpoints</div>
+      <h2 class="section-title">대용량 처리 체크포인트</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    대용량 벡터 검색의 운영 안정성은 <em>4가지 사전 체크</em>에서 결정된다 — 메모리 budget · 인덱스 선택 · 적재 속도 제어 · 배포 검증. 한 가지라도 빠지면 트래픽 10× 증가 시 시스템이 죽는다.
+  </p>
+
+  <!-- 1. Memory budget -->
+  <div class="diagram-block" id="scale-mem">
+    <div class="db-text">
+      <h4><span class="num">01 · 메모리</span>색인 가능한가? — 사전 체크</h4>
+      <p>
+        인덱스 빌드 전 무조건 <strong>"이 데이터가 메모리에 들어가는가?"</strong>부터 계산.
+        못 들어가면 OOM kill, page swap, query latency 100× 폭주 — 운영 사고 1번 메뉴.
+      </p>
+      <p>
+        공식만 알면 30초 계산이다. 1B × 768-dim 예시로 알고리즘별 메모리 fit 비교 — H100 80GB / 141GB 기준.
+        들어가지 않는 알고리즘은 sharding 또는 양자화·DiskANN 필수.
+      </p>
+      <div class="use-when">
+        <strong>안전 계수</strong>
+        <p>계산 결과 × <code>1.3~1.5</code>로 잡아라 (코드 자체 메모리 + buffer + page cache + JVM 등). 실제 가용 RAM의 70% 이내로 들어가야 안전.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Memory budget · 1B × 768d">
+      <div class="d-mem-budget">
+        <table>
+          <thead>
+            <tr><th>알고리즘</th><th>공식</th><th>1B × 768d</th><th>H100 80GB</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="algo">HNSW Flat (M=16)</td><td class="formula">N·d·4 + N·M·8·1.5</td><td class="size">~3.2 TB</td><td class="toobig">❌ 40× over</td></tr>
+            <tr><td class="algo">IVF Flat</td><td class="formula">N·d·4 (+ nlist·d·4)</td><td class="size">~3.0 TB</td><td class="toobig">❌ 38× over</td></tr>
+            <tr><td class="algo">IVF-PQ (m=96)</td><td class="formula">N·m + nlist·overhead</td><td class="size">~96 GB</td><td class="toobig">❌ 1.2× over (✅ on 141GB)</td></tr>
+            <tr><td class="algo">IVF-PQ (m=48)</td><td class="formula">N·m</td><td class="size">~48 GB</td><td class="fit">✅ fits</td></tr>
+            <tr><td class="algo">DiskANN</td><td class="formula">~10% in RAM + SSD</td><td class="size">~300 GB RAM + 3 TB SSD</td><td class="toobig">❌ RAM 초과 (단일 H100)</td></tr>
+            <tr><td class="algo">Binary (BQ)</td><td class="formula">N·d/8</td><td class="size">~96 GB</td><td class="toobig">❌ 1.2× over (✅ on 141GB)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. FAISS guideline -->
+  <div class="diagram-block" id="scale-faiss">
+    <div class="db-text">
+      <h4><span class="num">02 · 인덱스 선택</span>FAISS guideline by size</h4>
+      <p>
+        FAISS의 공식 가이드 — 데이터 사이즈별 권장 factory string.
+        <strong>"무조건 HNSW"는 1M까지만 좋은 선택</strong>이다. 그 위로는 IVF가 들어가고, 100M+에서는 OPQ + IVF + PQ 조합이 표준.
+      </p>
+      <p>
+        Factory string은 FAISS의 강력한 DSL — 알고리즘 조합을 한 문자열로 표현.
+        예: <code>OPQ32_128,IVF1048576_HNSW32,PQ32</code> = OPQ 차원축소 → 1M centroid IVF (HNSW로 빠른 centroid 탐색) → 32-byte PQ 압축.
+      </p>
+      <div class="use-when">
+        <strong>출발점</strong>
+        <p>본인 데이터 사이즈를 찾아 그 row의 factory string을 그대로 <code>faiss.index_factory(d, ...)</code>에 넣어 baseline 잡고 거기서 튜닝하라. 처음부터 직접 조합하지 말 것.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="FAISS guideline · index by size">
+      <div class="d-faiss-guide">
+        <div class="step">
+          <span class="range">&lt; 10K</span>
+          <div class="body"><b>brute-force</b> · <code>IndexFlatL2</code> — ANN 불필요, 정확한 k-NN. 빌드 0초.</div>
+        </div>
+        <div class="step">
+          <span class="range">10K~1M</span>
+          <div class="body"><code>HNSW32</code> 또는 <code>"IVF{4·sqrt(N)},Flat"</code> — 작은 코퍼스는 HNSW 단독으로 충분.</div>
+        </div>
+        <div class="step">
+          <span class="range">1M~10M</span>
+          <div class="body"><code>"IVF65536_HNSW32,Flat"</code> — IVF centroid 탐색을 HNSW로 가속, 후보는 정확 거리.</div>
+        </div>
+        <div class="step highlight">
+          <span class="range">10M~100M</span>
+          <div class="body"><code>"IVF65536_HNSW32,PQ32"</code> — IVF + HNSW centroid + 32-byte PQ. <b>실무 sweet spot</b>.</div>
+        </div>
+        <div class="step">
+          <span class="range">100M~1B</span>
+          <div class="body"><code>"OPQ32_128,IVF1048576_HNSW32,PQ32"</code> — OPQ 차원축소 추가, IVF 1M centroid.</div>
+        </div>
+        <div class="step">
+          <span class="range">&gt; 1B</span>
+          <div class="body">위와 동일한 조합을 <b>sharded</b> 운영, 또는 <code>DiskANN</code>으로 메모리 부담 분산.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 적재 속도 제어 -->
+  <div class="diagram-block" id="scale-backp">
+    <div class="db-text">
+      <h4><span class="num">03 · 적재 제어</span>Backpressure & rate control</h4>
+      <p>
+        대용량 색인 작업은 <em>"있는 만큼 빠르게"</em>가 절대 금기.
+        write throughput이 cluster capacity를 초과하면 segment merge 폭주 → query latency 폭주 → cascading failure.
+      </p>
+      <p>
+        5단계 control loop: <strong>rate limit → queue 모니터링 → memory ceiling → batch 튜닝 → circuit breaker</strong>.
+        Pull-based 인제스천(Kafka)은 자연스럽게 backpressure가 큐에 남으니 가장 안전.
+      </p>
+      <div class="use-when">
+        <strong>가장 흔한 실수</strong>
+        <p>"한 번에 다 넣자"로 retry 폭주. 100M doc bulk 색인은 며칠에 걸쳐 점진 적재. <code>rps</code> 제한 + queue depth 알람 필수.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Ingestion · backpressure layers">
+      <div class="d-backp">
+        <div class="step">
+          <span class="nr">[1]</span>
+          <div class="label">Token bucket rate limit
+            <small>writer당 RPS cap · burst 허용량 분리 · global / per-index 양쪽</small>
+          </div>
+        </div>
+        <div class="step">
+          <span class="nr">[2]</span>
+          <div class="label">Queue depth 모니터링
+            <small>indexing queue length / pending segments 알람 · 임계치 시 producer 차단</small>
+          </div>
+        </div>
+        <div class="step">
+          <span class="nr">[3]</span>
+          <div class="label">Memory ceiling → throttle
+            <small>RSS / heap usage 80% 초과 시 자동 RPS 절반으로 · cgroup limit 활용</small>
+          </div>
+        </div>
+        <div class="step">
+          <span class="nr">[4]</span>
+          <div class="label">Bulk batch 튜닝
+            <small>refresh_interval=-1, flush_threshold ↑, merge policy 완화 (Uber 패턴)</small>
+          </div>
+        </div>
+        <div class="step">
+          <span class="nr">[5]</span>
+          <div class="label">Circuit breaker
+            <small>HNSW build OOM 직전 차단 · search latency 임계치 초과 시 ingestion 일시 정지</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Blue-Green Shadow -->
+  <div class="diagram-block" id="scale-shadow">
+    <div class="db-text">
+      <h4><span class="num">04 · 배포 검증</span>Blue-Green Shadow 트래픽</h4>
+      <p>
+        새 인덱스를 띄우자마자 production traffic을 받게 하지 마라.
+        <strong>Shadow traffic</strong>: 실제 prod query를 새 인덱스에도 mirror해서 응답은 안 하고 결과만 비교.
+      </p>
+      <p>
+        측정 — <strong>recall@10 overlap · p99 latency diff · error rate</strong>.
+        임계치 통과 시에만 5% → 25% → 50% → 100% 점진 cutover. 위반 시 auto-rollback. 모델 변경 / 인덱스 schema 변경에 모두 필수.
+      </p>
+      <div class="use-when">
+        <strong>shadow의 함정</strong>
+        <p>green 인덱스에 read load만 들어가므로 cache 동작이 prod와 다를 수 있음. 진짜 cutover 후 latency가 더 나쁠 가능성 항상 염두.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Blue-Green Shadow · validation">
+      <div class="d-shadow">
+        <div class="src">Production Query<small>real user traffic · 동일 query · 동일 분포</small></div>
+        <div class="arrow"></div>
+        <div class="split">
+          <div class="pane blue">Blue (current)
+            <small>실제 응답 반환<br>SLA 보장</small>
+          </div>
+          <div class="pane green">Green (new)
+            <small>mirror only · 응답 버림<br>recall · latency 측정</small>
+          </div>
+        </div>
+        <div class="arrow"></div>
+        <div class="compare">자동 비교 게이트<small>recall@10 overlap &gt; 0.95 · p99 diff &lt; 10% · error rate &lt; baseline</small></div>
+        <div class="arrow"></div>
+        <div class="src">Gradual Cutover<small>5% → 25% → 50% → 100% · 위반 시 auto-rollback</small></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="margin-note">
+    가장 흔한 실수 — ① <strong>메모리 사전 체크 누락</strong>: 빌드 시작 후 OOM 발견은 며칠 낭비. ② <strong>HNSW를 모든 사이즈에 사용</strong>: 100M+에서 HNSW 단독은 RAM 4TB+ 요구. FAISS guideline 따라 IVF-PQ로 분기. ③ <strong>shadow 없는 배포</strong>: 모델 교체 시 silent recall regression이 가장 많이 잡힘. shadow 없이 cutover하면 사용자가 먼저 발견한다.
+  </p>
+
+  <div class="decision">
+    <h3>배포 전 통과해야 할 4 게이트</h3>
+    <div class="decision-table">
+      <div>
+        <h4>통과 신호 (Go)</h4>
+        <ul>
+          <li>인덱스 메모리 추정 × 1.5 ≤ 가용 RAM 70%</li>
+          <li>데이터 사이즈에 맞는 FAISS factory string 선택</li>
+          <li>Backpressure 5단계 모두 구성 (rate / queue / memory / batch / breaker)</li>
+          <li>Shadow traffic recall@10 overlap &gt; 0.95</li>
+          <li>Shadow p99 diff &lt; 10%, error rate baseline 이하</li>
+          <li>Rollback 절차 문서화 + 자동 트리거 설정</li>
+        </ul>
+      </div>
+      <div>
+        <h4>차단 신호 (Stop)</h4>
+        <ul>
+          <li>메모리 계산 안 함 / 추정만 함 — 측정 필수</li>
+          <li>"HNSW로 시작하고 나중에 본다" (1B 데이터에)</li>
+          <li>Bulk 색인 RPS 제한 없음 / 모니터링 없음</li>
+          <li>새 인덱스를 prod traffic 바로 받게 함</li>
+          <li>recall regression 측정 없이 모델 변경</li>
+          <li>장애 시 rollback에 수동 작업 필요</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Code: Memory budget -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>01 · Memory budget calculator</h4>
+      <span class="tag">precheck</span>
+    </div>
+<pre><span class="kw">def</span> <span class="fn">estimate_memory</span>(n_vectors: <span class="kw">int</span>, dim: <span class="kw">int</span>, algo: <span class="kw">str</span>, **kwargs) -> <span class="kw">int</span>:
+    <span class="str">"""인덱스 빌드 전 메모리 사전 추정 (bytes).
+    추정치 × 1.5는 실제 RAM 요구의 안전 marginal."""</span>
+
+    raw = n_vectors * dim * <span class="str">4</span>          <span class="com"># FP32 raw vectors</span>
+
+    <span class="kw">if</span> algo == <span class="str">"hnsw"</span>:
+        M = kwargs.<span class="fn">get</span>(<span class="str">"M"</span>, <span class="str">16</span>)
+        graph = n_vectors * M * <span class="str">8</span> * <span class="str">1.5</span>   <span class="com"># 포인터 + 1.5x overhead</span>
+        <span class="kw">return</span> raw + <span class="fn">int</span>(graph)
+
+    <span class="kw">elif</span> algo == <span class="str">"ivf_flat"</span>:
+        nlist = kwargs.<span class="fn">get</span>(<span class="str">"nlist"</span>, <span class="fn">int</span>(n_vectors ** <span class="str">0.5</span>))
+        centroids = nlist * dim * <span class="str">4</span>
+        <span class="kw">return</span> raw + centroids
+
+    <span class="kw">elif</span> algo == <span class="str">"ivf_pq"</span>:
+        m = kwargs.<span class="fn">get</span>(<span class="str">"m"</span>, <span class="str">96</span>)            <span class="com"># sub-vector 수</span>
+        nlist = kwargs.<span class="fn">get</span>(<span class="str">"nlist"</span>, <span class="fn">int</span>(n_vectors ** <span class="str">0.5</span>))
+        codes = n_vectors * m              <span class="com"># PQ 압축 코드 (1byte/sub-vec)</span>
+        centroids = nlist * dim * <span class="str">4</span>
+        codebook = m * <span class="str">256</span> * (dim // m) * <span class="str">4</span>
+        <span class="kw">return</span> codes + centroids + codebook
+
+    <span class="kw">elif</span> algo == <span class="str">"diskann"</span>:
+        <span class="com"># PQ sketch만 메모리, full vector는 SSD</span>
+        m = kwargs.<span class="fn">get</span>(<span class="str">"m"</span>, <span class="str">96</span>)
+        <span class="kw">return</span> n_vectors * m + n_vectors * <span class="str">8</span> * <span class="str">32</span>    <span class="com"># sketch + neighbor refs</span>
+
+    <span class="kw">raise</span> <span class="fn">ValueError</span>(<span class="str">f"unknown algo: {algo}"</span>)
+
+<span class="com"># 사용 예 — 빌드 시작 전 assertion</span>
+<span class="kw">def</span> <span class="fn">precheck</span>(n: <span class="kw">int</span>, d: <span class="kw">int</span>, algo: <span class="kw">str</span>, available_ram_gb: <span class="kw">int</span>, **kw):
+    est_bytes = <span class="fn">estimate_memory</span>(n, d, algo, **kw)
+    est_gb = est_bytes / (<span class="str">1024</span>**<span class="str">3</span>)
+    safe_gb = est_gb * <span class="str">1.5</span>                 <span class="com"># marginal</span>
+
+    <span class="kw">if</span> safe_gb &gt; available_ram_gb * <span class="str">0.7</span>:
+        <span class="kw">raise</span> <span class="fn">MemoryError</span>(
+            <span class="str">f"{algo} for {n:,} × {d}d needs ~{safe_gb:.0f}GB "</span>
+            <span class="str">f"(70% of {available_ram_gb}GB = {available_ram_gb*0.7:.0f}GB)"</span>
+        )
+    <span class="fn">print</span>(<span class="str">f"OK: {algo} est {est_gb:.1f}GB (safe {safe_gb:.0f}GB) ≤ {available_ram_gb*0.7:.0f}GB"</span>)
+
+<span class="fn">precheck</span>(n=<span class="str">1_000_000_000</span>, d=<span class="str">768</span>, algo=<span class="str">"ivf_pq"</span>, m=<span class="str">48</span>, available_ram_gb=<span class="str">256</span>)
+<span class="com"># → OK: ivf_pq est 47.0GB (safe 71GB) ≤ 179GB</span>
+</pre>
+    <div class="note"><strong>포인트.</strong> 빌드 시작 코드 가장 위에 <code>precheck()</code> assertion 박아두면 며칠 낭비 방지. <em>×1.5 안전 marginal</em>은 Python 자체 메모리 + buffer + page cache. 가용 RAM의 70% 이내로 들어가야 안전 (나머지 30%는 OS · query · merge 용).</div>
+  </article>
+
+  <!-- Code: FAISS factory selector -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>02 · FAISS factory string selector</h4>
+      <span class="tag">index choice</span>
+    </div>
+<pre><span class="kw">import</span> faiss
+<span class="kw">import</span> math
+
+<span class="kw">def</span> <span class="fn">recommend_factory</span>(n: <span class="kw">int</span>, d: <span class="kw">int</span>) -> <span class="kw">str</span>:
+    <span class="str">"""FAISS 공식 guideline 기반 추천."""</span>
+
+    <span class="kw">if</span> n &lt; <span class="str">10_000</span>:
+        <span class="kw">return</span> <span class="str">"Flat"</span>                              <span class="com"># brute-force, 가장 정확</span>
+
+    <span class="kw">elif</span> n &lt; <span class="str">1_000_000</span>:
+        <span class="kw">return</span> <span class="str">"HNSW32"</span>                            <span class="com"># 단독 HNSW</span>
+
+    <span class="kw">elif</span> n &lt; <span class="str">10_000_000</span>:
+        nlist = <span class="str">65536</span>
+        <span class="kw">return</span> <span class="str">f"IVF{nlist}_HNSW32,Flat"</span>           <span class="com"># IVF + 정확</span>
+
+    <span class="kw">elif</span> n &lt; <span class="str">100_000_000</span>:
+        nlist = <span class="str">65536</span>
+        m = <span class="fn">max</span>(<span class="str">32</span>, d // <span class="str">8</span>)                    <span class="com"># d/m = 8 sweet spot</span>
+        <span class="kw">return</span> <span class="str">f"IVF{nlist}_HNSW32,PQ{m}"</span>          <span class="com"># 실무 sweet spot</span>
+
+    <span class="kw">elif</span> n &lt; <span class="str">1_000_000_000</span>:
+        nlist = <span class="str">1048576</span>                            <span class="com"># 1M centroid</span>
+        m = <span class="fn">max</span>(<span class="str">32</span>, d // <span class="str">8</span>)
+        opq_reduced = <span class="str">128</span>                          <span class="com"># OPQ 차원 축소</span>
+        <span class="kw">return</span> <span class="str">f"OPQ{m}_{opq_reduced},IVF{nlist}_HNSW32,PQ{m}"</span>
+
+    <span class="kw">else</span>:
+        <span class="com"># &gt;1B: 위 조합을 sharded · DiskANN 검토</span>
+        <span class="kw">return</span> <span class="str">"DiskANN or sharded IVF-PQ"</span>
+
+<span class="com"># 사용 예 — index_factory 한 줄로 인덱스 생성</span>
+n, d = <span class="str">50_000_000</span>, <span class="str">768</span>
+factory = <span class="fn">recommend_factory</span>(n, d)
+<span class="fn">print</span>(<span class="str">f"recommended: {factory}"</span>)
+<span class="com"># → recommended: IVF65536_HNSW32,PQ96</span>
+
+index = faiss.<span class="fn">index_factory</span>(d, factory, faiss.METRIC_L2)
+<span class="fn">print</span>(<span class="str">f"created: {type(index).__name__}"</span>)
+</pre>
+    <div class="note"><strong>포인트.</strong> <code>faiss.index_factory()</code>는 <em>factory string DSL로 알고리즘 조합을 한 줄에 표현</em>. 직접 IndexIVFPQ 객체를 조립하지 말고 factory string으로 시작하면 baseline 즉시. 여기서 시작해 nlist, m, PQ bits를 데이터 특성에 맞게 튜닝.</div>
+  </article>
+
+  <!-- Code: Shadow traffic -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>03 · Shadow traffic diff + auto rollback</h4>
+      <span class="tag">deploy</span>
+    </div>
+<pre><span class="kw">import</span> asyncio
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, field
+
+@dataclass
+<span class="kw">class</span> <span class="fn">ShadowMetrics</span>:
+    recall_overlap: <span class="kw">list</span>[<span class="kw">float</span>] = field(default_factory=<span class="kw">list</span>)
+    p99_diff_ms:    <span class="kw">list</span>[<span class="kw">float</span>] = field(default_factory=<span class="kw">list</span>)
+    error_count:    <span class="kw">int</span> = <span class="str">0</span>
+
+    <span class="kw">def</span> <span class="fn">healthy</span>(self) -> <span class="kw">bool</span>:
+        <span class="kw">if</span> <span class="fn">len</span>(self.recall_overlap) &lt; <span class="str">100</span>: <span class="kw">return</span> <span class="kw">True</span>      <span class="com"># 표본 부족</span>
+        avg_recall = <span class="fn">sum</span>(self.recall_overlap) / <span class="fn">len</span>(self.recall_overlap)
+        avg_p99    = <span class="fn">sum</span>(self.p99_diff_ms) / <span class="fn">len</span>(self.p99_diff_ms)
+        error_rate = self.error_count / <span class="fn">len</span>(self.recall_overlap)
+        <span class="kw">return</span> avg_recall &gt; <span class="str">0.95</span> <span class="kw">and</span> avg_p99 &lt; <span class="str">10</span> <span class="kw">and</span> error_rate &lt; <span class="str">0.001</span>
+
+<span class="kw">class</span> <span class="fn">ShadowRouter</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, blue, green):
+        self.blue, self.green = blue, green
+        self.metrics = <span class="fn">ShadowMetrics</span>()
+        self.cutover_pct = <span class="str">0.0</span>                <span class="com"># 0 → 1로 점진</span>
+
+    <span class="kw">async def</span> <span class="fn">search</span>(self, query):
+        <span class="com"># 1) blue (current)는 항상 실행 — 실제 응답</span>
+        blue_task = asyncio.<span class="fn">create_task</span>(self.blue.<span class="fn">search</span>(query))
+
+        <span class="com"># 2) green (new)는 mirror — 결과 버리고 측정만</span>
+        green_task = asyncio.<span class="fn">create_task</span>(self.green.<span class="fn">search</span>(query))
+
+        blue_result, green_result = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(
+            blue_task, green_task, return_exceptions=<span class="kw">True</span>
+        )
+
+        <span class="com"># 3) diff 측정 (응답에 영향 없음)</span>
+        <span class="kw">if</span> <span class="fn">isinstance</span>(green_result, <span class="fn">Exception</span>):
+            self.metrics.error_count += <span class="str">1</span>
+        <span class="kw">else</span>:
+            overlap = <span class="fn">len</span>(<span class="fn">set</span>(blue_result.ids) &amp; <span class="fn">set</span>(green_result.ids)) / <span class="fn">len</span>(blue_result.ids)
+            latency_diff = green_result.latency_ms - blue_result.latency_ms
+            self.metrics.recall_overlap.<span class="fn">append</span>(overlap)
+            self.metrics.p99_diff_ms.<span class="fn">append</span>(latency_diff)
+
+        <span class="com"># 4) 건강하지 않으면 자동 rollback</span>
+        <span class="kw">if</span> <span class="kw">not</span> self.metrics.<span class="fn">healthy</span>():
+            <span class="kw">await</span> self.<span class="fn">rollback</span>()
+            <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="str">"green unhealthy — rolled back"</span>)
+
+        <span class="kw">return</span> blue_result        <span class="com"># 응답은 항상 blue</span>
+
+    <span class="kw">async def</span> <span class="fn">cutover</span>(self, pct: <span class="kw">float</span>):
+        <span class="kw">assert</span> self.metrics.<span class="fn">healthy</span>(), <span class="str">"can't cutover unhealthy green"</span>
+        self.cutover_pct = pct
+        <span class="fn">emit</span>(<span class="str">"cutover_pct"</span>, pct)         <span class="com"># 5 → 25 → 50 → 100</span>
+
+    <span class="kw">async def</span> <span class="fn">rollback</span>(self):
+        self.cutover_pct = <span class="str">0.0</span>
+        <span class="fn">page_oncall</span>(<span class="str">"shadow validation failed"</span>)
+</pre>
+    <div class="note"><strong>포인트.</strong> Shadow는 <em>application layer에서</em> 구현 가능 — 인프라 변경 없이 시작할 수 있는 가장 안전한 검증. <code>asyncio.gather(return_exceptions=True)</code>로 green 장애가 blue에 영향 안 주게. <em>recall overlap이 가장 중요</em> — latency만 보면 silent regression을 놓친다.</div>
+  </article>
+
+</section>
+
+
+<!-- §5 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">05</div>
     <div class="section-titles">
       <div class="section-kicker">Reference Implementation</div>
       <h2 class="section-title">실전 코드</h2>

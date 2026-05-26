@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vector Search Engines — 학습 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+  /* HERO */
+  .hero { max-width: 1200px; margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); position: relative; }
+  .hero::before { content: ""; position: absolute; top: 2rem; left: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); height: 1px; background: var(--ink); }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.5rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.95; font-weight: 600; margin-top: clamp(2rem, 5vw, 3rem); letter-spacing: -0.035em; color: var(--ink); }
+  .hero-title em { font-style: normal; font-weight: 300; color: var(--accent-deep); }
+  .hero-sub { margin-top: 1.4rem; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: var(--ink-soft); max-width: 42rem; line-height: 1.5; font-weight: 300; }
+  .hero-grid { margin-top: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .hero-grid > div { background: var(--paper); padding: 1.25rem 1.5rem; }
+  .hero-grid .k { display: block; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 0.4rem; }
+  .hero-grid .v { font-size: 1.2rem; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .hero-grid .v small { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; font-weight: 400; }
+
+  /* SECTIONS */
+  .section { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem); position: relative; }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head { display: grid; grid-template-columns: auto 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: baseline; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .section-num { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.85; color: var(--accent); font-weight: 200; letter-spacing: -0.04em; }
+  .section-titles { border-left: 1px solid var(--ink); padding-left: clamp(1rem, 3vw, 2rem); padding-top: 0.5rem; }
+  .section-kicker { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .section-title { font-size: clamp(1.65rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.028em; }
+
+  /* §1 TL;DR */
+  .tldr-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
+  @media (min-width: 720px) { .tldr-grid { grid-template-columns: repeat(12, 1fr); } }
+  .tldr-lead { grid-column: 1 / -1; font-size: clamp(1.2rem, 2.1vw, 1.6rem); line-height: 1.45; color: var(--ink); padding-bottom: 2rem; border-bottom: 1px solid var(--rule); margin-bottom: 2.5rem; font-weight: 300; letter-spacing: -0.012em; }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  .tldr-lead::first-letter { font-size: 3.4em; float: left; line-height: 0.9; padding-right: 0.12em; padding-top: 0.08em; color: var(--accent-deep); font-weight: 200; }
+  @media (min-width: 720px) { .tldr-lead { grid-column: 2 / 12; } }
+  .points { display: contents; }
+  .point { grid-column: 1 / -1; display: grid; grid-template-columns: 4ch 1fr; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 720px) { .point { grid-column: 2 / 12; grid-template-columns: 5ch 1fr; gap: 2rem; } }
+  .point .n { font-size: 1.25rem; color: var(--accent); line-height: 1; font-weight: 300; letter-spacing: 0.05em; text-transform: uppercase; }
+  .point h3 { font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.3; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.015em; }
+  .point p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
+  .point p strong { color: var(--ink); font-weight: 600; }
+  .point p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+
+  /* §2 다이어그램 */
+  .diagram-block { margin-bottom: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .db-text h4 { font-size: clamp(1.3rem, 2.3vw, 1.75rem); line-height: 1.25; margin-bottom: 0.8rem; color: var(--ink); font-weight: 600; letter-spacing: -0.022em; }
+  .db-text h4 .num { display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em; color: var(--accent-deep); vertical-align: middle; background: var(--accent-wash); padding: 0.28rem 0.55rem; border-radius: 999px; margin-right: 0.65rem; font-weight: 600; position: relative; top: -0.15em; }
+  .db-text p { color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.65; font-size: 0.95rem; }
+  .db-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .db-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .db-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas { background: var(--paper-deep); border: 1px solid var(--rule); padding: clamp(1.25rem, 3vw, 2rem); position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .canvas::before { content: attr(data-label); position: absolute; top: 0.7rem; left: 0.9rem; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; }
+  .canvas-tall { min-height: 420px; }
+
+  /* Four-axis tradeoffs */
+  .d-axis { display: grid; grid-template-columns: 1fr; gap: 0.55rem; width: 100%; min-width: 0; }
+  .d-axis .ax { display: grid; grid-template-columns: 6rem minmax(0, 1fr) 6rem; align-items: center; gap: 0.5rem; padding: 0.6rem 0.8rem; border: 1px solid var(--rule); background: var(--paper); }
+  .d-axis .ax .left { font-size: 0.78rem; color: var(--ink); font-weight: 600; text-align: right; }
+  .d-axis .ax .right { font-size: 0.78rem; color: var(--ink); font-weight: 600; text-align: left; }
+  .d-axis .ax .bar { height: 1.2rem; background: linear-gradient(90deg, var(--accent), var(--ink-faint)); position: relative; border-radius: 1px; }
+  .d-axis .ax .bar::after { content: "↔"; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: var(--paper); font-weight: 700; font-size: 0.9rem; }
+
+  /* Algorithm matrix */
+  .d-mat { width: 100%; min-width: 0; overflow-x: auto; }
+  .d-mat table { width: 100%; border-collapse: collapse; font-size: 0.74rem; }
+  .d-mat th, .d-mat td { padding: 0.5rem 0.55rem; border: 1px solid var(--rule); text-align: center; }
+  .d-mat th { background: var(--ink); color: var(--paper); font-weight: 600; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .d-mat td.algo { background: var(--paper-deep); font-weight: 600; color: var(--ink); text-align: left; }
+  .d-mat td.best { background: var(--accent-wash); color: var(--accent-deep); font-weight: 600; }
+  .d-mat td.poor { color: var(--ink-faint); }
+  .d-mat td.mid  { color: var(--ink-soft); }
+
+  /* Engine matrix */
+  .d-eng table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+  .d-eng th, .d-eng td { padding: 0.45rem 0.5rem; border: 1px solid var(--rule); text-align: center; }
+  .d-eng th { background: var(--ink); color: var(--paper); font-weight: 600; font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .d-eng td.name { background: var(--paper-deep); font-weight: 600; color: var(--ink); text-align: left; padding-left: 0.6rem; }
+  .d-eng td.yes  { color: var(--accent-deep); font-weight: 600; }
+  .d-eng td.no   { color: var(--ink-faint); }
+  .d-eng td.par  { color: var(--ink-soft); }
+
+  /* Workload bestfit */
+  .d-fit { display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; min-width: 0; }
+  .d-fit .wl { display: grid; grid-template-columns: minmax(0, 1fr); padding: 0.65rem 0.85rem; border: 1px solid var(--rule); background: var(--paper); gap: 0.4rem; }
+  .d-fit .wl .label { font-size: 0.82rem; font-weight: 600; color: var(--ink); }
+  .d-fit .wl .ranks { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .d-fit .wl .ranks span { font-size: 0.72rem; padding: 0.25rem 0.5rem; border: 1px solid var(--rule); background: var(--paper-deep); }
+  .d-fit .wl .ranks .gold { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); font-weight: 600; }
+  .d-fit .wl .ranks .silver { background: var(--accent-wash); color: var(--accent-deep); border-color: var(--accent); }
+  .d-fit .wl .ranks .skip { background: var(--paper); color: var(--ink-faint); border-style: dashed; }
+
+  /* Tiered architecture */
+  .d-tier { display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; min-width: 0; }
+  .d-tier .gw { padding: 0.8rem 1rem; background: var(--ink); color: var(--paper); text-align: center; font-weight: 600; font-size: 0.88rem; }
+  .d-tier .gw small { display: block; font-size: 0.68rem; opacity: 0.7; margin-top: 0.18rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .d-tier .tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; }
+  .d-tier .tier { padding: 0.7rem 0.6rem; border: 1.5px solid var(--accent); background: var(--accent-wash); text-align: center; font-size: 0.78rem; color: var(--accent-deep); font-weight: 600; }
+  .d-tier .tier small { display: block; font-size: 0.66rem; color: var(--ink-soft); margin-top: 0.2rem; font-weight: 400; letter-spacing: 0.04em; }
+  .d-tier .arr { justify-self: center; width: 1.5px; height: 0.6rem; background: var(--ink-soft); position: relative; }
+  .d-tier .arr::after { content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--ink-soft); }
+  .d-tier .ingestion { padding: 0.6rem 0.8rem; background: var(--paper); border: 1px dashed var(--rule); text-align: center; font-size: 0.74rem; color: var(--ink-soft); margin-top: 0.3rem; }
+
+  /* Pre-mortem ladder */
+  .d-prem { display: grid; grid-template-columns: 1fr; gap: 0.45rem; width: 100%; min-width: 0; }
+  .d-prem .lvl { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr) auto; gap: 0.6rem; padding: 0.65rem 0.85rem; border: 1px solid var(--rule); background: var(--paper); align-items: baseline; }
+  .d-prem .lvl.first { border-color: var(--accent); border-width: 1.5px; }
+  .d-prem .lvl .nr { font-family: var(--mono); font-size: 0.75rem; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; }
+  .d-prem .lvl .ttl { font-size: 0.85rem; font-weight: 600; color: var(--ink); }
+  .d-prem .lvl .ttl small { display: block; color: var(--ink-faint); font-size: 0.7rem; font-weight: 400; margin-top: 0.15rem; line-height: 1.4; }
+  .d-prem .lvl .when { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-soft); letter-spacing: 0.04em; white-space: nowrap; }
+
+  /* Decision */
+  .decision { margin-top: clamp(3rem, 6vw, 5rem); border-top: 2px solid var(--ink); padding-top: 2.5rem; }
+  .decision h3 { font-size: clamp(1.35rem, 2.4vw, 1.75rem); font-weight: 600; letter-spacing: -0.025em; margin-bottom: 1.4rem; }
+  .decision-table { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  @media (min-width: 760px) { .decision-table { grid-template-columns: 1fr 1fr; } }
+  .decision-table > div { background: var(--paper); padding: 1.5rem; }
+  .decision-table h4 { font-size: 1.1rem; margin-bottom: 0.7rem; color: var(--accent-deep); font-weight: 600; letter-spacing: -0.015em; }
+  .decision-table ul { list-style: none; color: var(--ink-soft); }
+  .decision-table li { padding: 0.35rem 0; padding-left: 1.1rem; position: relative; font-size: 0.92rem; }
+  .decision-table li::before { content: "→"; position: absolute; left: 0; color: var(--accent); font-family: var(--mono); }
+
+  /* Gloss / reference */
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
+
+  /* §3 코드 */
+  .code-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card { margin-bottom: 2.5rem; border: 1px solid var(--rule); background: var(--paper); overflow: hidden; }
+  .code-head { display: flex; align-items: baseline; justify-content: space-between; padding: 1rem 1.4rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; gap: 0.5rem; }
+  .code-head h4 { font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .code-head .tag { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--accent); color: var(--paper); border-radius: 2px; }
+  .code-head .head-right { display: flex; align-items: center; gap: 0.5rem; }
+  .copy-btn { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease; font-weight: 600; }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .copy-btn.failed { background: var(--paper-deep); color: var(--accent-deep); border-color: var(--accent); }
+  .code-card pre { margin: 0; padding: 1.35rem 1.5rem; overflow-x: auto; background: oklch(0.18 0.02 260); color: oklch(0.92 0.015 75); font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note { padding: 1rem 1.4rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper-deep); line-height: 1.6; }
+  .code-card .note strong { color: var(--accent-deep); }
+
+  /* §4 도입 전 점검 - Q&A */
+  .qa-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2rem; font-weight: 300; }
+  .qa-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .qa { margin-bottom: 1.5rem; border: 1px solid var(--rule); background: var(--paper); }
+  .qa-q {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 0.9rem;
+    padding: 0.95rem 1.2rem;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-deep);
+    align-items: baseline;
+  }
+  .qa-q .qn { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); font-weight: 600; letter-spacing: 0.06em; }
+  .qa-q .qt { font-size: 0.98rem; font-weight: 600; color: var(--ink); line-height: 1.4; letter-spacing: -0.012em; }
+  .qa-q .qt code { font-family: var(--mono); font-size: 0.88rem; padding: 0.05rem 0.35rem; background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); font-weight: 500; }
+  .qa-a { padding: 0.95rem 1.2rem 1rem 4.1rem; font-size: 0.9rem; line-height: 1.6; color: var(--ink-soft); }
+  .qa-a::before { content: "키워드 · "; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; }
+  .qa-a b { color: var(--ink); font-weight: 600; }
+  .qa-a code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
+
+  .scoring {
+    margin-top: 2rem;
+    padding: 1.2rem 1.4rem;
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+  }
+  .scoring h4 { font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-bottom: 0.6rem; letter-spacing: -0.012em; }
+  .scoring ul { list-style: none; }
+  .scoring li { padding: 0.3rem 0; padding-left: 1rem; position: relative; font-size: 0.88rem; color: var(--ink-soft); line-height: 1.55; }
+  .scoring li::before { content: "·"; position: absolute; left: 0.2rem; color: var(--accent); font-weight: 700; }
+  .scoring li b { color: var(--ink); font-weight: 600; }
+
+  .margin-note { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; padding: 1.1rem 1.3rem; background: var(--paper-deep); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); margin: 2rem 0; font-weight: 300; }
+  .margin-note::before { content: "노트"; font-weight: 600; color: var(--accent-deep); font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-right: 0.8rem; display: inline-block; padding-right: 0.7rem; border-right: 1px solid var(--rule); }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  /* FOOTER */
+  footer { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: var(--ink-faint); }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* HOME LINK */
+  .home-link { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 60; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0 0.95rem; height: 48px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.04em; transition: background 0.2s ease, color 0.2s ease; }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow { font-family: var(--mono); font-size: 0.95rem; transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  /* HAMBURGER + TOC */
+  .menu-btn { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; transition: background 0.2s ease; }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span { display: block; width: 20px; height: 1.5px; background: var(--ink); transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, background 0.2s ease; transform-origin: center; }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+  .toc-backdrop { position: fixed; inset: 0; background: oklch(0.18 0.015 260 / 0.35); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+  .toc-panel { position: fixed; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--ink); z-index: 55; transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); overflow-y: auto; padding: 6rem 2.5rem 3rem; }
+  .toc-panel.open { transform: translateX(0); }
+  .toc-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .toc-title { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.03em; color: var(--ink); margin-bottom: 2.2rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule); }
+  .toc-list { list-style: none; counter-reset: toc; }
+  .toc-list > li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a { display: grid; grid-template-columns: 2.5rem 1fr; align-items: baseline; text-decoration: none; color: var(--ink); font-weight: 500; font-size: 1.05rem; letter-spacing: -0.012em; transition: color 0.2s ease; }
+  .toc-list > li > a::before { counter-increment: toc; content: counter(toc, decimal-leading-zero); color: var(--accent); font-weight: 300; font-size: 0.85rem; letter-spacing: 0.05em; }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+  .toc-sub { list-style: none; margin-top: 0.6rem; margin-left: 2.5rem; padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a { color: var(--ink-soft); text-decoration: none; font-size: 0.88rem; font-weight: 400; transition: color 0.2s ease; display: flex; align-items: baseline; gap: 0.6rem; }
+  .toc-sub a span { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; min-width: 1.6rem; }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-sub a:hover span { color: var(--accent); }
+  .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); line-height: 1.6; }
+  body.menu-open { overflow: hidden; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card, .qa { animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html" aria-label="홈으로 돌아가기">
+  <span class="arrow">←</span><span>notebook</span>
+</a>
+
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+<div class="toc-backdrop" id="tocBackdrop"></div>
+
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#diagrams" data-close>그림으로 보는 구조</a>
+      <ul class="toc-sub">
+        <li><a href="#d-axis" data-close><span>01</span>4축 트레이드오프</a></li>
+        <li><a href="#d-algo" data-close><span>02</span>알고리즘 비교</a></li>
+        <li><a href="#d-eng" data-close><span>03</span>엔진 capability</a></li>
+        <li><a href="#d-fit" data-close><span>04</span>워크로드별 best fit</a></li>
+        <li><a href="#d-tier" data-close><span>05</span>티어 분리 아키텍처</a></li>
+        <li><a href="#d-prem" data-close><span>06</span>Pre-mortem</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+    <li><a href="#qa" data-close>도입 전 점검</a></li>
+  </ol>
+
+  <div class="toc-foot">
+    Vector Search Engines · Tech Deep Dive<br>학습 노트 · 2026.05
+  </div>
+</aside>
+
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="meta-row">
+    <span>Tech Deep Dive · 2026.05</span>
+    <span>학습 노트 · 읽는 시간 22분</span>
+  </div>
+
+  <h1 class="hero-title">Vector Search<br><em>Engines</em></h1>
+
+  <p class="hero-sub">
+    "고차원 공간에서 정확한 k-NN은 O(N) — 100% 정확도와 O(log N) 속도는 동시에 못 가진다. 모든 엔진은 이 트레이드오프 곡선 위의 다른 좌표를 선택한 결과다."
+  </p>
+
+  <div class="hero-grid">
+    <div>
+      <span class="k">스코프</span>
+      <span class="v">알고리즘<small>· 엔진 · 관리형</small></span>
+    </div>
+    <div>
+      <span class="k">워크로드</span>
+      <span class="v">4 종<small>· 동시 충족</small></span>
+    </div>
+    <div>
+      <span class="k">트레이드오프</span>
+      <span class="v">4 축<small>· R · L · M · B</small></span>
+    </div>
+    <div>
+      <span class="k">결론</span>
+      <span class="v">티어 분리</span>
+    </div>
+    <div>
+      <span class="k">작성</span>
+      <span class="v">2026<small>.05.27</small></span>
+    </div>
+  </div>
+</header>
+
+
+<!-- §1 TL;DR -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      벡터 검색 엔진의 모든 결정은 <span class="hl">Recall · Latency · Memory · Build cost 4축의 트레이드오프</span> 위에서 좌표를 찍는 일이다.
+      알고리즘(HNSW · IVF · DiskANN · PQ)이 그 곡선의 어느 영역에 강한지를 먼저 알아야 하고,
+      엔진(Milvus · Vespa · Qdrant · pgvector …)은 그 알고리즘을 <em>어떤 운영 모델로 감싸느냐</em>의 차이다.
+      <em>billion-scale + hybrid + RAG + real-time을 동시에</em> 요구하면 단일 엔진은 거의 답이 없다 — 티어 분리가 정답.
+    </p>
+
+    <div class="points">
+      <article class="point">
+        <div class="n">i</div>
+        <div>
+          <h3>한 줄 정의 — O(N)과 O(log N) 사이</h3>
+          <p>정확한 k-NN은 brute-force <code>O(N)</code>. ANN은 그 정확도를 살짝 포기하고 <code>O(log N)</code>에 가까운 속도를 얻는다. <strong>"Recall을 얼마나 양보하느냐 ↔ Latency가 얼마나 줄어드느냐"</strong>가 모든 엔진의 본질적 결정.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">ii</div>
+        <div>
+          <h3>네 가지 근본 트레이드오프</h3>
+          <p><strong>Recall ↔ Latency</strong> (ANN 파라미터 <code>ef_search</code>·<code>nprobe</code>), <strong>Memory ↔ Recall</strong> (양자화 FP32→INT8→PQ→BQ), <strong>Build ↔ Query</strong> (<code>ef_construction</code>·<code>M</code>), <strong>Dynamic ↔ Static</strong> (real-time insert 지원 여부). 운영의 모든 고민은 이 네 축 중 하나에 매핑된다.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iii</div>
+        <div>
+          <h3>알고리즘 — HNSW가 default, 한계 시 분기</h3>
+          <p>일반 ANN: <strong>HNSW</strong> (recall 0.95+, latency 1~5ms, 메모리 1.5~3x). 메모리 압박: <strong>IVF-PQ</strong> (32x 압축). billion-scale: <strong>DiskANN</strong> (SSD 활용). 메모리 무제한 + 동적: <strong>IVF-Flat</strong>. RAM이 받쳐주면 거의 항상 HNSW가 답.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iv</div>
+        <div>
+          <h3>엔진 — 알고리즘은 비슷, 운영 모델이 차이</h3>
+          <p>대부분 HNSW 사용. 결정적 차이는 <strong>hybrid 표현력 · filter 통합 · 분산 · 운영 모델</strong>. Vespa/OpenSearch는 hybrid 강함, Qdrant는 filter 강함, Pinecone은 운영 0이지만 lock-in. pgvector는 Postgres에 흡수돼 트랜잭션 무료 — 작은 RAG에 황금.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">v</div>
+        <div>
+          <h3>4 워크로드 동시 충족은 거의 불가능</h3>
+          <p>billion-scale + hybrid + RAG + real-time 네 가지를 한 엔진에 다 넣으려 하면 운영 복잡도가 폭주. <strong>현실적 해법은 티어 분리</strong>: billion 검색 = Vespa/OpenSearch, RAG 캐시 = Qdrant, 트랜잭셔널 메타 = pgvector. 같은 SLA를 강제하지 마라.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">vi</div>
+        <div>
+          <h3>가장 흔한 함정 — selectivity 측정 누락</h3>
+          <p>"pre-filter면 빠르다"는 일반화 → 거짓. <strong>filter selectivity 1%면 graph traversal 깨져 recall 폭락, 50%면 brute-force와 비슷</strong>. sweet spot은 5~20%. 측정 없이 결정하면 latency만 보고 잘못된 선택을 한다. Recall@k는 모든 결정의 출발점.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- §2 다이어그램 -->
+<section class="section" id="diagrams">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Tradeoff Maps</div>
+      <h2 class="section-title">그림으로 보는 구조</h2>
+    </div>
+  </div>
+
+  <!-- 1. 4축 -->
+  <div class="diagram-block" id="d-axis">
+    <div class="db-text">
+      <h4><span class="num">01 · 트레이드오프</span>4축 — 동시에 가질 수 없는 것들</h4>
+      <p>
+        벡터 검색 엔진의 모든 결정은 이 네 축 위에서 일어난다.
+        한 축을 당기면 다른 축이 밀려난다 — 공짜 점심은 없다.
+      </p>
+      <p>
+        실무 관점: <strong>4개를 동시에 좋게 하려면 단일 엔진 한계</strong>를 인정해야 한다.
+        대신 워크로드별로 다른 좌표를 선택한 엔진을 조합하는 게 정답.
+      </p>
+      <div class="use-when">
+        <strong>출발점</strong>
+        <p>"우리 워크로드에서 가장 중요한 축은?" 4개 중 2개만 골라라. 나머지는 양보. 못 고르면 요구사항이 정리 안 된 것.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Tradeoff · 4 axes">
+      <div class="d-axis">
+        <div class="ax">
+          <span class="left">High Recall</span>
+          <div class="bar"></div>
+          <span class="right">Low Latency</span>
+        </div>
+        <div class="ax">
+          <span class="left">Low Memory</span>
+          <div class="bar"></div>
+          <span class="right">High Recall</span>
+        </div>
+        <div class="ax">
+          <span class="left">Fast Build</span>
+          <div class="bar"></div>
+          <span class="right">Fast Query</span>
+        </div>
+        <div class="ax">
+          <span class="left">Dynamic Insert</span>
+          <div class="bar"></div>
+          <span class="right">Stable Recall</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Algorithm matrix -->
+  <div class="diagram-block" id="d-algo">
+    <div class="db-text">
+      <h4><span class="num">02 · 알고리즘</span>주요 ANN 알고리즘 비교</h4>
+      <p>
+        각 알고리즘은 4축 곡선의 다른 좌표 — <strong>HNSW</strong>는 그래프 기반으로 latency·recall에 강하고 메모리 비쌈,
+        <strong>IVF</strong>는 클러스터링으로 메모리·동적성에 유리, <strong>DiskANN</strong>은 SSD로 메모리 부담 해결.
+      </p>
+      <p>
+        선택 기준: <strong>RAM 충분</strong>이면 HNSW가 default. <strong>RAM 부족 + billion</strong>이면 DiskANN.
+        <strong>real-time insert 많음</strong>이면 IVF. <strong>극한 압축</strong>이면 PQ 또는 BQ + re-rank.
+      </p>
+      <div class="use-when">
+        <strong>실전 팁</strong>
+        <p>처음엔 HNSW로 baseline 잡고, 메모리·비용 문제가 실제 닥치면 그때 IVF-PQ나 DiskANN으로 분기. 처음부터 최적화하지 말 것.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Algorithms · trade-off matrix">
+      <div class="d-mat">
+        <table>
+          <thead>
+            <tr>
+              <th>알고리즘</th><th>Recall@10</th><th>Latency</th><th>Memory</th><th>Build</th><th>Dynamic</th><th>Best for</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="algo">HNSW</td>
+              <td class="best">0.95~0.99</td><td class="best">1~5ms</td><td class="poor">1.5~3× raw</td><td class="poor">느림</td><td class="mid">△</td>
+              <td>일반 ANN · default</td>
+            </tr>
+            <tr>
+              <td class="algo">IVF-Flat</td>
+              <td class="mid">0.85~0.95</td><td class="mid">5~20ms</td><td class="best">1.1× raw</td><td class="best">빠름</td><td class="best">○</td>
+              <td>동적, 빠른 리빌드</td>
+            </tr>
+            <tr>
+              <td class="algo">IVF-PQ</td>
+              <td class="poor">0.70~0.90</td><td class="mid">5~15ms</td><td class="best">0.05~0.25×</td><td class="mid">보통</td><td class="best">○</td>
+              <td>메모리 압박</td>
+            </tr>
+            <tr>
+              <td class="algo">DiskANN</td>
+              <td class="best">0.90~0.97</td><td class="mid">5~30ms</td><td class="best">0.1× + SSD</td><td class="poor">느림</td><td class="mid">△</td>
+              <td>billion-scale</td>
+            </tr>
+            <tr>
+              <td class="algo">ScaNN</td>
+              <td class="best">0.90~0.98</td><td class="best">1~5ms</td><td class="mid">0.5× raw</td><td class="mid">보통</td><td class="poor">×</td>
+              <td>Google 환경</td>
+            </tr>
+            <tr>
+              <td class="algo">Annoy</td>
+              <td class="poor">0.70~0.90</td><td class="mid">1~10ms</td><td class="poor">2× raw</td><td class="poor">느림</td><td class="poor">×</td>
+              <td>static · 단순</td>
+            </tr>
+            <tr>
+              <td class="algo">Binary (BQ)</td>
+              <td class="poor">0.70~0.85</td><td class="best">&lt;1ms</td><td class="best">0.03× raw</td><td class="best">빠름</td><td class="best">○</td>
+              <td>re-rank 전제 first-stage</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Engine matrix -->
+  <div class="diagram-block" id="d-eng">
+    <div class="db-text">
+      <h4><span class="num">03 · 엔진</span>주요 엔진 capability matrix</h4>
+      <p>
+        12개 엔진을 7개 capability로 비교. 대부분 HNSW 알고리즘은 공통 — <strong>결정적 차이는 hybrid·filter·분산·real-time 지원</strong>.
+        라이센스(Apache 2 vs SSPL vs proprietary)와 운영 모델도 도입 결정에 큰 영향.
+      </p>
+      <p>
+        주의: ✓✓는 native·강력함, ✓는 지원, △는 제한적, ×는 미지원. NRT는 near real-time (수초 지연).
+      </p>
+      <div class="use-when">
+        <strong>경고</strong>
+        <p>"Pinecone은 모든 게 ✓"처럼 보이지만 lock-in과 비용은 행렬에 안 나타난다. self-host와 managed의 진짜 비용은 24개월 TCO로 계산해야.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Engines · capability matrix">
+      <div class="d-eng">
+        <table>
+          <thead>
+            <tr>
+              <th>엔진</th><th>Index</th><th>Hybrid</th><th>Filter</th><th>분산</th><th>Real-time</th><th>License</th><th>운영</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="name">FAISS</td><td>all</td><td class="no">×</td><td class="no">×</td><td class="no">❌</td><td class="no">×</td><td>MIT</td><td>library</td></tr>
+            <tr><td class="name">HNSWlib</td><td>HNSW</td><td class="no">×</td><td class="no">×</td><td class="no">×</td><td class="par">△</td><td>Apache 2</td><td>library</td></tr>
+            <tr><td class="name">Milvus</td><td>HNSW/IVF/Disk</td><td class="par">△</td><td class="yes">✓</td><td class="yes">✓</td><td class="par">○</td><td>Apache 2</td><td>self/Zilliz</td></tr>
+            <tr><td class="name">Qdrant</td><td>HNSW</td><td class="par">△</td><td class="yes">✓✓</td><td class="yes">✓</td><td class="yes">✓</td><td>Apache 2</td><td>self/managed</td></tr>
+            <tr><td class="name">Weaviate</td><td>HNSW +module</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="par">○</td><td>BSD</td><td>self/managed</td></tr>
+            <tr><td class="name">Vespa</td><td>HNSW</td><td class="yes">✓✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td>Apache 2</td><td>self/Yahoo</td></tr>
+            <tr><td class="name">OpenSearch / ES</td><td>HNSW Lucene</td><td class="yes">✓✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="par">△ NRT</td><td>SSPL/Apache</td><td>self/AWS</td></tr>
+            <tr><td class="name">pgvector</td><td>HNSW/IVF</td><td class="par">△</td><td class="yes">✓</td><td class="par">△</td><td class="yes">✓ ACID</td><td>PG</td><td>DB 통합</td></tr>
+            <tr><td class="name">LanceDB</td><td>IVF-PQ</td><td class="par">○</td><td class="yes">✓</td><td class="par">△</td><td class="yes">✓</td><td>Apache 2</td><td>embed/cloud</td></tr>
+            <tr><td class="name">ChromaDB</td><td>HNSW</td><td class="no">×</td><td class="yes">✓</td><td class="par">△</td><td class="par">○</td><td>Apache 2</td><td>RAG-focused</td></tr>
+            <tr><td class="name">Pinecone</td><td>proprietary</td><td class="par">○</td><td class="yes">✓</td><td class="yes">(managed)</td><td class="yes">✓</td><td>closed</td><td>fully managed</td></tr>
+            <tr><td class="name">Vertex Vector</td><td>ScaNN</td><td class="par">○</td><td class="yes">✓</td><td class="yes">(managed)</td><td class="par">○</td><td>closed</td><td>GCP managed</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Workload best fit -->
+  <div class="diagram-block" id="d-fit">
+    <div class="db-text">
+      <h4><span class="num">04 · 매핑</span>워크로드별 best fit</h4>
+      <p>
+        4가지 워크로드 각각에 대해 <strong>1·2·3순위 + 피해야 할 엔진</strong>.
+        같은 엔진이 한 워크로드에서는 1순위이고 다른 워크로드에서는 ❌가 되는 게 정상이다 — 단일 엔진의 한계를 시각화.
+      </p>
+      <p>
+        4개 워크로드를 모두 가진 시스템이라면 — 하나의 ✅에 의지하지 말고
+        <em>워크로드별로 다른 엔진을 조합하는 티어 분리</em>를 검토해야 한다 (다음 다이어그램).
+      </p>
+      <div class="use-when">
+        <strong>강한 신호</strong>
+        <p>"❌" 표시된 엔진을 그 워크로드에 쓰면 6개월 안에 후회한다. 예: 1B 벡터에 pgvector, hybrid scoring에 Pinecone만.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Workloads · best fit">
+      <div class="d-fit">
+        <div class="wl">
+          <span class="label">Billion-scale 코퍼스</span>
+          <div class="ranks">
+            <span class="gold">Milvus</span>
+            <span class="gold">Vespa</span>
+            <span class="silver">OpenSearch+FAISS</span>
+            <span class="skip">❌ pgvector</span>
+            <span class="skip">❌ ChromaDB</span>
+          </div>
+        </div>
+        <div class="wl">
+          <span class="label">Hybrid (vector + BM25 + filter)</span>
+          <div class="ranks">
+            <span class="gold">Vespa</span>
+            <span class="gold">OpenSearch/ES</span>
+            <span class="silver">Weaviate</span>
+            <span class="skip">❌ Pinecone</span>
+            <span class="skip">❌ Qdrant alone</span>
+          </div>
+        </div>
+        <div class="wl">
+          <span class="label">RAG · agentic 단기 메모리</span>
+          <div class="ranks">
+            <span class="gold">Qdrant</span>
+            <span class="gold">ChromaDB</span>
+            <span class="silver">LanceDB</span>
+            <span class="silver">pgvector</span>
+            <span class="skip">❌ Vespa (오버킬)</span>
+          </div>
+        </div>
+        <div class="wl">
+          <span class="label">Real-time updates · streaming</span>
+          <div class="ranks">
+            <span class="gold">Qdrant</span>
+            <span class="gold">Vespa streaming</span>
+            <span class="silver">pgvector ACID</span>
+            <span class="skip">❌ FAISS</span>
+            <span class="skip">❌ Annoy/HNSWlib</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Tiered architecture -->
+  <div class="diagram-block" id="d-tier">
+    <div class="db-text">
+      <h4><span class="num">05 · 권장</span>티어 분리 — 4 워크로드 동시 충족</h4>
+      <p>
+        단일 엔진으로 4 워크로드를 모두 잘하기는 사실상 불가능 (Vespa 시도 가능하나 운영 복잡도 폭증).
+        <strong>현실적 답은 워크로드별로 다른 엔진을 조합 — 티어 분리</strong>.
+      </p>
+      <p>
+        같은 SLA를 강제하지 마라. RAG 메모리는 ms, billion 검색은 100ms — 같은 엔진에 묶을 이유가 없다.
+        Gateway 레이어에서 score fusion (RRF)으로 합성.
+      </p>
+      <div class="use-when">
+        <strong>운영 효과</strong>
+        <p>티어별 독립 스케일링 · 독립 배포 · 독립 장애 — 한 티어 장애가 다른 티어에 전파 안 됨. 운영 인력이 적어도 모니터링 단순화.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Recommended · tiered architecture">
+      <div class="d-tier">
+        <div class="gw">Query Gateway<small>hybrid score fusion · RRF</small></div>
+        <div class="arr"></div>
+        <div class="tiers">
+          <div class="tier">Vespa<br>or OpenSearch
+            <small>billion + hybrid</small>
+          </div>
+          <div class="tier">Qdrant
+            <small>RAG 캐시 · ms 응답</small>
+          </div>
+          <div class="tier">pgvector
+            <small>메타 · 트랜잭션</small>
+          </div>
+        </div>
+        <div class="ingestion">↑ Kafka pull-based ingestion (Uber 패턴) · real-time updates</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Pre-mortem -->
+  <div class="diagram-block" id="d-prem">
+    <div class="db-text">
+      <h4><span class="num">06 · Pre-mortem</span>6개월 뒤 트래픽 10x — 무엇이 먼저 깨지나</h4>
+      <p>
+        벡터 검색 시스템의 임계치 도달 순서. <strong>메모리가 항상 가장 먼저</strong>.
+        HNSW가 RAM을 못 들어가는 순간 latency가 100x 폭주.
+      </p>
+      <p>
+        예방의 핵심: <strong>각 임계치의 trigger 지표를 미리 monitoring</strong>.
+        memory headroom &lt; 20%면 양자화·DiskANN 검토, network fan-in 시 tail latency가 dominate하면 sharding 전략 재검토.
+      </p>
+      <div class="use-when">
+        <strong>가장 흔한 실수</strong>
+        <p>"CPU가 먼저 깨질 것"이라 생각하는 것. 벡터 검색은 거의 항상 <em>메모리 우선 → 네트워크 → CPU</em> 순. CPU 모니터링만 보면 메모리 폭발 못 잡는다.</p>
+      </div>
+    </div>
+    <div class="canvas canvas-tall" data-label="Pre-mortem · bottleneck order">
+      <div class="d-prem">
+        <div class="lvl first">
+          <span class="nr">[1]</span>
+          <div class="ttl">메모리
+            <small>HNSW graph가 RAM 초과 · query p99 100x 폭주 · OOM kill</small>
+          </div>
+          <span class="when">가장 먼저</span>
+        </div>
+        <div class="lvl">
+          <span class="nr">[2]</span>
+          <div class="ttl">네트워크
+            <small>distributed shard fan-out · tail latency가 평균 dominate</small>
+          </div>
+          <span class="when">2nd</span>
+        </div>
+        <div class="lvl">
+          <span class="nr">[3]</span>
+          <div class="ttl">CPU
+            <small>SIMD 없는 distance compute · AVX-512 미지원 시 throughput 절반</small>
+          </div>
+          <span class="when">3rd</span>
+        </div>
+        <div class="lvl">
+          <span class="nr">[4]</span>
+          <div class="ttl">Disk IO
+            <small>DiskANN 시 SSD IOPS 한계 · NVMe 필수</small>
+          </div>
+          <span class="when">4th</span>
+        </div>
+        <div class="lvl">
+          <span class="nr">[5]</span>
+          <div class="ttl">인덱스 빌드
+            <small>모델 갱신 reindex · 일 단위 ETA · 모델 evolution 막힘</small>
+          </div>
+          <span class="when">5th</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="margin-note">
+    벡터 검색에서 가장 반직관적인 사실 — <strong>"알고리즘 자체보다 filter selectivity가 latency에 더 큰 영향을 준다"</strong>. selectivity 1% 강한 필터에서 HNSW graph traversal이 깨져 recall이 폭락, 50% 약한 필터에서는 brute-force와 거의 같은 비용. <em>"우리 워크로드의 filter selectivity 분포는 무엇인가"</em>가 엔진 선택보다 먼저 묻혀야 할 질문.
+  </p>
+
+  <!-- Gloss: HNSW -->
+  <div class="gloss">
+    <div class="gloss-head">
+      <span class="gloss-label">참고</span>
+      <h5>HNSW (Hierarchical Navigable Small World)</h5>
+      <span class="gloss-pron">"에이치엔에스더블유"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>아이디어.</strong> Skip list를 그래프 위로 확장. <b>top layer는 sparse</b>, 점차 dense해지는 multi-layer graph. 쿼리는 top에서 greedy descent로 거친 nearest 찾고, 아래 layer에서 점점 정밀하게. <b>O(log N) 탐색</b>.</p>
+      <p><strong>핵심 파라미터.</strong> <code>M</code>(노드당 out-edge 수, 메모리 직접 비례), <code>ef_construction</code>(빌드 시 후보 큐 크기, <b>recall ceiling을 결정</b>), <code>ef_search</code>(런타임 후보 큐, 동적 조절 가능).</p>
+      <p><strong>강점.</strong> 일반 ANN에서 가장 좋은 recall/latency 균형. <code>ef_search</code>로 런타임 recall/latency 곡선 그릴 수 있음.</p>
+      <p><strong>약점.</strong> 메모리 1.5~3x raw. <b>filter와 결합 시 graph traversal 깨짐</b> (selectivity 의존). 동적 삭제는 tombstone + 주기적 rebuild.</p>
+    </div>
+  </div>
+
+  <!-- Gloss: Product Quantization -->
+  <div class="gloss">
+    <div class="gloss-head">
+      <span class="gloss-label">참고</span>
+      <h5>Product Quantization (PQ)</h5>
+      <span class="gloss-pron">"피큐"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>아이디어.</strong> 768-dim 벡터를 <code>m</code>개의 sub-vector로 쪼개고 (예: m=96 → 각 8-dim), 각 sub-vector를 256개 centroid로 표현. 한 벡터당 <b>m bytes로 압축</b> — 3072 byte → 96 byte = <b>32× 압축</b>.</p>
+      <p><strong>거리 계산.</strong> 쿼리 시 sub-vector × centroid의 distance lookup table을 미리 만들어 두고, 인덱스의 m개 byte를 indexing해서 합산. <b>SIMD 친화적</b>.</p>
+      <p><strong>트레이드오프.</strong> <code>m</code>이 클수록 압축률 좋지만 sub-vector 표현력 부족 → recall 손상. <b>sweet spot은 d/m = 4~8</b>. d=768이면 m=96~192.</p>
+      <p><strong>주의.</strong> PQ만으로는 recall 0.7~0.9 — 운영에선 <b>first-stage PQ + second-stage exact re-rank</b>가 정석. 그래서 IVF-PQ + re-rank 패턴이 흔하다.</p>
+    </div>
+  </div>
+
+  <!-- Gloss: DiskANN -->
+  <div class="gloss">
+    <div class="gloss-head">
+      <span class="gloss-label">참고</span>
+      <h5>DiskANN (Vamana graph)</h5>
+      <span class="gloss-pron">"디스크앤"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>아이디어.</strong> Microsoft 2019 (Subramanya et al). HNSW와 유사한 <b>Vamana 그래프</b>(layer 없는 단일 그래프). 메모리에는 <b>PQ-compressed sketch만</b>, SSD에는 full-precision vector + neighbor list.</p>
+      <p><strong>쿼리 흐름.</strong> ① greedy descent는 메모리 PQ로 빠르게, ② final re-ranking은 <b>SSD에서 정확 거리 fetch</b>. <code>batch IO + async</code>가 latency 핵심.</p>
+      <p><strong>강점.</strong> billion-scale에서 HNSW 대비 메모리 1/10 수준. SSD IOPS만 받쳐주면 recall 거의 동등.</p>
+      <p><strong>주의.</strong> NVMe 필수. 일반 SATA SSD에서는 latency 폭주. 빌드 시간이 HNSW보다 길다.</p>
+    </div>
+  </div>
+
+  <div class="decision">
+    <h3>그래서 — 어떤 알고리즘부터?</h3>
+    <div class="decision-table">
+      <div>
+        <h4>HNSW로 시작 권장</h4>
+        <ul>
+          <li>RAM 충분 (벡터 수 × 차원 × 6 byte 미만)</li>
+          <li>recall &gt; 0.95 필요</li>
+          <li>latency 5ms 이하 요구</li>
+          <li>insert/update 빈도 낮음 (시간 단위 reindex 허용)</li>
+          <li>filter selectivity가 5~20% 범위</li>
+        </ul>
+      </div>
+      <div>
+        <h4>HNSW 대신 다른 것 검토</h4>
+        <ul>
+          <li>RAM 한계 닥침 → <b>DiskANN</b> (NVMe 받쳐주면)</li>
+          <li>극한 압축 필요 → <b>IVF-PQ</b> (recall 0.85 양보 가능 시)</li>
+          <li>real-time insert 많음 → <b>IVF-Flat</b> 또는 Qdrant HNSW 동적</li>
+          <li>filter selectivity 1% 미만 → <b>partition별 인덱스 분리</b></li>
+          <li>recall 0.85로 충분 + 초저 latency → <b>BQ + re-rank</b></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- §3 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Reference Implementation</div>
+      <h2 class="section-title">실전 코드</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    각 알고리즘과 운영 패턴을 <em>최소 동작 코드</em>로 재구성. 프로덕션 코드는 모니터링·재시도·메트릭이 더 붙지만, 핵심 아이디어는 동일.
+  </p>
+
+  <!-- 1. HNSW basic -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>01 · HNSW 빌드 + 검색 (hnswlib)</h4>
+      <span class="tag">algo</span>
+    </div>
+<pre><span class="kw">import</span> hnswlib
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+dim, num = <span class="str">768</span>, <span class="str">1_000_000</span>
+data = np.random.<span class="fn">randn</span>(num, dim).<span class="fn">astype</span>(<span class="str">"float32"</span>)
+
+<span class="com"># 핵심 3개 파라미터 — 한 번 정하면 recall ceiling이 결정됨</span>
+index = hnswlib.<span class="fn">Index</span>(space=<span class="str">"cosine"</span>, dim=dim)
+index.<span class="fn">init_index</span>(
+    max_elements=num,
+    M=<span class="str">16</span>,                   <span class="com"># 노드당 edge — 메모리 직접 비례</span>
+    ef_construction=<span class="str">200</span>,    <span class="com"># 빌드 시 후보 큐 — recall 천장 결정</span>
+)
+
+<span class="com"># 벡터 추가 — 정규화 필수 (cosine이면)</span>
+data_norm = data / np.linalg.<span class="fn">norm</span>(data, axis=<span class="str">1</span>, keepdims=<span class="kw">True</span>)
+index.<span class="fn">add_items</span>(data_norm, np.<span class="fn">arange</span>(num))
+
+<span class="com"># 쿼리 시 ef_search로 recall/latency 트레이드오프 조절 (런타임)</span>
+index.<span class="fn">set_ef</span>(<span class="str">100</span>)            <span class="com"># 작으면 빠르지만 recall↓, 크면 반대</span>
+query = data_norm[:<span class="str">10</span>]
+ids, dists = index.<span class="fn">knn_query</span>(query, k=<span class="str">10</span>)
+</pre>
+    <div class="note"><strong>포인트.</strong> <code>M</code>·<code>ef_construction</code>은 한 번 빌드하면 바꿀 수 없는 고정. <code>ef_search</code>는 런타임 조절 가능 — 같은 인덱스로 A/B 곡선 그릴 수 있는 강력한 강점. cosine이면 <em>벡터 정규화 누락 = 인덱스 전체 무효</em>.</div>
+  </article>
+
+  <!-- 2. FAISS IVFPQ -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>02 · FAISS IVFPQ — 메모리 32배 압축</h4>
+      <span class="tag">quantization</span>
+    </div>
+<pre><span class="kw">import</span> faiss
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+dim = <span class="str">768</span>
+nlist = <span class="str">4096</span>          <span class="com"># IVF centroid 수 — sqrt(N) 근처가 보통</span>
+m = <span class="str">96</span>               <span class="com"># PQ sub-vector 수 — d/m = 8 (sweet spot)</span>
+nbits = <span class="str">8</span>            <span class="com"># sub-vector당 8bit = 256 centroid</span>
+
+<span class="com"># IVF: coarse quantizer로 partitioning, PQ로 압축</span>
+quantizer = faiss.<span class="fn">IndexFlatL2</span>(dim)
+index = faiss.<span class="fn">IndexIVFPQ</span>(quantizer, dim, nlist, m, nbits)
+
+<span class="com"># 학습 단계 — centroid + codebook 학습</span>
+training = np.random.<span class="fn">randn</span>(<span class="str">100_000</span>, dim).<span class="fn">astype</span>(<span class="str">"float32"</span>)
+index.<span class="fn">train</span>(training)
+
+<span class="com"># 추가 — 벡터당 96 byte로 압축 저장 (raw 3072 byte 대비 32x)</span>
+index.<span class="fn">add</span>(training)
+
+<span class="com"># 쿼리 — nprobe는 런타임 조절. 메모리 변화 없음, latency만 변함</span>
+index.nprobe = <span class="str">16</span>      <span class="com"># 탐색할 centroid 수</span>
+D, I = index.<span class="fn">search</span>(training[:<span class="str">10</span>], k=<span class="str">10</span>)
+
+<span class="com"># nprobe 곡선 — recall vs latency 측정</span>
+<span class="kw">for</span> np_val <span class="kw">in</span> [<span class="str">1</span>, <span class="str">4</span>, <span class="str">16</span>, <span class="str">64</span>, <span class="str">256</span>]:
+    index.nprobe = np_val
+    <span class="com"># ... benchmark & record recall@10, latency</span>
+</pre>
+    <div class="note"><strong>포인트.</strong> IVF의 강력한 점은 <em>nprobe가 런타임 조절 가능</em>이라는 것. 같은 인덱스로 운영 중에 recall/latency를 dynamic하게 조절. 메모리는 변하지 않음. <code>nlist</code>는 <code>sqrt(N)</code> 근처가 일반 룰. PQ <code>m</code>은 <code>d/m=4~8</code> 사이.</div>
+  </article>
+
+  <!-- 3. Filter-aware search -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>03 · Filter-aware search (Qdrant)</h4>
+      <span class="tag">hybrid filter</span>
+    </div>
+<pre><span class="kw">from</span> qdrant_client <span class="kw">import</span> QdrantClient
+<span class="kw">from</span> qdrant_client.models <span class="kw">import</span> *
+
+client = <span class="fn">QdrantClient</span>(url=<span class="str">"http://localhost:6333"</span>)
+
+<span class="com"># filter selectivity 측정 — 매우 중요</span>
+<span class="kw">def</span> <span class="fn">measure_selectivity</span>(filter_obj) -> <span class="kw">float</span>:
+    total = client.<span class="fn">count</span>(<span class="str">"products"</span>).count
+    matched = client.<span class="fn">count</span>(<span class="str">"products"</span>, count_filter=filter_obj).count
+    <span class="kw">return</span> matched / total
+
+<span class="com"># 강한 필터 (selectivity 1%) — partition별 인덱스 검토 신호</span>
+filter_strict = <span class="fn">Filter</span>(must=[
+    <span class="fn">FieldCondition</span>(key=<span class="str">"user_id"</span>, match=<span class="fn">MatchValue</span>(value=<span class="str">"u123"</span>)),
+])
+
+<span class="com"># 적당한 필터 (selectivity 10%) — sweet spot</span>
+filter_ok = <span class="fn">Filter</span>(must=[
+    <span class="fn">FieldCondition</span>(key=<span class="str">"category"</span>, match=<span class="fn">MatchValue</span>(value=<span class="str">"electronics"</span>)),
+    <span class="fn">FieldCondition</span>(key=<span class="str">"price"</span>, range=<span class="fn">Range</span>(gte=<span class="str">10</span>, lte=<span class="str">100</span>)),
+])
+
+sel = <span class="fn">measure_selectivity</span>(filter_ok)
+<span class="kw">if</span> sel &lt; <span class="str">0.05</span>:
+    <span class="fn">warn</span>(<span class="str">"selectivity too low — consider partitioned index"</span>)
+<span class="kw">elif</span> sel &gt; <span class="str">0.5</span>:
+    <span class="fn">warn</span>(<span class="str">"selectivity too high — consider post-filter or no filter"</span>)
+
+<span class="com"># Qdrant는 filter selectivity에 따라 자동으로 strategy 선택</span>
+results = client.<span class="fn">search</span>(
+    collection_name=<span class="str">"products"</span>,
+    query_vector=query_vec,
+    query_filter=filter_ok,
+    limit=<span class="str">10</span>,
+    search_params=<span class="fn">SearchParams</span>(hnsw_ef=<span class="str">128</span>, exact=<span class="kw">False</span>),
+)
+</pre>
+    <div class="note"><strong>포인트.</strong> <em>filter selectivity는 도입 전 반드시 측정</em>. 1% 미만이면 HNSW 단일 인덱스는 답이 아님 → partition별 인덱스 분리. 50% 초과면 filter가 사실상 의미 없음 → post-filter로 전환. Qdrant는 selectivity에 따라 strategy switching이 가장 매끄러움.</div>
+  </article>
+
+  <!-- 4. Hybrid scoring with RRF -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>04 · Hybrid scoring — Reciprocal Rank Fusion</h4>
+      <span class="tag">hybrid scoring</span>
+    </div>
+<pre><span class="kw">def</span> <span class="fn">rrf_fusion</span>(rankings: <span class="kw">list</span>[<span class="kw">list</span>[<span class="kw">str</span>]], k: <span class="kw">int</span> = <span class="str">60</span>) -> <span class="kw">list</span>[<span class="kw">tuple</span>]:
+    <span class="str">"""Reciprocal Rank Fusion — 학습 데이터 없이도 robust한 hybrid.
+
+    rankings: 각 retriever의 결과 ID 리스트 (rank 순서)
+    k: 60이 일반적 (논문 default). 작을수록 top rank 가중치 ↑
+    """</span>
+    scores = {}
+    <span class="kw">for</span> ranking <span class="kw">in</span> rankings:
+        <span class="kw">for</span> rank, doc_id <span class="kw">in</span> <span class="fn">enumerate</span>(ranking, start=<span class="str">1</span>):
+            scores[doc_id] = scores.<span class="fn">get</span>(doc_id, <span class="str">0</span>) + <span class="str">1</span> / (k + rank)
+    <span class="kw">return</span> <span class="fn">sorted</span>(scores.<span class="fn">items</span>(), key=<span class="kw">lambda</span> x: -x[<span class="str">1</span>])
+
+<span class="com"># 사용 예: BM25 + vector 두 retriever 결과 fusion</span>
+bm25_results   = bm25_index.<span class="fn">search</span>(query_text, k=<span class="str">100</span>)      <span class="com"># IDs only</span>
+vector_results = qdrant.<span class="fn">search</span>(query_vec, limit=<span class="str">100</span>)        <span class="com"># IDs only</span>
+
+fused = <span class="fn">rrf_fusion</span>([bm25_results, vector_results])
+top_10 = [doc_id <span class="kw">for</span> doc_id, _ <span class="kw">in</span> fused[:<span class="str">10</span>]]
+
+<span class="com"># 비교: alpha-blending (점수 직접 합산 — scale 다른 점이 함정)</span>
+<span class="kw">def</span> <span class="fn">alpha_blend</span>(bm25: <span class="kw">dict</span>[<span class="kw">str</span>, <span class="kw">float</span>], vec: <span class="kw">dict</span>[<span class="kw">str</span>, <span class="kw">float</span>],
+                alpha: <span class="kw">float</span> = <span class="str">0.5</span>):
+    <span class="com"># min-max normalize 먼저</span>
+    bm25_n = {k: (v - <span class="fn">min</span>(bm25.values())) / (<span class="fn">max</span>(bm25.values()) - <span class="fn">min</span>(bm25.values()))
+              <span class="kw">for</span> k, v <span class="kw">in</span> bm25.<span class="fn">items</span>()}
+    vec_n = {k: v <span class="kw">for</span> k, v <span class="kw">in</span> vec.<span class="fn">items</span>()}      <span class="com"># cosine은 이미 0~1</span>
+    keys = <span class="fn">set</span>(bm25_n) | <span class="fn">set</span>(vec_n)
+    <span class="kw">return</span> {k: alpha * bm25_n.<span class="fn">get</span>(k, <span class="str">0</span>) + (<span class="str">1</span>-alpha) * vec_n.<span class="fn">get</span>(k, <span class="str">0</span>)
+            <span class="kw">for</span> k <span class="kw">in</span> keys}
+</pre>
+    <div class="note"><strong>포인트.</strong> <em>RRF는 학습 데이터 없이도 baseline보다 항상 우수</em>한 거의 유일한 hybrid 방법. 절대 점수 무시하고 rank만 사용 — scale 다른 두 retriever를 자연스럽게 통합. <code>k=60</code>은 논문 default. alpha-blending은 normalization 잘못하면 더 나빠진다.</div>
+  </article>
+
+  <!-- 5. Recall evaluation -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>05 · Recall@k 평가 — 모든 결정의 출발점</h4>
+      <span class="tag">eval</span>
+    </div>
+<pre><span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">from</span> faiss <span class="kw">import</span> IndexFlatL2
+
+<span class="kw">def</span> <span class="fn">compute_ground_truth</span>(corpus: np.ndarray, queries: np.ndarray, k: <span class="kw">int</span>):
+    <span class="str">"""brute-force k-NN — 작은 sample (예: 1만 query)로만 계산."""</span>
+    truth_index = <span class="fn">IndexFlatL2</span>(corpus.shape[<span class="str">1</span>])
+    truth_index.<span class="fn">add</span>(corpus)
+    _, gt_ids = truth_index.<span class="fn">search</span>(queries, k)
+    <span class="kw">return</span> gt_ids   <span class="com"># (n_queries, k)</span>
+
+<span class="kw">def</span> <span class="fn">recall_at_k</span>(ann_results: np.ndarray, ground_truth: np.ndarray, k: <span class="kw">int</span>):
+    <span class="str">"""ann_results, ground_truth: (n_queries, k) array of IDs"""</span>
+    recalls = []
+    <span class="kw">for</span> ann_ids, gt_ids <span class="kw">in</span> <span class="fn">zip</span>(ann_results, ground_truth):
+        overlap = <span class="fn">len</span>(<span class="fn">set</span>(ann_ids[:k]) &amp; <span class="fn">set</span>(gt_ids[:k]))
+        recalls.<span class="fn">append</span>(overlap / k)
+    <span class="kw">return</span> np.<span class="fn">mean</span>(recalls)
+
+<span class="com"># 핵심 측정 루프 — 파라미터 변경 시 항상 함께 측정</span>
+gt = <span class="fn">compute_ground_truth</span>(corpus, queries, k=<span class="str">10</span>)
+
+results = []
+<span class="kw">for</span> ef <span class="kw">in</span> [<span class="str">32</span>, <span class="str">64</span>, <span class="str">128</span>, <span class="str">256</span>, <span class="str">512</span>]:
+    hnsw.<span class="fn">set_ef</span>(ef)
+    start = time.<span class="fn">time</span>()
+    ann_ids, _ = hnsw.<span class="fn">knn_query</span>(queries, k=<span class="str">10</span>)
+    latency_ms = (time.<span class="fn">time</span>() - start) / <span class="fn">len</span>(queries) * <span class="str">1000</span>
+    recall = <span class="fn">recall_at_k</span>(ann_ids, gt, k=<span class="str">10</span>)
+    results.<span class="fn">append</span>((ef, recall, latency_ms))
+
+<span class="com"># 출력: ef → recall → latency 곡선. 운영 SLA에 맞는 ef 선택의 근거.</span>
+<span class="kw">for</span> ef, r, l <span class="kw">in</span> results:
+    <span class="fn">print</span>(<span class="str">f"ef={ef:4d}  recall@10={r:.3f}  latency={l:.2f}ms"</span>)
+</pre>
+    <div class="note"><strong>포인트.</strong> <em>recall 측정 없는 latency 비교는 의미 없는 숫자</em>. ground truth는 brute-force (Flat index)로 계산. 1만 query sample이면 충분. 파라미터를 바꿀 때마다 이 곡선을 다시 그려야 진짜 비교 가능. 이 한 가지 습관이 운영 결정의 90%를 옳게 만든다.</div>
+  </article>
+
+  <!-- 6. Blue-Green model migration -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>06 · 임베딩 모델 교체 — Blue/Green dual index</h4>
+      <span class="tag">migration</span>
+    </div>
+<pre><span class="kw">class</span> <span class="fn">DualIndexRouter</span>:
+    <span class="str">"""새 임베딩 모델 출시 시 v1·v2 인덱스를 동시 운영, 점진 traffic shift.
+
+    v1과 v2는 임베딩 공간이 완전히 다르므로 절대 섞으면 안 된다."""</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        self.v1_index, self.v1_encoder = <span class="fn">load</span>(<span class="str">"v1"</span>)
+        self.v2_index, self.v2_encoder = <span class="fn">load</span>(<span class="str">"v2"</span>)
+        self.v2_traffic_pct = <span class="str">0.0</span>     <span class="com"># 0 → 1로 점진 증가</span>
+
+    <span class="kw">def</span> <span class="fn">search</span>(self, query_text: <span class="kw">str</span>, k: <span class="kw">int</span> = <span class="str">10</span>):
+        <span class="com"># A/B split — 사용자별 stable routing (해시 기반)</span>
+        use_v2 = <span class="fn">hash</span>(<span class="fn">get_user_id</span>()) % <span class="str">100</span> &lt; self.v2_traffic_pct * <span class="str">100</span>
+
+        <span class="kw">if</span> use_v2:
+            q_vec = self.v2_encoder.<span class="fn">encode</span>(query_text)
+            <span class="kw">return</span> self.v2_index.<span class="fn">search</span>(q_vec, k=k)
+        <span class="kw">else</span>:
+            q_vec = self.v1_encoder.<span class="fn">encode</span>(query_text)
+            <span class="kw">return</span> self.v1_index.<span class="fn">search</span>(q_vec, k=k)
+
+    <span class="kw">def</span> <span class="fn">shift_traffic</span>(self, new_pct: <span class="kw">float</span>):
+        <span class="str">"""검증 게이트 통과 후 점진 shift: 5% → 25% → 50% → 100%"""</span>
+        <span class="kw">assert</span> self.<span class="fn">v2_recall_check</span>() &gt; <span class="str">0.95</span>, <span class="str">"v2 recall regression"</span>
+        self.v2_traffic_pct = new_pct
+        <span class="fn">emit_metric</span>(<span class="str">"v2_traffic_pct"</span>, new_pct)
+
+    <span class="kw">def</span> <span class="fn">retire_v1</span>(self):
+        <span class="str">"""v2 100% + 안정성 확인 후 v1 인덱스 삭제 (24h grace)"""</span>
+        <span class="kw">assert</span> self.v2_traffic_pct == <span class="str">1.0</span>
+        <span class="fn">schedule_delete</span>(self.v1_index, after=<span class="str">"24h"</span>)
+</pre>
+    <div class="note"><strong>포인트.</strong> 임베딩 모델 v1과 v2는 <em>완전히 다른 좌표계</em> — v1 인덱스에 v2 query 벡터를 절대 섞으면 안 됨. dual index는 비용 일시 2배지만 안전 swap의 유일한 방법. <em>사용자별 stable routing</em>이 중요 — 같은 사용자가 검색마다 다른 결과 받으면 UX 깨짐.</div>
+  </article>
+
+  <p class="margin-note">
+    위 6개 코드는 <strong>독립적으로 도입 가능</strong>하다. 도입 순서 권장 — ① Recall 측정(05)부터, ② 그 다음 HNSW baseline(01), ③ 비용 압박이면 IVFPQ(02), ④ hybrid 필요하면 RRF(04), ⑤ 모델 교체 직전에 dual index(06). 측정 없는 최적화는 추측이다.
+  </p>
+</section>
+
+
+<!-- §4 도입 전 점검 -->
+<section class="section" id="qa">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Self-check</div>
+      <h2 class="section-title">도입 전 점검</h2>
+    </div>
+  </div>
+
+  <p class="qa-intro">
+    엔진 도입 결정을 내리기 전에 답할 수 있어야 할 <em>12가지 질문</em>. 단순 사용자와 내부 원리를 이해한 사람을 가르는 지점들. 먼저 답을 머릿속에서 구성한 뒤 키워드를 확인.
+  </p>
+
+  <div class="qa">
+    <div class="qa-q">
+      <span class="qn">Q1</span>
+      <span class="qt">HNSW의 <code>M</code>을 16에서 32로 늘리면 메모리는 정확히 얼마나 증가하나?</span>
+    </div>
+    <div class="qa-a">
+      <code>M</code>은 노드당 out-edge 개수. <b>그래프 메모리 ≈ N × M × 8 bytes</b>. M=16→32면 그래프 메모리 정확히 2배. raw vector 메모리는 변하지 않음. 1B 벡터에서 16×8×1B = 128GB → 256GB. recall은 marginal 개선, latency 약간 증가.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">
+      <span class="qn">Q2</span>
+      <span class="qt"><code>ef_search</code>를 <code>ef_construction</code>보다 크게 설정하면?</span>
+    </div>
+    <div class="qa-a">
+      <code>ef_search</code>는 <b>런타임 동적 조절 가능</b>, <code>ef_construction</code>은 빌드 시점 고정. ef_search &gt; ef_construction은 동작하지만 <b>recall ceiling이 ef_construction에 의해 결정</b>됨 — 그래프 자체가 그 수준의 후보로 만들어졌기 때문. ef_construction은 미래 recall 목표보다 2배 높게 잡아두는 게 안전.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">
+      <span class="qn">Q3</span>
+      <span class="qt">PQ에서 sub-vector 개수 <code>m=8</code> vs <code>m=96</code>은 어떻게 다른가?</span>
+    </div>
+    <div class="qa-a">
+      d=768에서 m=96이면 각 sub-vector 8-dim, m=8이면 96-dim. <b>m 클수록 압축률 좋지만 sub-vector 표현력 부족 → recall 손상</b>. 메모리는 sub-vector당 256 centroid 기준 m=96이면 96 byte/vec, m=8이면 8 byte/vec. <b>sweet spot은 d/m = 4~8</b>.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">
+      <span class="qn">Q4</span>
+      <span class="qt">Filtered HNSW에서 selectivity 1%와 50%일 때 무슨 일이?</span>
+    </div>
+    <div class="qa-a">
+      selectivity 1% (강한 필터) → graph traversal이 통과 노드를 거의 못 만나서 ef_search 후보 못 채움 → <b>recall 폭락</b>. 50% (약한 필터) → 거의 brute force와 비슷. <b>sweet spot 5~20%</b>. 1%면 <b>partition별 인덱스 분리</b>, 50%면 <b>post-filter로 전환</b>. ACORN / Filtered HNSW 논문이 해결 시도.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">
+      <span class="qn">Q5</span>
+      <span class="qt">FAISS <code>IndexIVFPQ</code>에서 <code>nprobe</code>를 늘리면 메모리·latency·recall 각각?</span>
+    </div>
+    <div class="qa-a">
+      <code>nprobe</code> = 탐색할 centroid 수. <b>메모리는 변화 없음</b>. latency는 거의 선형 증가. recall은 빠르게 올라간 뒤 plateau. <b>nprobe는 런타임 조절 가능</b> — 같은 인덱스로 recall/latency 곡선 그릴 수 있어 A/B 시험 비용이 0. IVF의 강점.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">
+      <span class="qn">Q6</span>
+      <span class="qt">DiskANN이 SSD에서 HNSW와 비슷한 recall을 내는 비결은?</span>
+    </div>
+    <div class="qa-a">
+      Vamana 그래프 (HNSW와 유사하지만 layer 없음). 메모리에는 <b>PQ-compressed sketch만</b>, SSD에는 full-precision vector + neighbor list. greedy descent는 메모리 PQ로 빠르게, <b>final re-ranking은 SSD에서 정확 거리</b>. <code>batch IO + async</code>가 latency 핵심. NVMe 필수.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">
+      <span class="qn">Q7</span>
+      <span class="qt">pgvector HNSW에서 동시 <code>UPDATE</code> 100개가 들어오면 내부적으로?</span>
+    </div>
+    <div class="qa-a">
+      pgvector HNSW는 PostgreSQL <b>MVCC</b>와 결합. 각 UPDATE는 새 row version 생성 → 인덱스도 새 graph node 추가. <b>VACUUM 안 하면 dead tuple + dead node 누적</b>, HNSW 그래프 fragmented → query latency 점진 악화. routine <code>VACUUM</code> + 주기적 <code>REINDEX</code> 필수.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">
+      <span class="qn">Q8</span>
+      <span class="qt">Cosine으로 인덱스 빌드했는데 일부 벡터가 정규화 안 된 채 들어갔다면?</span>
+    </div>
+    <div class="qa-a">
+      Cosine = <b>normalized inner product</b>. 정규화 안 된 벡터는 magnitude로 거리 distortion. 그래프 구축 시 wrong neighbors → <b>그래프 자체가 잘못됨</b>. 일부만 다시 정규화해도 회복 안 됨 — graph topology가 이미 망가짐. <b>전체 rebuild 필수</b>. 인제스천 파이프라인에 normalize assertion 필수.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">
+      <span class="qn">Q9</span>
+      <span class="qt">Vespa의 streaming mode vs index mode 차이와 언제 무엇?</span>
+    </div>
+    <div class="qa-a">
+      index mode = 사전 인덱싱된 HNSW. streaming mode = <b>쿼리 시점에 매번 corpus scan</b> (인덱스 없음). multi-tenant에서 tenant당 small corpus (예: 사용자별 10K 문서)면 streaming이 더 빠름 — 인덱스 오버헤드 없고 freshness 즉시. 단일 tenant가 billion이면 streaming은 죽음.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">
+      <span class="qn">Q10</span>
+      <span class="qt">Hybrid search에서 BM25 0~50과 cosine 0~1 점수를 어떻게 fusion?</span>
+    </div>
+    <div class="qa-a">
+      직접 합산은 scale 달라 불가. ① <b>RRF</b>: <code>score = sum(1/(60+rank_i))</code>, 절대 점수 무시하고 순위만. 학습 데이터 불요, 가장 robust. ② <b>min-max normalize + weighted</b> (alpha-blending), α 튜닝 필요. ③ <b>Learning to Rank</b>: BM25/cosine을 feature로 LambdaMART. <b>RRF가 default 추천</b>.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">
+      <span class="qn">Q11</span>
+      <span class="qt">1B 벡터를 8개 노드에 sharding하면 query latency가 1/8?</span>
+    </div>
+    <div class="qa-a">
+      틀림. ANN은 shard별 top-k 모두 가져와 merge — <b>search amplification</b>. 각 shard에서 k=100 가져오면 8 × 100 = 800 candidates merge. <b>실제 latency = max(shard latency) + network fan-in + merge</b>. p99 tail이 worst shard에 의해 dominate. recall도 약간 손상 가능. 단순 1/N 가정은 잘못.
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q">
+      <span class="qn">Q12</span>
+      <span class="qt">임베딩 모델 v1으로 만든 인덱스에 v2 query vector를 넣으면?</span>
+    </div>
+    <div class="qa-a">
+      절대 안 됨. <b>임베딩 공간이 완전히 다른 좌표계</b> — 같은 "apple"이 v1과 v2에서 전혀 다른 위치. cosine 계산은 되지만 의미 없는 숫자. 기존 인덱스는 <b>무용지물</b>, full reindex 또는 dual-index 필수. <b>blue/green 배포의 본질</b> — 새 모델 출시 시 모든 데이터 v2로 다시 임베딩.
+    </div>
+  </div>
+
+  <div class="scoring">
+    <h4>채점 가이드</h4>
+    <ul>
+      <li><b>4개 미만</b> — §02 트레이드오프 다이어그램부터 재점검. HNSW와 IVF 동작 메커니즘을 종이 위에 그릴 수 있어야 함.</li>
+      <li><b>5~6개</b> — 일반 사용자 졸업. Q4 (filter), Q6 (DiskANN), Q11 (sharding)을 중점 보강.</li>
+      <li><b>7~9개</b> — 실무 도입 결정 가능. 남은 빈칸은 <b>선택한 엔진의 소스 코드 직접 읽기</b>로 채우는 게 가장 빠름.</li>
+      <li><b>10개 이상</b> — 팀에 가르치는 입장. 다음 단계는 <b>"주니어에게 HNSW를 30초로 설명하기"</b>로 추상화 공백 찾기 (Feynman 검증).</li>
+    </ul>
+  </div>
+</section>
+
+
+<footer>
+  <div>학습 노트 · Vector Search Engines</div>
+  <div>
+    참고 · <a href="https://github.com/erikbern/ann-benchmarks" target="_blank" rel="noopener">ann-benchmarks</a> ·
+    <a href="https://arxiv.org/abs/1603.09320" target="_blank" rel="noopener">HNSW 논문</a> ·
+    <a href="https://arxiv.org/abs/1707.08819" target="_blank" rel="noopener">FAISS</a> ·
+    <a href="https://www.microsoft.com/en-us/research/publication/diskann-fast-accurate-billion-point-nearest-neighbor-search-on-a-single-node/" target="_blank" rel="noopener">DiskANN</a>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    const btn = document.getElementById('menuBtn');
+    const panel = document.getElementById('tocPanel');
+    const backdrop = document.getElementById('tocBackdrop');
+    const body = document.body;
+
+    function setOpen(open) {
+      btn.classList.toggle('open', open);
+      panel.classList.toggle('open', open);
+      backdrop.classList.toggle('open', open);
+      body.classList.toggle('menu-open', open);
+      btn.setAttribute('aria-expanded', String(open));
+      panel.setAttribute('aria-hidden', String(!open));
+      btn.setAttribute('aria-label', open ? '목차 닫기' : '목차 열기');
+    }
+
+    btn.addEventListener('click', () => setOpen(!panel.classList.contains('open')));
+    backdrop.addEventListener('click', () => setOpen(false));
+    document.querySelectorAll('[data-close]').forEach(a => a.addEventListener('click', () => setOpen(false)));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && panel.classList.contains('open')) setOpen(false);
+    });
+  })();
+
+  // Inject copy buttons into every code card
+  (function () {
+    document.querySelectorAll('.code-card').forEach(card => {
+      const head = card.querySelector('.code-head');
+      const pre  = card.querySelector('pre');
+      if (!head || !pre) return;
+
+      const tag = head.querySelector('.tag');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy-btn';
+      btn.textContent = 'copy';
+      btn.setAttribute('aria-label', '코드 복사');
+
+      const reset = () => { btn.textContent = 'copy'; btn.classList.remove('copied', 'failed'); };
+
+      btn.addEventListener('click', async () => {
+        const code = pre.textContent;
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(code);
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = code;
+            ta.style.position = 'fixed'; ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          btn.textContent = 'copied';
+          btn.classList.add('copied');
+          setTimeout(reset, 1500);
+        } catch (e) {
+          btn.textContent = 'failed';
+          btn.classList.add('failed');
+          setTimeout(reset, 2000);
+        }
+      });
+
+      if (tag) {
+        const wrap = document.createElement('div');
+        wrap.className = 'head-right';
+        tag.replaceWith(wrap);
+        wrap.appendChild(tag);
+        wrap.appendChild(btn);
+      } else {
+        head.appendChild(btn);
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>

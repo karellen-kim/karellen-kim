@@ -391,6 +391,65 @@
 
   body.menu-open { overflow: hidden; }
 
+  /* ───────── §03 대용량 처리 ───────── */
+  .ls-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .ls-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .ls-block { margin-bottom: clamp(3rem, 5vw, 4.5rem); padding-bottom: clamp(3rem, 5vw, 4.5rem); border-bottom: 1px solid var(--rule); }
+  .ls-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .ls-kicker { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.35rem; }
+  .ls-title { font-size: clamp(1.15rem, 1.9vw, 1.45rem); font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.2rem; color: var(--ink); }
+  .ls-body { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .ls-body { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .ls-text p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.65; margin-bottom: 0.9rem; }
+  .ls-text p:last-child { margin-bottom: 0; }
+  .ls-text p strong { color: var(--ink); font-weight: 600; }
+  .ls-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .ls-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .ls-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .ls-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+  .company-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+  .company-row .cl { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-right: 0.1rem; }
+  .badge { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; padding: 0.18rem 0.5rem; border: 1px solid var(--accent); color: var(--accent-deep); background: var(--accent-wash); }
+
+  /* AQE 다이어그램 */
+  .d-aqe { width: 100%; display: flex; flex-direction: column; gap: 1rem; }
+  .d-aqe .aqe-label { font-size: 0.6rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint); margin-bottom: 0.35rem; }
+  .d-aqe .aqe-flow { display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; }
+  .d-aqe .aqe-node { padding: 0.4rem 0.55rem; border: 1.5px solid var(--rule); font-size: 0.68rem; font-weight: 500; text-align: center; background: var(--paper); white-space: nowrap; }
+  .d-aqe .aqe-node.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); font-weight: 600; }
+  .d-aqe .aqe-node.hi { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); font-weight: 600; }
+  .d-aqe .aqe-node.dim { color: var(--ink-faint); border-color: var(--rule); }
+  .d-aqe .aqe-arr { color: var(--ink-faint); font-size: 0.75rem; flex-shrink: 0; }
+  .d-aqe .aqe-divider { border: none; border-top: 1px dashed var(--rule); margin: 0.3rem 0; }
+
+  /* Salting 다이어그램 */
+  .d-salt { width: 100%; display: flex; flex-direction: column; gap: 1rem; }
+  .d-salt .salt-label { font-size: 0.6rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint); margin-bottom: 0.35rem; }
+  .d-salt .bar-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+  .d-salt .bar-key { font-family: var(--mono); font-size: 0.62rem; color: var(--ink-soft); min-width: 3.8rem; flex-shrink: 0; }
+  .d-salt .bar { height: 1rem; min-width: 2px; border: 1.5px solid var(--rule); background: var(--paper-deep); }
+  .d-salt .bar.heavy { background: var(--accent); border-color: var(--accent-deep); }
+  .d-salt .bar.salted { background: var(--accent-wash); border-color: var(--accent); }
+  .d-salt .bar-val { font-family: var(--mono); font-size: 0.6rem; color: var(--ink-faint); flex-shrink: 0; }
+
+  /* Format comparison table */
+  .format-table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+  .format-table th { font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; padding: 0.6rem 0.8rem; border-bottom: 2px solid var(--ink); text-align: left; }
+  .format-table td { padding: 0.65rem 0.8rem; border-bottom: 1px solid var(--rule); vertical-align: top; color: var(--ink-soft); line-height: 1.5; font-size: 0.88rem; }
+  .format-table tr:last-child td { border-bottom: none; }
+  .format-table .fn { font-weight: 600; color: var(--ink); font-family: var(--mono); font-size: 0.82rem; }
+  .format-table .fwho { font-size: 0.7rem; color: var(--accent-deep); display: block; margin-top: 0.2rem; }
+
+  /* Config reference */
+  .config-ref { margin-top: 1.5rem; border-top: 2px solid var(--ink); }
+  .config-ref-head { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.5rem 0; border-bottom: 1px solid var(--ink-faint); }
+  .config-ref-head span { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; }
+  .config-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.65rem 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .config-row:last-child { border-bottom: none; }
+  .config-row .ck { font-family: var(--mono); font-size: 0.71rem; color: var(--accent-deep); word-break: break-all; line-height: 1.4; }
+  .config-row .cv { font-family: var(--mono); font-size: 0.75rem; color: var(--ink); font-weight: 600; white-space: nowrap; }
+  .config-row .cd { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.4; }
+
   /* 코드 카드 기본 접힘 */
   .code-card pre, .code-card .note { display: none; }
   .code-card.expanded pre, .code-card.expanded .note { display: block; }
@@ -439,6 +498,15 @@
         <li><a href="#d-eco" data-close><span>05</span>에코시스템</a></li>
       </ul>
     </li>
+    <li>
+      <a href="#largescale" data-close>대용량 처리</a>
+      <ul class="toc-sub">
+        <li><a href="#ls-aqe" data-close><span>01</span>AQE</a></li>
+        <li><a href="#ls-skew" data-close><span>02</span>데이터 스큐 & Salting</a></li>
+        <li><a href="#ls-format" data-close><span>03</span>오픈 테이블 포맷</a></li>
+        <li><a href="#ls-config" data-close><span>04</span>핵심 설정 튜닝</a></li>
+      </ul>
+    </li>
     <li><a href="#code" data-close>실전 코드</a></li>
   </ol>
 
@@ -452,7 +520,7 @@
 <header class="hero" id="top">
   <div class="meta-row">
     <span>Apache Spark · 오픈소스</span>
-    <span>학습 노트 · 읽는 시간 15분</span>
+    <span>학습 노트 · 읽는 시간 22분</span>
   </div>
 
   <h1 class="hero-title">Apache<br><em>Spark</em></h1>
@@ -749,15 +817,263 @@
 </section>
 
 
-<div class="margin-note">
-  Spark의 가장 흔한 성능 안티패턴은 <strong>데이터 스큐(skew)</strong>다. groupBy 후 특정 키에 데이터가 집중되면 그 파티션을 처리하는 Executor 하나가 전체를 기다리게 만든다. 해결책은 salting(키에 랜덤 접미사 추가 후 집계), repartition, 또는 broadcast join이다.
-</div>
-
-
-<!-- §3 실전 코드 -->
-<section class="section" id="code">
+<!-- §03 대용량 처리 -->
+<section class="section" id="largescale">
   <div class="section-head">
     <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Big Tech</div>
+      <h2 class="section-title">대용량 처리 — 빅테크 패턴</h2>
+    </div>
+  </div>
+
+  <p class="ls-intro">
+    TB~PB 규모에서 Spark 성능 차이의 90%는 알고리즘이 아니라 <em>설정·파티션 전략·메모리 모델 이해</em>에서 온다.
+    Spark 3.0의 AQE, 스큐 처리 패턴, 메모리 아키텍처, 오픈 테이블 포맷, 핵심 설정 —
+    Meta·Netflix·Uber·Databricks의 실운영 결정들을 정리한다.
+  </p>
+
+  <!-- 1. AQE -->
+  <div class="ls-block" id="ls-aqe">
+    <div class="ls-kicker">Spark 3.0+</div>
+    <div class="ls-title">AQE — Adaptive Query Execution</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row">
+          <span class="cl">사용</span>
+          <span class="badge">Databricks</span>
+          <span class="badge">Meta</span>
+          <span class="badge">Netflix</span>
+          <span class="badge">LinkedIn</span>
+        </div>
+        <p>Spark 2.x까지는 DAG를 컴파일 시점에 고정했다. <strong>AQE</strong>는 각 Stage 완료 후 수집한 런타임 통계를 바탕으로 다음 Stage 실행 계획을 동적으로 재최적화한다. Spark 3.2+에서 기본 활성화.</p>
+        <p><strong>① 셔플 파티션 동적 병합</strong> — Stage 완료 후 실제 파티션 크기를 측정해 너무 작은 파티션들을 합친다. <code>shuffle.partitions=200</code> 기본값의 "200개 중 190개가 빈 파티션" 문제를 자동 해결.</p>
+        <p><strong>② 조인 전략 동적 전환</strong> — 컴파일 시에 크다고 판단해 sort-merge join으로 계획했더라도, 실제 데이터가 브로드캐스트 임계치 이하면 런타임에 broadcast join으로 전환.</p>
+        <p><strong>③ 스큐 조인 자동 분할</strong> — 스큐 파티션을 여러 개로 쪼개 병렬 처리. <code>skewJoin.skewedPartitionFactor=5</code>·<code>skewedPartitionThresholdInBytes=256MB</code>가 판단 기준.</p>
+        <div class="use-when">
+          <strong>Meta 사례</strong>
+          <p>전사 Spark 설정에 AQE 기본 활성화. 10PB+ 일일 처리 파이프라인에서 셔플 파티션 수를 AQE가 자동 결정하도록 위임 — 잡 튜닝 공수 70% 감소.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="AQE runtime optimization">
+        <div class="d-aqe">
+          <div>
+            <div class="aqe-label">Spark 2.x — Static Plan</div>
+            <div class="aqe-flow">
+              <div class="aqe-node dim">DAG 컴파일</div>
+              <span class="aqe-arr">→</span>
+              <div class="aqe-node dim">고정 실행 계획</div>
+              <span class="aqe-arr">→</span>
+              <div class="aqe-node dark">실행</div>
+            </div>
+          </div>
+          <hr class="aqe-divider">
+          <div>
+            <div class="aqe-label">Spark 3.x — AQE</div>
+            <div class="aqe-flow">
+              <div class="aqe-node dim">DAG 컴파일</div>
+              <span class="aqe-arr">→</span>
+              <div class="aqe-node">Stage 실행</div>
+              <span class="aqe-arr">→</span>
+              <div class="aqe-node hi">Stats 수집</div>
+              <span class="aqe-arr">→</span>
+              <div class="aqe-node hi">재최적화</div>
+              <span class="aqe-arr">→</span>
+              <div class="aqe-node dark">완료</div>
+            </div>
+          </div>
+          <div style="padding: 0.8rem; background: var(--paper-deep); border: 1px solid var(--rule); font-size: 0.72rem; color: var(--ink-soft); line-height: 1.5;">
+            <div style="font-family: var(--mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent-deep); margin-bottom: 0.4rem; font-weight: 600;">AQE 활성화 설정</div>
+            <code style="font-family: var(--mono); font-size: 0.68rem; color: var(--ink);">spark.sql.adaptive.enabled = true</code><br>
+            <code style="font-family: var(--mono); font-size: 0.68rem; color: var(--ink);">spark.sql.adaptive.coalescePartitions.enabled = true</code><br>
+            <code style="font-family: var(--mono); font-size: 0.68rem; color: var(--ink);">spark.sql.adaptive.skewJoin.enabled = true</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 메모리 모델 -->
+  <div class="ls-block" id="ls-memory">
+    <div class="ls-kicker">Memory Architecture</div>
+    <div class="ls-title">Spark 메모리 모델 — Unified Memory Manager</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <p>Spark 1.6부터 도입된 <strong>Unified Memory Manager</strong>는 JVM Heap을 4개 영역으로 분리한다. 가장 중요한 변화는 실행 메모리와 저장 메모리가 <strong>동적으로 경계를 공유</strong>한다는 점이다 — 한쪽이 부족하면 다른 쪽을 빌려 쓴다.</p>
+        <p><strong>Reserved Memory</strong>(300MB 고정) — Spark 내부 객체용. 나머지가 usable heap.<br>
+        <strong>Spark Memory</strong>(<code>memory.fraction</code> = 0.6 기본) — Execution + Storage 공유 풀.<br>
+        <strong>User Memory</strong>(나머지 40%) — RDD 파티션 메타데이터, UDF 내부 자료구조.<br>
+        <strong>Execution Memory</strong> — 셔플·집계·정렬 중간 버퍼. 부족하면 디스크로 Spill.<br>
+        <strong>Storage Memory</strong> — <code>.cache()</code>·<code>.persist()</code>·broadcast 변수.</p>
+        <p><strong>Off-Heap Memory</strong>(Tungsten) — JVM GC 밖에서 직접 관리. GC 압박이 심한 장시간 잡에 유효. <code>spark.memory.offHeap.enabled=true</code>·<code>offHeap.size</code> 설정 필요.</p>
+        <div class="use-when">
+          <strong>OOM / Spill 진단 순서</strong>
+          <p>Spark UI → Stages → "Spill (memory)" 컬럼 확인 → 크면 executor memory 증가 또는 파티션 수 늘리기. GC Time이 20% 이상이면 <code>executor.cores</code> 줄이거나 off-heap 검토.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="unified memory model" style="align-items: flex-start; flex-direction: column; gap: 0.3rem; padding: 1.5rem;">
+        <div style="font-family: var(--mono); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint); margin-bottom: 0.5rem;">JVM Heap (예: 8g executor)</div>
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 0.3rem;">
+          <div style="width: 100%; padding: 0.45rem 0.7rem; background: var(--paper-deep); border: 1.5px solid var(--rule); font-size: 0.7rem; font-weight: 500; display: flex; justify-content: space-between;"><span>Reserved Memory</span><span style="font-family: var(--mono); color: var(--ink-faint);">300MB 고정</span></div>
+          <div style="width: 100%; padding: 0.45rem 0.7rem; background: var(--paper-deep); border: 1.5px solid var(--rule); font-size: 0.7rem; font-weight: 500; display: flex; justify-content: space-between;"><span>User Memory</span><span style="font-family: var(--mono); color: var(--ink-faint);">40%</span></div>
+          <div style="width: 100%; border: 1.5px solid var(--accent); overflow: hidden;">
+            <div style="padding: 0.3rem 0.7rem; background: var(--accent-wash); font-size: 0.65rem; font-weight: 600; color: var(--accent-deep); letter-spacing: 0.08em; text-transform: uppercase;">Spark Memory Pool — 60%</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr;">
+              <div style="padding: 0.55rem 0.7rem; background: oklch(0.18 0.02 260); color: var(--paper); font-size: 0.7rem; font-weight: 600; border-right: 1px solid var(--accent);">Execution<br><span style="font-size: 0.6rem; font-weight: 400; opacity: 0.7;">셔플·집계·정렬</span></div>
+              <div style="padding: 0.55rem 0.7rem; background: var(--accent-wash); color: var(--accent-deep); font-size: 0.7rem; font-weight: 600;">Storage<br><span style="font-size: 0.6rem; font-weight: 400; opacity: 0.7;">cache·broadcast</span></div>
+            </div>
+            <div style="padding: 0.3rem 0.7rem; background: var(--paper-deep); font-size: 0.62rem; color: var(--ink-faint); border-top: 1px dashed var(--rule);">← 동적 경계: 한쪽이 부족하면 다른 쪽 영역을 빌림 →</div>
+          </div>
+          <div style="width: 100%; padding: 0.45rem 0.7rem; border: 1.5px dashed var(--rule); font-size: 0.7rem; color: var(--ink-faint);">Off-Heap (옵션) — JVM GC 밖, Tungsten</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 데이터 스큐 & Salting -->
+  <div class="ls-block" id="ls-skew">
+    <div class="ls-kicker">Performance</div>
+    <div class="ls-title">데이터 스큐 & Salting</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row">
+          <span class="cl">사례</span>
+          <span class="badge">Uber</span>
+          <span class="badge">Meta</span>
+        </div>
+        <p>스큐는 가장 빈번한 대용량 처리 병목이다. 특정 키에 데이터가 집중되면 해당 파티션의 Executor 하나가 나머지를 기다리게 만들어 전체 Stage가 블록된다. <strong>Uber</strong>는 뉴욕 맨해튼 셀의 배달 이벤트가 전체의 30%를 차지하는 스큐를 Salting으로 해결했다.</p>
+        <p><strong>Salting 2-phase 패턴</strong>: 키에 랜덤 정수 접미사를 붙여 파티션을 강제 분산(Phase 1) → 접미사 제거 후 재집계(Phase 2). 아래 코드 카드 참고.</p>
+        <p>AQE의 <code>skewJoin.enabled=true</code>는 조인 시 스큐를 자동 감지해 파티션을 분할한다. 단, groupBy·agg의 스큐는 AQE가 처리 못하므로 Salting이 필요하다.</p>
+        <div class="use-when">
+          <strong>언제 쓰나</strong>
+          <p>Spark UI에서 Tasks 중 일부가 나머지보다 10배+ 오래 걸리면 스큐다. 조인 스큐 → AQE skewJoin. groupBy 스큐 → Salting. 전체적으로 느리면 파티션 수 조정.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="data skew vs salting" style="align-items: flex-start; flex-direction: column; gap: 1rem; padding: 1.5rem 1.25rem;">
+        <div class="d-salt">
+          <div>
+            <div class="salt-label">스큐 발생 — 파티션 편중</div>
+            <div class="bar-row"><span class="bar-key">키A (핫)</span><div class="bar heavy" style="width: 80%;"></div><span class="bar-val">80%</span></div>
+            <div class="bar-row"><span class="bar-key">키B</span><div class="bar" style="width: 10%;"></div><span class="bar-val">10%</span></div>
+            <div class="bar-row"><span class="bar-key">키C</span><div class="bar" style="width: 10%;"></div><span class="bar-val">10%</span></div>
+          </div>
+          <div>
+            <div class="salt-label">Salting 후 — 균등 분산</div>
+            <div class="bar-row"><span class="bar-key">키A_0</span><div class="bar salted" style="width: 27%;"></div><span class="bar-val">27%</span></div>
+            <div class="bar-row"><span class="bar-key">키A_1</span><div class="bar salted" style="width: 27%;"></div><span class="bar-val">27%</span></div>
+            <div class="bar-row"><span class="bar-key">키A_2</span><div class="bar salted" style="width: 26%;"></div><span class="bar-val">26%</span></div>
+            <div class="bar-row"><span class="bar-key">키B</span><div class="bar" style="width: 10%;"></div><span class="bar-val">10%</span></div>
+            <div class="bar-row"><span class="bar-key">키C</span><div class="bar" style="width: 10%;"></div><span class="bar-val">10%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 오픈 테이블 포맷 -->
+  <div class="ls-block" id="ls-format">
+    <div class="ls-kicker">Storage Layer</div>
+    <div class="ls-title">오픈 테이블 포맷 — Delta Lake · Iceberg · Hudi</div>
+    <p style="color: var(--ink-soft); font-size: 0.95rem; line-height: 1.65; margin-bottom: 0.5rem;">
+      Raw Parquet는 ACID 트랜잭션·스키마 진화·타임 트래블이 없다. 오픈 테이블 포맷 3종은 메타데이터 레이어를 추가해 이를 해결한다. 빅테크마다 선택이 갈린다.
+    </p>
+    <table class="format-table">
+      <thead>
+        <tr>
+          <th>포맷</th>
+          <th>강점</th>
+          <th>주요 특징</th>
+          <th>채택</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="fn">Delta Lake</span><span class="fwho">Databricks 오픈소스</span></td>
+          <td>DML 완성도, MERGE INTO</td>
+          <td>트랜잭션 로그(_delta_log), Schema enforcement, Liquid Clustering(3.1+), Photon 통합</td>
+          <td>Databricks, Meta, Microsoft, Apple</td>
+        </tr>
+        <tr>
+          <td><span class="fn">Apache Iceberg</span><span class="fwho">Netflix 오픈소스 (2018)</span></td>
+          <td>숨겨진 파티셔닝, 엔진 중립</td>
+          <td>Manifest 기반 메타데이터, Hidden partitioning, Schema evolution 우수, Snowflake·Trino·Flink 지원</td>
+          <td>Netflix, Apple, LinkedIn, Snowflake, AWS</td>
+        </tr>
+        <tr>
+          <td><span class="fn">Apache Hudi</span><span class="fwho">Uber 오픈소스 (2016)</span></td>
+          <td>Upsert·CDC 최적화</td>
+          <td>Copy-on-Write / Merge-on-Read 두 가지 테이블 타입, Incremental query, 근실시간 스트리밍 upsert</td>
+          <td>Uber, Alibaba, Amazon EMR, ByteDance</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 5. 핵심 설정 튜닝 -->
+  <div class="ls-block" id="ls-config">
+    <div class="ls-kicker">Tuning</div>
+    <div class="ls-title">핵심 설정 튜닝 — GC · Shuffle · OOM</div>
+    <p style="color: var(--ink-soft); font-size: 0.95rem; line-height: 1.65; margin-bottom: 1rem;">
+      Netflix는 과거 실행 이력 기반 <strong>Auto-tuner</strong>로 shuffle.partitions·executor memory를 자동 추천한다.
+      Meta도 잡 특성별 최적 설정 DB를 구축해 수동 튜닝 공수를 줄였다.
+      기본값은 소규모 워크로드 기준이므로 대용량에서는 반드시 조정해야 한다.
+    </p>
+    <div class="config-ref">
+      <div class="config-ref-head">
+        <span>설정 키</span>
+        <span>권장값</span>
+        <span>설명</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">spark.sql.shuffle.partitions</span>
+        <span class="cv">데이터 크기 / 200MB</span>
+        <span class="cd">기본 200은 소규모용. 1TB 데이터면 5000 이상. AQE 활성화 시 자동 병합됨</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">spark.executor.memory</span>
+        <span class="cv">4g ~ 16g</span>
+        <span class="cd">너무 크면 GC 시간 증가. 단일 JVM에 64g 이상은 G1GC·ZGC 검토 필요</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">spark.executor.cores</span>
+        <span class="cv">2 ~ 4</span>
+        <span class="cd">코어 수 많을수록 GC 경쟁 심화. 5코어 이상은 일반적으로 역효과</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">spark.memory.fraction</span>
+        <span class="cv">0.6 (기본)</span>
+        <span class="cd">Spark 관리 메모리 비율. Spill 빈번하면 0.7~0.75로 올리되 User Memory 여유 확인</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">spark.memory.offHeap.enabled</span>
+        <span class="cv">true (GC 심할 때)</span>
+        <span class="cd">JVM GC 밖 Tungsten 메모리. GC Time이 Stage 시간의 20% 이상이면 검토</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">spark.sql.files.maxPartitionBytes</span>
+        <span class="cv">128MB ~ 256MB</span>
+        <span class="cd">파일 읽기 시 파티션 최대 크기. 256MB로 늘리면 태스크 수 감소 → 스케줄링 오버헤드 절감</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">spark.sql.autoBroadcastJoinThreshold</span>
+        <span class="cv">10MB → 100MB</span>
+        <span class="cd">기본 10MB는 작다. 메모리 여유 시 100MB~1GB로 확대해 셔플 없는 조인 범위 넓히기</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">spark.executor.extraJavaOptions</span>
+        <span class="cv">-XX:+UseG1GC</span>
+        <span class="cd">Heap 4g 이상 시 G1GC 권장. 32g+ 이상이면 ZGC. GC log 출력으로 튜닝 근거 확보</span>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+
+<!-- §04 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">04</div>
     <div class="section-titles">
       <div class="section-kicker">PySpark</div>
       <h2 class="section-title">실전 코드</h2>
@@ -768,6 +1084,96 @@
     PySpark DataFrame API 기준. <em>SparkSession</em>이 진입점이고 모든 작업은 여기서 시작한다.
     코드 카드 헤더를 클릭하면 펼쳐진다.
   </p>
+
+  <!-- 코드 0: AQE + GC 설정 -->
+  <div class="code-card">
+    <div class="code-head">
+      <h4>대용량 처리 SparkSession — AQE + 메모리 + GC 설정</h4>
+      <span class="tag">production config</span>
+    </div>
+    <pre><span class="kw">from</span> pyspark.sql <span class="kw">import</span> SparkSession
+
+spark = (SparkSession.builder
+    .<span class="fn">appName</span>(<span class="str">"large-scale-job"</span>)
+
+    <span class="com"># AQE — 런타임 재최적화 (Spark 3.2+부터 기본값이나 명시 권장)</span>
+    .<span class="fn">config</span>(<span class="str">"spark.sql.adaptive.enabled"</span>, <span class="str">"true"</span>)
+    .<span class="fn">config</span>(<span class="str">"spark.sql.adaptive.coalescePartitions.enabled"</span>, <span class="str">"true"</span>)
+    .<span class="fn">config</span>(<span class="str">"spark.sql.adaptive.skewJoin.enabled"</span>, <span class="str">"true"</span>)
+    .<span class="fn">config</span>(<span class="str">"spark.sql.adaptive.skewJoin.skewedPartitionFactor"</span>, <span class="str">"5"</span>)
+
+    <span class="com"># 셔플 파티션 — 200은 소규모용. 데이터 크기(바이트) / 200MB 로 계산</span>
+    .<span class="fn">config</span>(<span class="str">"spark.sql.shuffle.partitions"</span>, <span class="str">"2000"</span>)
+
+    <span class="com"># Executor 메모리 — cores 2~4, memory 4~16g 조합이 GC 안정적</span>
+    .<span class="fn">config</span>(<span class="str">"spark.executor.memory"</span>, <span class="str">"8g"</span>)
+    .<span class="fn">config</span>(<span class="str">"spark.executor.cores"</span>, <span class="str">"4"</span>)
+    .<span class="fn">config</span>(<span class="str">"spark.executor.memoryOverhead"</span>, <span class="str">"2g"</span>)  <span class="com"># off-heap + Python용 버퍼</span>
+
+    <span class="com"># 메모리 모델 튜닝</span>
+    .<span class="fn">config</span>(<span class="str">"spark.memory.fraction"</span>, <span class="str">"0.7"</span>)     <span class="com"># 기본 0.6 → Spill 빈번하면 올리기</span>
+    .<span class="fn">config</span>(<span class="str">"spark.memory.storageFraction"</span>, <span class="str">"0.3"</span>) <span class="com"># Storage에 덜 예약 → Execution 우선</span>
+
+    <span class="com"># GC 튜닝 — G1GC는 4g+ heap에서 STW pause 최소화</span>
+    .<span class="fn">config</span>(<span class="str">"spark.executor.extraJavaOptions"</span>,
+           <span class="str">"-XX:+UseG1GC -XX:G1HeapRegionSize=16m "
+           "-XX:InitiatingHeapOccupancyPercent=35 "
+           "-XX:+PrintGCDetails -XX:+PrintGCDateStamps"</span>)
+
+    <span class="com"># 파일 읽기 파티션 크기 — 256MB로 늘려 태스크 수 감소</span>
+    .<span class="fn">config</span>(<span class="str">"spark.sql.files.maxPartitionBytes"</span>, <span class="str">"268435456"</span>)  <span class="com"># 256MB</span>
+
+    <span class="com"># Broadcast join 임계치 확대 — 셔플 없는 조인 범위 늘리기</span>
+    .<span class="fn">config</span>(<span class="str">"spark.sql.autoBroadcastJoinThreshold"</span>, <span class="str">"104857600"</span>)  <span class="com"># 100MB</span>
+
+    .<span class="fn">getOrCreate</span>())</pre>
+    <div class="note">
+      <strong>포인트.</strong> <code>memoryOverhead</code>는 JVM 밖 메모리(Python 프로세스·off-heap 버퍼)다. PySpark는 Python 워커가 별도 프로세스로 뜨므로 executor.memory의 10~20%를 추가 확보해야 YARN/K8s에서 컨테이너가 OOM-kill되지 않는다.
+    </div>
+  </div>
+
+  <!-- 코드 0b: Salting -->
+  <div class="code-card">
+    <div class="code-head">
+      <h4>데이터 스큐 — Salting 2-phase 집계</h4>
+      <span class="tag">skew handling</span>
+    </div>
+    <pre><span class="kw">from</span> pyspark.sql <span class="kw">import</span> functions <span class="kw">as</span> F
+<span class="kw">import</span> math
+
+<span class="com"># 스큐 키의 파티션 분산 목표 수 (핫 키의 데이터 크기 / 목표 파티션 크기)</span>
+SALT_BUCKETS = 50
+
+<span class="com"># Phase 1: 키에 랜덤 접미사 추가 → 파티션 강제 분산</span>
+df_salted = df.<span class="fn">withColumn</span>(
+    <span class="str">"salt"</span>, (F.<span class="fn">rand</span>() * SALT_BUCKETS).<span class="fn">cast</span>(<span class="str">"int"</span>)
+).<span class="fn">withColumn</span>(
+    <span class="str">"salted_key"</span>, F.<span class="fn">concat</span>(F.<span class="fn">col</span>(<span class="str">"user_id"</span>), F.<span class="fn">lit</span>(<span class="str">"_"</span>), F.<span class="fn">col</span>(<span class="str">"salt"</span>))
+)
+
+agg1 = (df_salted
+    .<span class="fn">groupBy</span>(<span class="str">"salted_key"</span>, <span class="str">"event_type"</span>)
+    .<span class="fn">agg</span>(
+        F.<span class="fn">sum</span>(<span class="str">"amount"</span>).<span class="fn">alias</span>(<span class="str">"sum_amount"</span>),
+        F.<span class="fn">count</span>(<span class="str">"*"</span>).<span class="fn">alias</span>(<span class="str">"cnt"</span>),
+    ))
+
+<span class="com"># Phase 2: 접미사 제거 후 원래 키로 최종 집계</span>
+result = (agg1
+    .<span class="fn">withColumn</span>(<span class="str">"user_id"</span>,
+        F.<span class="fn">regexp_extract</span>(F.<span class="fn">col</span>(<span class="str">"salted_key"</span>), <span class="str">r"^(.+)_\d+$"</span>, 1))
+    .<span class="fn">groupBy</span>(<span class="str">"user_id"</span>, <span class="str">"event_type"</span>)
+    .<span class="fn">agg</span>(
+        F.<span class="fn">sum</span>(<span class="str">"sum_amount"</span>).<span class="fn">alias</span>(<span class="str">"total_amount"</span>),
+        F.<span class="fn">sum</span>(<span class="str">"cnt"</span>).<span class="fn">alias</span>(<span class="str">"total_cnt"</span>),
+    ))
+
+<span class="com"># AQE skewJoin은 조인에만 적용 — groupBy 스큐는 Salting이 유일한 해법</span>
+result.<span class="fn">write</span>.<span class="fn">parquet</span>(<span class="str">"s3://bucket/output/user-agg/"</span>)</pre>
+    <div class="note">
+      <strong>포인트.</strong> SALT_BUCKETS는 핫 키가 차지하는 데이터 비율에 비례해서 정한다. 핫 키가 전체의 30%를 차지하고 목표 파티션 크기를 200MB로 잡으면, 30% × 전체 데이터 / 200MB = 버킷 수. 너무 많으면 Phase 2 집계의 셔플이 커지므로 균형을 맞춰야 한다.
+    </div>
+  </div>
 
   <!-- 코드 1: SparkSession + 기본 DataFrame -->
   <div class="code-card">

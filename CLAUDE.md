@@ -124,6 +124,13 @@
 - hero-grid의 "노트 N개" 카운트 업데이트
 - meta-row의 "last updated" 월 갱신
 
+### 11-a. list.html — 전체 노트 목록 페이지
+
+- `list.html`은 모든 노트의 타이틀 + 간단한 설명 + 링크를 **타이틀 알파벳 오름차순**으로 나열한다
+- index.html에 추가하지 않는 노트도 list.html에는 반드시 추가한다
+- 새 노트를 추가할 때 index.html을 업데이트하지 않는 경우에도 list.html은 항상 업데이트한다
+- 디자인은 index.html의 `.notes` 목록과 동일한 스타일을 따른다 (같은 CSS 클래스 재사용)
+
 ### 11. 푸터
 
 - "— end of notes —" 같은 장식 라인 추가 금지

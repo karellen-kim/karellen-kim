@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apache Kafka — 학습 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .hero { max-width: 1200px; margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); position: relative; }
+  .hero::before { content: ""; position: absolute; top: 2rem; left: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); height: 1px; background: var(--ink); }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.5rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.95; font-weight: 600; margin-top: clamp(2rem, 5vw, 3rem); letter-spacing: -0.035em; color: var(--ink); }
+  .hero-title em { font-style: normal; font-weight: 300; color: var(--accent-deep); }
+  .hero-sub { margin-top: 1.4rem; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: var(--ink-soft); max-width: 42rem; line-height: 1.5; font-weight: 300; }
+  .hero-grid { margin-top: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .hero-grid > div { background: var(--paper); padding: 1.25rem 1.5rem; }
+  .hero-grid .k { display: block; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 0.4rem; }
+  .hero-grid .v { font-size: 1.2rem; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .hero-grid .v small { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; font-weight: 400; }
+
+  .section { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem); position: relative; }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head { display: grid; grid-template-columns: auto 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: baseline; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .section-num { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.85; color: var(--accent); font-weight: 200; letter-spacing: -0.04em; }
+  .section-titles { border-left: 1px solid var(--ink); padding-left: clamp(1rem, 3vw, 2rem); padding-top: 0.5rem; }
+  .section-kicker { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .section-title { font-size: clamp(1.65rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.028em; }
+
+  .tldr-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
+  @media (min-width: 720px) { .tldr-grid { grid-template-columns: repeat(12, 1fr); } }
+  .tldr-lead {
+    grid-column: 1 / -1;
+    font-size: clamp(1.2rem, 2.1vw, 1.6rem);
+    line-height: 1.45;
+    color: var(--ink);
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+    letter-spacing: -0.012em;
+  }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead::first-letter { font-size: 3.4em; float: left; line-height: 0.9; padding-right: 0.12em; padding-top: 0.08em; color: var(--accent-deep); font-weight: 200; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  @media (min-width: 720px) { .tldr-lead { grid-column: 2 / 12; } }
+
+  .points { display: contents; }
+  .point { grid-column: 1 / -1; display: grid; grid-template-columns: 4ch 1fr; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 720px) { .point { grid-column: 2 / 12; grid-template-columns: 5ch 1fr; gap: 2rem; } }
+  .point .n { font-size: 1.25rem; color: var(--accent); line-height: 1; font-weight: 300; letter-spacing: 0.05em; text-transform: uppercase; }
+  .point h3 { font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.3; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.015em; }
+  .point p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
+  .point p strong { color: var(--ink); font-weight: 600; }
+  .point p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+
+  .diagram-block { margin-bottom: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .db-text h4 { font-size: clamp(1.3rem, 2.3vw, 1.75rem); line-height: 1.25; margin-bottom: 0.8rem; color: var(--ink); font-weight: 600; letter-spacing: -0.022em; }
+  .db-text h4 .num { display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em; color: var(--accent-deep); vertical-align: middle; background: var(--accent-wash); padding: 0.28rem 0.55rem; border-radius: 999px; margin-right: 0.65rem; font-weight: 600; position: relative; top: -0.15em; }
+  .db-text p { color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.65; font-size: 0.95rem; }
+  .db-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .db-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .db-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas {
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    padding: clamp(1.25rem, 3vw, 2rem);
+    position: relative;
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .canvas::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 0.7rem;
+    left: 0.9rem;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+
+  .box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.6rem 0.85rem;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    font-family: var(--sans);
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.3;
+    min-width: 0;
+    max-width: 100%;
+    position: relative;
+    word-break: keep-all;
+    flex-direction: column;
+  }
+  .box.accent { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); }
+  .box.soft { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .box.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .box small { display: block; font-size: 0.6rem; font-weight: 400; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.18rem; }
+  .box.accent small { color: var(--accent-wash); opacity: 0.85; }
+  .box.dark small { color: oklch(0.75 0.01 260); }
+
+  /* 브로커 클러스터 다이어그램 */
+  .d-broker {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    width: 100%;
+  }
+  .d-broker .prod-row { display: flex; gap: 0.4rem; justify-content: center; }
+  .d-broker .prod-box { padding: 0.45rem 0.6rem; border: 1.5px solid var(--rule); font-size: 0.68rem; font-weight: 500; background: var(--paper); flex: 1; text-align: center; max-width: 80px; }
+  .d-broker .arr-down { text-align: center; font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); }
+  .d-broker .brokers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; }
+  .d-broker .broker { padding: 0.6rem 0.5rem; border: 1.5px solid var(--ink); background: var(--paper-deep); font-size: 0.7rem; font-weight: 600; text-align: center; }
+  .d-broker .broker small { display: block; font-size: 0.58rem; font-weight: 400; color: var(--ink-faint); margin-top: 0.15rem; letter-spacing: 0.06em; }
+  .d-broker .broker.leader { background: var(--ink); color: var(--paper); }
+  .d-broker .broker.leader small { color: oklch(0.75 0.01 260); }
+  .d-broker .zk { padding: 0.45rem 0.8rem; border: 1.5px dashed var(--ink-faint); font-size: 0.65rem; color: var(--ink-soft); text-align: center; font-weight: 500; }
+
+  /* 파티션/오프셋 다이어그램 */
+  .d-partition {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  .d-partition .topic-label { font-size: 0.62rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint); margin-bottom: 0.2rem; }
+  .d-partition .part-row { display: flex; gap: 0.3rem; align-items: center; }
+  .d-partition .part-name { font-size: 0.64rem; font-family: var(--mono); color: var(--ink-soft); min-width: 2.8rem; flex-shrink: 0; }
+  .d-partition .offsets { display: flex; gap: 0; flex: 1; }
+  .d-partition .off { padding: 0.35rem 0.45rem; border: 1px solid var(--rule); font-size: 0.62rem; font-family: var(--mono); text-align: center; background: var(--paper); color: var(--ink-faint); min-width: 2rem; }
+  .d-partition .off.written { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .d-partition .off.committed { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  /* 컨슈머 그룹 다이어그램 */
+  .d-cgroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    width: 100%;
+  }
+  .d-cgroup .topic-row { display: flex; gap: 0.3rem; justify-content: center; }
+  .d-cgroup .tpart { padding: 0.45rem 0.5rem; border: 1.5px solid var(--accent); background: var(--accent-wash); font-size: 0.65rem; font-weight: 600; color: var(--accent-deep); text-align: center; flex: 1; max-width: 60px; }
+  .d-cgroup .cg-divider { border: none; border-top: 1px dashed var(--rule); }
+  .d-cgroup .cg-label { font-size: 0.6rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint); }
+  .d-cgroup .consumers { display: flex; gap: 0.4rem; }
+  .d-cgroup .consumer { flex: 1; padding: 0.5rem 0.4rem; border: 1.5px solid var(--ink); background: var(--paper-deep); font-size: 0.65rem; font-weight: 500; text-align: center; }
+  .d-cgroup .consumer small { display: block; font-size: 0.55rem; color: var(--accent-deep); margin-top: 0.1rem; font-family: var(--mono); }
+
+  /* ISR 복제 다이어그램 */
+  .d-isr {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  .d-isr .isr-row { display: flex; gap: 0.5rem; align-items: center; }
+  .d-isr .isr-label { font-size: 0.62rem; font-family: var(--mono); color: var(--ink-faint); min-width: 4.5rem; flex-shrink: 0; }
+  .d-isr .isr-broker { flex: 1; padding: 0.45rem 0.5rem; border: 1.5px solid var(--rule); font-size: 0.64rem; font-weight: 500; text-align: center; background: var(--paper); }
+  .d-isr .isr-broker.leader { border-color: var(--ink); background: var(--ink); color: var(--paper); font-weight: 600; }
+  .d-isr .isr-broker.in-sync { border-color: var(--accent); background: var(--accent-wash); color: var(--accent-deep); }
+  .d-isr .isr-broker.lagging { border-color: var(--rule); color: var(--ink-faint); }
+  .d-isr .isr-arrow { font-family: var(--mono); font-size: 0.65rem; color: var(--ink-faint); }
+
+  /* 대용량 처리 섹션 */
+  .ls-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .ls-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .ls-block { margin-bottom: clamp(3rem, 5vw, 4.5rem); padding-bottom: clamp(3rem, 5vw, 4.5rem); border-bottom: 1px solid var(--rule); }
+  .ls-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .ls-kicker { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.35rem; }
+  .ls-title { font-size: clamp(1.15rem, 1.9vw, 1.45rem); font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.2rem; color: var(--ink); }
+  .ls-body { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .ls-body { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .ls-text p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.65; margin-bottom: 0.9rem; }
+  .ls-text p:last-child { margin-bottom: 0; }
+  .ls-text p strong { color: var(--ink); font-weight: 600; }
+  .ls-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .ls-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .ls-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .ls-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+  .company-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+  .company-row .cl { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-right: 0.1rem; }
+  .badge { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; padding: 0.18rem 0.5rem; border: 1px solid var(--accent); color: var(--accent-deep); background: var(--accent-wash); }
+
+  /* 처리량 시각화 */
+  .d-throughput { width: 100%; display: flex; flex-direction: column; gap: 0.8rem; }
+  .d-throughput .tp-label { font-size: 0.6rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint); margin-bottom: 0.2rem; }
+  .d-throughput .tp-row { display: flex; align-items: center; gap: 0.5rem; }
+  .d-throughput .tp-key { font-size: 0.62rem; color: var(--ink-soft); min-width: 7rem; flex-shrink: 0; font-family: var(--mono); }
+  .d-throughput .tp-bar { height: 1.1rem; background: var(--accent-wash); border: 1.5px solid var(--accent); min-width: 2px; }
+  .d-throughput .tp-bar.full { background: var(--ink); border-color: var(--ink); }
+  .d-throughput .tp-bar.mid { background: var(--accent); border-color: var(--accent-deep); }
+  .d-throughput .tp-val { font-family: var(--mono); font-size: 0.62rem; color: var(--ink-faint); flex-shrink: 0; }
+
+  /* Config reference */
+  .config-ref { margin-top: 1.5rem; border-top: 2px solid var(--ink); }
+  .config-ref-head { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.5rem 0; border-bottom: 1px solid var(--ink-faint); }
+  .config-ref-head span { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; }
+  .config-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.65rem 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .config-row:last-child { border-bottom: none; }
+  .config-row .ck { font-family: var(--mono); font-size: 0.71rem; color: var(--accent-deep); word-break: break-all; line-height: 1.4; }
+  .config-row .cv { font-family: var(--mono); font-size: 0.75rem; color: var(--ink); font-weight: 600; white-space: nowrap; }
+  .config-row .cd { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.4; }
+
+  /* 코드 섹션 */
+  .code-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card { margin-bottom: 2.5rem; border: 1px solid var(--rule); background: var(--paper); overflow: hidden; }
+  .code-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 1rem 1.4rem;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-deep);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .code-head h4 { font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .code-head .tag { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--accent); color: var(--paper); border-radius: 2px; }
+  .code-head .head-right { display: flex; align-items: center; gap: 0.5rem; }
+  .copy-btn { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease; font-weight: 600; }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .code-card pre { margin: 0; padding: 1.35rem 1.5rem; overflow-x: auto; background: oklch(0.18 0.02 260); color: oklch(0.92 0.015 75); font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note { padding: 1rem 1.4rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper-deep); line-height: 1.6; }
+  .code-card .note strong { color: var(--accent-deep); }
+
+  .code-card pre, .code-card .note { display: none; }
+  .code-card.expanded pre, .code-card.expanded .note { display: block; }
+  .code-card .code-head { cursor: pointer; user-select: none; transition: background 0.15s ease; }
+  .code-card .code-head:hover { background: var(--paper); }
+  .expand-indicator { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-faint); transition: transform 0.2s ease; display: inline-block; line-height: 1; }
+  .code-card.expanded .expand-indicator { transform: rotate(90deg); color: var(--accent-deep); }
+
+  .margin-note { max-width: 1200px; margin: 0 auto; color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; padding: 1.1rem clamp(1.5rem, 5vw, 4rem); background: var(--paper-deep); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); font-weight: 300; }
+  .margin-note::before { content: "노트"; font-weight: 600; color: var(--accent-deep); font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-right: 0.8rem; display: inline-block; padding-right: 0.7rem; border-right: 1px solid var(--rule); }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  footer { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: var(--ink-faint); }
+  footer .lockup { font-size: 1.1rem; color: var(--ink); font-weight: 600; letter-spacing: 0.02em; }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  .home-link { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 60; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0 0.95rem; height: 48px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.04em; transition: background 0.2s ease, color 0.2s ease; }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow { font-family: var(--mono); font-size: 0.95rem; transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  .menu-btn { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; transition: background 0.2s ease; }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span { display: block; width: 20px; height: 1.5px; background: var(--ink); transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, background 0.2s ease; transform-origin: center; }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  .toc-backdrop { position: fixed; inset: 0; background: oklch(0.18 0.015 260 / 0.35); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+
+  .toc-panel { position: fixed; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--ink); z-index: 55; transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); overflow-y: auto; padding: 6rem 2.5rem 3rem; }
+  .toc-panel.open { transform: translateX(0); }
+
+  .toc-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .toc-title { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.03em; color: var(--ink); margin-bottom: 2.2rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule); }
+
+  .toc-list { list-style: none; counter-reset: toc; }
+  .toc-list > li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a { display: grid; grid-template-columns: 2.5rem 1fr; align-items: baseline; text-decoration: none; color: var(--ink); font-weight: 500; font-size: 1.05rem; letter-spacing: -0.012em; transition: color 0.2s ease; }
+  .toc-list > li > a::before { counter-increment: toc; content: counter(toc, decimal-leading-zero); color: var(--accent); font-weight: 300; font-size: 0.85rem; letter-spacing: 0.05em; }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+
+  .toc-sub { list-style: none; margin-top: 0.6rem; margin-left: 2.5rem; padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a { color: var(--ink-soft); text-decoration: none; font-size: 0.88rem; font-weight: 400; transition: color 0.2s ease; display: flex; align-items: baseline; gap: 0.6rem; }
+  .toc-sub a span { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; min-width: 1.6rem; }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-sub a:hover span { color: var(--accent); }
+
+  .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); line-height: 1.6; }
+
+  body.menu-open { overflow: hidden; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card {
+      animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html" aria-label="홈으로 돌아가기">
+  <span class="arrow">←</span><span>notebook</span>
+</a>
+
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+
+<div class="toc-backdrop" id="tocBackdrop"></div>
+
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#concepts" data-close>핵심 개념 도감</a>
+      <ul class="toc-sub">
+        <li><a href="#d-broker" data-close><span>01</span>브로커 클러스터</a></li>
+        <li><a href="#d-partition" data-close><span>02</span>파티션과 오프셋</a></li>
+        <li><a href="#d-cgroup" data-close><span>03</span>컨슈머 그룹</a></li>
+        <li><a href="#d-isr" data-close><span>04</span>ISR 복제</a></li>
+        <li><a href="#d-delivery" data-close><span>05</span>전달 보장 스펙트럼</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#largescale" data-close>대용량 처리</a>
+      <ul class="toc-sub">
+        <li><a href="#ls-partition" data-close><span>01</span>파티셔닝 전략</a></li>
+        <li><a href="#ls-throughput" data-close><span>02</span>처리량 튜닝</a></li>
+        <li><a href="#ls-consumer" data-close><span>03</span>컨슈머 랙 관리</a></li>
+        <li><a href="#ls-config" data-close><span>04</span>핵심 설정 참조</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+  <div class="toc-foot">
+    Apache Kafka — 분산 커밋 로그<br>학습 노트 · 2026.05.28
+  </div>
+</aside>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="meta-row">
+    <span>karellen-kim · notebook</span>
+    <span>분산 시스템</span>
+  </div>
+  <h1 class="hero-title">Apache <em>Kafka</em></h1>
+  <p class="hero-sub">분산 커밋 로그 기반 이벤트 스트리밍 플랫폼 — 초당 수백만 메시지, 영속 저장, 정확히-한-번 전달</p>
+  <div class="hero-grid">
+    <div><span class="k">출시</span><span class="v">2011<small>LinkedIn → Apache</small></span></div>
+    <div><span class="k">최대 처리량</span><span class="v">2M+<small>msgs/sec/broker</small></span></div>
+    <div><span class="k">지연</span><span class="v">&lt;10ms<small>p99 end-to-end</small></span></div>
+    <div><span class="k">보존</span><span class="v">무한<small>디스크 기반</small></span></div>
+    <div><span class="k">작성</span><span class="v">2026<small>.05.28</small></span></div>
+  </div>
+</header>
+
+<!-- §01 -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <div class="section-kicker">TL;DR</div>
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      카프카는 <em>분산 커밋 로그(Distributed Commit Log)</em>다. 메시지를 전달하고 지우는 큐가 아니라, 디스크에 순서대로 <span class="hl">영속 저장</span>하고 컨슈머가 원하는 오프셋부터 언제든 다시 읽을 수 있다. 이 단순한 원칙 하나가 수평 확장, 재처리, 이벤트 소싱을 모두 가능하게 한다.
+    </p>
+
+    <div class="points">
+      <div class="point">
+        <span class="n">01</span>
+        <div>
+          <h3>토픽 · 파티션 · 오프셋</h3>
+          <p>토픽은 논리적 채널이고, 파티션은 물리적 단위다. 각 파티션은 <strong>append-only 로그</strong>이며, 메시지마다 단조 증가하는 오프셋이 부여된다. 컨슈머는 오프셋을 직접 관리하므로 임의 지점부터 재처리가 가능하다. 파티션 수가 병렬처리 상한선이다.</p>
+        </div>
+      </div>
+
+      <div class="point">
+        <span class="n">02</span>
+        <div>
+          <h3>프로듀서 배치 · 압축</h3>
+          <p><code>linger.ms</code>와 <code>batch.size</code>로 메시지를 묶어 보내고, Snappy/LZ4/ZSTD로 압축한다. 브로커는 압축된 배치를 <strong>그대로 디스크에 기록</strong>하고 컨슈머에 전달한다 — 한 번도 압축 해제하지 않는다. Zero-Copy sendfile(2)로 커널 버퍼에서 NIC로 직접 전달한다.</p>
+        </div>
+      </div>
+
+      <div class="point">
+        <span class="n">03</span>
+        <div>
+          <h3>컨슈머 그룹 · 파티션 할당</h3>
+          <p>동일 <code>group.id</code>를 가진 컨슈머들이 파티션을 나눠 담당한다. 컨슈머 1개당 파티션 1개 이상이 할당되고, 파티션보다 컨슈머가 많으면 유휴 상태가 된다. <strong>그룹 코디네이터</strong>가 heartbeat를 감지해 멤버 변화 시 리밸런싱을 트리거한다.</p>
+        </div>
+      </div>
+
+      <div class="point">
+        <span class="n">04</span>
+        <div>
+          <h3>ISR · 복제 · 내구성</h3>
+          <p>각 파티션에는 Leader 1개와 Follower N개가 있다. <strong>ISR(In-Sync Replicas)</strong>는 Leader를 따라잡은 Follower 목록이다. <code>acks=all</code>이면 모든 ISR이 기록을 확인해야 프로듀서에 응답한다. Leader 장애 시 ISR 중 새 Leader를 선출한다.</p>
+        </div>
+      </div>
+
+      <div class="point">
+        <span class="n">05</span>
+        <div>
+          <h3>Exactly-Once Semantics (EOS)</h3>
+          <p>프로듀서 <code>enable.idempotence=true</code> + <code>transactional.id</code>로 브로커 측 중복 제거를 활성화한다. 트랜잭션 코디네이터가 두 토픽 쓰기를 원자적으로 묶는다. 컨슈머는 <code>isolation.level=read_committed</code>로 커밋된 메시지만 읽는다.</p>
+        </div>
+      </div>
+
+      <div class="point">
+        <span class="n">06</span>
+        <div>
+          <h3>Kafka vs RabbitMQ vs Pulsar</h3>
+          <p>RabbitMQ는 메시지 소비 후 삭제 — 복잡한 라우팅과 낮은 지연이 필요할 때. Kafka는 로그 보존 · 재처리 · 높은 처리량이 필요할 때. Pulsar는 멀티 테넌시 · 계층적 저장(BookKeeper + S3 오프로딩)이 필요할 때. <strong>CDC, 이벤트 소싱, 로그 집계는 Kafka가 정답</strong>이다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §02 -->
+<section class="section" id="concepts">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Architecture</div>
+      <h2 class="section-title">핵심 개념 도감</h2>
+    </div>
+  </div>
+
+  <!-- 다이어그램 01 -->
+  <div class="diagram-block" id="d-broker">
+    <div class="db-text">
+      <h4><span class="num">01</span>브로커 클러스터</h4>
+      <p>브로커는 파티션 리더/팔로워 역할을 동시에 맡는다. ZooKeeper(KRaft 이전)가 컨트롤러 선출과 메타데이터를 관리하고, 브로커는 <strong>KRaft 모드</strong>에서는 내부 메타데이터 토픽(@metadata)으로 이를 대체한다.</p>
+      <p>Kafka 3.3+ KRaft GA: ZooKeeper 없이 브로커가 Raft 합의로 컨트롤러를 선출한다. 클러스터 규모 확장 시 ZooKeeper 병목이 사라졌다.</p>
+      <div class="use-when">
+        <strong>브로커 수 선택</strong>
+        <p>일반적으로 파티션 수 / 복제 인수 비율로 결정한다. LinkedIn: 1,400+ 브로커, 900TB+ 일일 처리량.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Broker Cluster">
+      <div class="d-broker">
+        <div class="prod-row">
+          <div class="prod-box">Producer A</div>
+          <div class="prod-box">Producer B</div>
+          <div class="prod-box">Producer C</div>
+        </div>
+        <div class="arr-down">↓ Round-Robin / Key Hash</div>
+        <div class="brokers">
+          <div class="broker leader">Broker 0<small>Controller</small></div>
+          <div class="broker">Broker 1<small>Follower</small></div>
+          <div class="broker">Broker 2<small>Follower</small></div>
+        </div>
+        <div class="zk">ZooKeeper / KRaft @metadata</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 다이어그램 02 -->
+  <div class="diagram-block" id="d-partition">
+    <div class="db-text">
+      <h4><span class="num">02</span>파티션과 오프셋</h4>
+      <p>파티션은 물리적으로 세그먼트 파일(<code>.log</code>) 묶음이다. 기본 세그먼트 크기는 1GB(<code>log.segment.bytes</code>). 읽기는 <strong>페이지 캐시</strong>를 통해 이뤄지며, 순차 I/O이므로 SSD와 HDD 모두 고처리량을 달성한다.</p>
+      <p>오프셋은 64비트 정수. 컨슈머 그룹의 커밋 오프셋은 <code>__consumer_offsets</code> 내부 토픽에 저장된다.</p>
+      <div class="use-when">
+        <strong>파티션 수 계산</strong>
+        <p>목표 처리량 / 단일 파티션 처리량. 파티션은 늘릴 수 있지만 줄이는 것은 토픽 재생성이 필요하다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Partition / Offset">
+      <div class="d-partition">
+        <div class="topic-label">orders-topic (3 partitions)</div>
+        <div class="part-row">
+          <span class="part-name">P-0</span>
+          <div class="offsets">
+            <div class="off committed">0</div>
+            <div class="off committed">1</div>
+            <div class="off committed">2</div>
+            <div class="off written">3</div>
+            <div class="off written">4</div>
+            <div class="off">5</div>
+          </div>
+        </div>
+        <div class="part-row">
+          <span class="part-name">P-1</span>
+          <div class="offsets">
+            <div class="off committed">0</div>
+            <div class="off committed">1</div>
+            <div class="off written">2</div>
+            <div class="off">3</div>
+            <div class="off">4</div>
+            <div class="off">5</div>
+          </div>
+        </div>
+        <div class="part-row">
+          <span class="part-name">P-2</span>
+          <div class="offsets">
+            <div class="off committed">0</div>
+            <div class="off written">1</div>
+            <div class="off">2</div>
+            <div class="off">3</div>
+            <div class="off">4</div>
+            <div class="off">5</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:1rem;margin-top:0.5rem;font-size:0.58rem;font-family:var(--mono);color:var(--ink-faint);">
+          <span style="color:var(--ink);">■ committed</span>
+          <span style="color:var(--accent-deep);">■ written</span>
+          <span>□ empty</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 다이어그램 03 -->
+  <div class="diagram-block" id="d-cgroup">
+    <div class="db-text">
+      <h4><span class="num">03</span>컨슈머 그룹</h4>
+      <p>하나의 파티션은 동일 그룹 내 하나의 컨슈머에만 할당된다. 파티션 수보다 컨슈머가 많으면 초과 컨슈머는 대기 상태가 된다. 그룹이 다르면 동일 파티션을 독립적으로 소비할 수 있다 — 파이프라인 팬아웃에 유용하다.</p>
+      <p><strong>Static Group Membership</strong>(<code>group.instance.id</code>): 재시작 시 불필요한 리밸런싱을 방지한다. 쿠버네티스 롤링 업데이트에서 중요하다.</p>
+      <div class="use-when">
+        <strong>리밸런싱 최소화</strong>
+        <p><code>session.timeout.ms</code>를 충분히 크게, <code>max.poll.interval.ms</code>를 처리 시간에 맞게 설정한다. Incremental Cooperative Rebalancing(Kafka 2.4+)으로 Stop-The-World 리밸런싱을 제거한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Consumer Group">
+      <div class="d-cgroup">
+        <div class="topic-label" style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-faint);">orders-topic</div>
+        <div class="topic-row">
+          <div class="tpart">P-0</div>
+          <div class="tpart">P-1</div>
+          <div class="tpart">P-2</div>
+          <div class="tpart">P-3</div>
+        </div>
+        <div class="arr-down" style="font-family:var(--mono);font-size:0.7rem;color:var(--ink-faint);text-align:center;">↓ Partition Assignment</div>
+        <div class="cg-label">Consumer Group A</div>
+        <div class="consumers">
+          <div class="consumer">Consumer 1<small>P-0, P-1</small></div>
+          <div class="consumer">Consumer 2<small>P-2</small></div>
+          <div class="consumer">Consumer 3<small>P-3</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 다이어그램 04 -->
+  <div class="diagram-block" id="d-isr">
+    <div class="db-text">
+      <h4><span class="num">04</span>ISR 복제</h4>
+      <p>Leader가 메시지를 받으면 Follower들이 Fetch로 복제한다. <code>replica.lag.time.max.ms</code>(기본 30s) 이내에 따라오지 못한 Follower는 ISR에서 제거된다. <strong><code>min.insync.replicas</code></strong>: ISR 최소 수. 이 수보다 ISR이 적으면 쓰기를 거부한다.</p>
+      <div class="use-when">
+        <strong>권장 내구성 설정</strong>
+        <p>복제 인수 3 + <code>min.insync.replicas=2</code> + <code>acks=all</code>. 브로커 1개 장애에서도 데이터 손실 없음.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="ISR Replication">
+      <div class="d-isr">
+        <div class="isr-row">
+          <span class="isr-label">Leader</span>
+          <div class="isr-broker leader">Broker 0 (Leader)<br><small style="font-size:0.55rem;color:oklch(0.75 0.01 260);">writes here first</small></div>
+        </div>
+        <div style="text-align:center;font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);padding:0.2rem 0;">↓ Fetch (async)</div>
+        <div class="isr-row">
+          <span class="isr-label">ISR</span>
+          <div class="isr-broker in-sync">Broker 1</div>
+        </div>
+        <div class="isr-row">
+          <span class="isr-label">ISR</span>
+          <div class="isr-broker in-sync">Broker 2</div>
+        </div>
+        <div class="isr-row">
+          <span class="isr-label">OSR</span>
+          <div class="isr-broker lagging">Broker 3 (lagging)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 다이어그램 05 -->
+  <div class="diagram-block" id="d-delivery">
+    <div class="db-text">
+      <h4><span class="num">05</span>전달 보장 스펙트럼</h4>
+      <p>At-Most-Once: <code>acks=0</code>, 빠르지만 손실 가능. At-Least-Once: <code>acks=all</code> + 재시도, 중복 가능. <strong>Exactly-Once</strong>: <code>enable.idempotence=true</code> + 트랜잭션 API, 브로커가 PID+Sequence로 중복을 차단한다.</p>
+      <p>EOS는 같은 Kafka 클러스터 내 read-process-write 파이프라인에만 보장된다. 외부 시스템(DB, S3)에 쓸 때는 멱등 설계가 별도로 필요하다.</p>
+      <div class="use-when">
+        <strong>EOS 비용</strong>
+        <p>처리량 약 20% 감소, 지연 증가. 결제·재고 등 정확성이 중요한 파이프라인에만 적용한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Delivery Semantics">
+      <div style="display:flex;flex-direction:column;gap:0.8rem;width:100%;">
+        <div style="display:flex;gap:0.5rem;align-items:stretch;">
+          <div style="flex:1;padding:0.7rem;border:1.5px solid var(--rule);font-size:0.72rem;">
+            <div style="font-weight:600;margin-bottom:0.3rem;color:var(--ink);">At-Most-Once</div>
+            <div style="color:var(--ink-soft);font-size:0.65rem;">acks=0, 재시도 없음</div>
+            <div style="color:var(--ink-faint);font-size:0.6rem;margin-top:0.25rem;">손실 가능 / 최고 처리량</div>
+          </div>
+          <div style="flex:1;padding:0.7rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.72rem;">
+            <div style="font-weight:600;margin-bottom:0.3rem;color:var(--accent-deep);">At-Least-Once</div>
+            <div style="color:var(--accent-deep);font-size:0.65rem;">acks=all, 재시도 O</div>
+            <div style="color:var(--accent);font-size:0.6rem;margin-top:0.25rem;">중복 가능 / 기본 권장</div>
+          </div>
+          <div style="flex:1;padding:0.7rem;border:1.5px solid var(--ink);background:var(--ink);font-size:0.72rem;color:var(--paper);">
+            <div style="font-weight:600;margin-bottom:0.3rem;">Exactly-Once</div>
+            <div style="font-size:0.65rem;color:oklch(0.78 0.01 260);">idempotence + txn</div>
+            <div style="font-size:0.6rem;color:oklch(0.65 0.01 260);margin-top:0.25rem;">중복 없음 / ~20% 오버헤드</div>
+          </div>
+        </div>
+        <div style="font-size:0.62rem;font-family:var(--mono);color:var(--ink-faint);text-align:center;">↑ 보장 강도 / 처리 비용 증가 →</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §03 대용량 처리 -->
+<section class="section" id="largescale">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Large Scale</div>
+      <h2 class="section-title">대용량 처리</h2>
+    </div>
+  </div>
+
+  <p class="ls-intro">LinkedIn은 Kafka로 <em>하루 7조 건</em> 이상의 메시지를 처리한다. Uber는 초당 1백만 건의 이벤트를 4,000+ 토픽으로 분산한다. 이 수치의 배경에는 파티셔닝 전략, I/O 튜닝, 컨슈머 랙 관리가 있다.</p>
+
+  <!-- 파티셔닝 전략 -->
+  <div class="ls-block" id="ls-partition">
+    <div class="ls-kicker">01 · Partitioning</div>
+    <div class="ls-title">파티셔닝 전략 — 핫스팟 없이 균등 분산</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row">
+          <span class="cl">사례</span>
+          <span class="badge">LinkedIn</span>
+          <span class="badge">Uber</span>
+          <span class="badge">Confluent</span>
+        </div>
+        <p>기본 파티셔너는 키 해시(<code>murmur2</code>). 키가 없으면 라운드로빈. <strong>핫 키 문제</strong>: 특정 user_id나 merchant_id에 트래픽이 집중되면 단일 파티션이 병목이 된다.</p>
+        <p>해결책: 컴포지트 키(<code>user_id + random_suffix</code>), 또는 커스텀 파티셔너로 고트래픽 키를 여러 파티션에 분산한다. 컨슈머 쪽에서는 합산 처리한다.</p>
+        <p>파티션 수 확장: 기존 파티션 키 할당이 바뀌어 순서 보장이 깨진다. <strong>파티션 수는 처음부터 여유 있게 설정</strong>하는 것이 권장된다(LinkedIn: 일부 토픽 3,000+ 파티션).</p>
+        <div class="use-when">
+          <strong>파티션 수 공식</strong>
+          <p>파티션 수 = max(목표 프로듀서 처리량 / 단일 파티션 쓰기 처리량, 목표 컨슈머 처리량 / 단일 파티션 읽기 처리량). 단일 파티션은 일반적으로 10~50 MB/s.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Partitioning" style="min-height:200px;">
+        <div class="d-throughput">
+          <div class="tp-label">파티션 처리량 (정상)</div>
+          <div class="tp-row"><span class="tp-key">P-0</span><div class="tp-bar mid" style="width:65%;"></div><span class="tp-val">32 MB/s</span></div>
+          <div class="tp-row"><span class="tp-key">P-1</span><div class="tp-bar mid" style="width:60%;"></div><span class="tp-val">30 MB/s</span></div>
+          <div class="tp-row"><span class="tp-key">P-2</span><div class="tp-bar mid" style="width:70%;"></div><span class="tp-val">35 MB/s</span></div>
+          <hr style="border:none;border-top:1px dashed var(--rule);margin:0.5rem 0;">
+          <div class="tp-label">핫 키 발생 시</div>
+          <div class="tp-row"><span class="tp-key">P-0 (hot)</span><div class="tp-bar full" style="width:100%;"></div><span class="tp-val">100+ MB/s</span></div>
+          <div class="tp-row"><span class="tp-key">P-1</span><div class="tp-bar" style="width:20%;"></div><span class="tp-val">10 MB/s</span></div>
+          <div class="tp-row"><span class="tp-key">P-2</span><div class="tp-bar" style="width:15%;"></div><span class="tp-val">7 MB/s</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 처리량 튜닝 -->
+  <div class="ls-block" id="ls-throughput">
+    <div class="ls-kicker">02 · Throughput</div>
+    <div class="ls-title">처리량 튜닝 — 배치 · 압축 · Zero-Copy</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row">
+          <span class="cl">적용</span>
+          <span class="badge">Netflix</span>
+          <span class="badge">Airbnb</span>
+        </div>
+        <p><strong>프로듀서 배치</strong>: <code>linger.ms=5~20</code>, <code>batch.size=65536~262144</code>. 배치가 클수록 압축률과 처리량이 올라가지만 지연은 증가한다.</p>
+        <p><strong>압축</strong>: ZSTD가 압축률(Snappy 대비 30~40% 더 작음)과 CPU 효율 모두 우수하다. 브로커는 압축된 배치를 그대로 저장하고 전달한다(zero decompression). 컨슈머가 직접 해제한다.</p>
+        <p><strong>Zero-Copy</strong>: <code>sendfile(2)</code> 시스템 콜로 페이지 캐시 → NIC 버퍼로 데이터를 직접 전달한다. user space 복사 없음. 단일 브로커 기준 2M+ msg/sec 처리량의 핵심이다.</p>
+        <div class="use-when">
+          <strong>페이지 캐시 활용</strong>
+          <p>Kafka가 사용하는 힙(JVM) 크기를 작게(6~8GB) 유지하고 나머지 메모리를 OS 페이지 캐시로 남긴다. 읽기 작업의 대부분이 캐시 히트로 처리된다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Zero-Copy" style="min-height:200px;">
+        <div style="display:flex;flex-direction:column;gap:0.6rem;width:100%;">
+          <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-faint);">일반 복사 vs Zero-Copy</div>
+          <div style="display:flex;flex-direction:column;gap:0.25rem;">
+            <div style="font-size:0.62rem;color:var(--ink-faint);font-family:var(--mono);">일반:</div>
+            <div style="display:flex;gap:0.3rem;align-items:center;font-size:0.62rem;">
+              <div style="padding:0.3rem 0.4rem;border:1px solid var(--rule);background:var(--paper-deep);">Disk</div>
+              <span style="color:var(--ink-faint);">→</span>
+              <div style="padding:0.3rem 0.4rem;border:1px solid var(--accent);background:var(--accent-wash);color:var(--accent-deep);">Kernel buf</div>
+              <span style="color:var(--ink-faint);">→</span>
+              <div style="padding:0.3rem 0.4rem;border:1px solid var(--accent);background:var(--accent-wash);color:var(--accent-deep);">User buf</div>
+              <span style="color:var(--ink-faint);">→</span>
+              <div style="padding:0.3rem 0.4rem;border:1px solid var(--accent);background:var(--accent-wash);color:var(--accent-deep);">Socket buf</div>
+              <span style="color:var(--ink-faint);">→</span>
+              <div style="padding:0.3rem 0.4rem;border:1px solid var(--rule);">NIC</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.25rem;margin-top:0.5rem;">
+            <div style="font-size:0.62rem;color:var(--ink-faint);font-family:var(--mono);">Zero-Copy (sendfile):</div>
+            <div style="display:flex;gap:0.3rem;align-items:center;font-size:0.62rem;">
+              <div style="padding:0.3rem 0.4rem;border:1px solid var(--rule);background:var(--paper-deep);">Page Cache</div>
+              <span style="color:var(--accent-deep);font-weight:600;">→</span>
+              <div style="padding:0.3rem 0.4rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);">NIC</div>
+            </div>
+            <div style="font-size:0.58rem;color:var(--ink-faint);font-family:var(--mono);">4 copies → 2 copies, 2 context switches → 0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 컨슈머 랙 관리 -->
+  <div class="ls-block" id="ls-consumer">
+    <div class="ls-kicker">03 · Consumer Lag</div>
+    <div class="ls-title">컨슈머 랙 관리 — 지연 감지와 백프레셔</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row">
+          <span class="cl">모니터링</span>
+          <span class="badge">Burrow</span>
+          <span class="badge">Cruise Control</span>
+        </div>
+        <p><strong>컨슈머 랙</strong>: 최신 오프셋 - 커밋 오프셋. 랙이 증가하면 컨슈머 처리 속도가 프로듀서 속도를 따라가지 못하는 것이다. <code>kafka.consumer.records-lag-max</code> 메트릭으로 추적한다.</p>
+        <p>랙 대응: (1) 컨슈머 인스턴스 추가(파티션 수 이내), (2) <code>max.poll.records</code> 줄여 처리 배치 크기 감소, (3) 처리 로직 최적화. 파티션 수 자체가 상한선이므로 미리 충분히 설정해야 한다.</p>
+        <p><strong>Cruise Control</strong>(LinkedIn): 클러스터 부하를 자동으로 재분산한다. 브로커 간 리더 파티션 수, 디스크 사용량, 네트워크 처리량을 균등하게 유지한다.</p>
+        <div class="use-when">
+          <strong>리텐션 vs 랙</strong>
+          <p>랙이 리텐션 기간을 넘으면 오래된 메시지가 삭제되어 데이터 손실이 발생한다. 크리티컬 토픽은 리텐션을 길게, 또는 무한(<code>log.retention.bytes=-1</code>)으로 설정한다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Consumer Lag" style="min-height:200px;">
+        <div style="display:flex;flex-direction:column;gap:0.7rem;width:100%;">
+          <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-faint);">랙 증가 시나리오</div>
+          <div style="display:flex;flex-direction:column;gap:0.4rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.68rem;">
+              <span style="min-width:5rem;color:var(--ink-soft);">프로듀서 속도</span>
+              <div style="flex:1;height:0.8rem;background:var(--ink);"></div>
+              <span style="font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);">100k/s</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.68rem;">
+              <span style="min-width:5rem;color:var(--ink-soft);">컨슈머 속도</span>
+              <div style="flex:0.6;height:0.8rem;background:var(--accent);"></div>
+              <span style="font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);">60k/s</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.68rem;">
+              <span style="min-width:5rem;color:var(--accent-deep);font-weight:600;">랙 누적</span>
+              <div style="flex:0.4;height:0.8rem;background:var(--accent-wash);border:1.5px dashed var(--accent);"></div>
+              <span style="font-family:var(--mono);font-size:0.6rem;color:var(--accent-deep);">+40k/s</span>
+            </div>
+          </div>
+          <div style="font-size:0.6rem;color:var(--ink-faint);font-family:var(--mono);">해결: 컨슈머 추가 or 처리 최적화</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 핵심 설정 참조 -->
+  <div class="ls-block" id="ls-config">
+    <div class="ls-kicker">04 · Configuration</div>
+    <div class="ls-title">핵심 설정 참조표</div>
+    <div class="config-ref">
+      <div class="config-ref-head">
+        <span>파라미터</span>
+        <span>권장값</span>
+        <span>설명</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">num.partitions</span>
+        <span class="cv">12~100+</span>
+        <span class="cd">기본 파티션 수. 처음부터 여유 있게 설정한다</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">replication.factor</span>
+        <span class="cv">3</span>
+        <span class="cd">프로덕션 최소값. 브로커 1개 장애 허용</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">min.insync.replicas</span>
+        <span class="cv">2</span>
+        <span class="cd">acks=all과 함께 사용. ISR 최소 수 미달 시 쓰기 거부</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">linger.ms</span>
+        <span class="cv">5~20</span>
+        <span class="cd">프로듀서 배치 대기 시간. 처리량-지연 트레이드오프</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">batch.size</span>
+        <span class="cv">65536</span>
+        <span class="cd">배치 최대 크기(bytes). 64KB~256KB가 일반적</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">compression.type</span>
+        <span class="cv">zstd</span>
+        <span class="cd">ZSTD: Snappy 대비 30~40% 추가 압축. CPU 효율 우수</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">max.poll.records</span>
+        <span class="cv">500</span>
+        <span class="cd">컨슈머 폴링당 최대 레코드 수. 처리 시간에 맞게 조정</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">session.timeout.ms</span>
+        <span class="cv">45000</span>
+        <span class="cd">컨슈머 heartbeat 타임아웃. 리밸런싱 민감도 조정</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">log.retention.hours</span>
+        <span class="cv">168 (7일)</span>
+        <span class="cd">메시지 보존 기간. 재처리 요구에 따라 늘린다</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">log.segment.bytes</span>
+        <span class="cv">1073741824</span>
+        <span class="cd">세그먼트 파일 크기(1GB). 세그먼트 롤 빈도 결정</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="margin-note">
+  <strong>KRaft vs ZooKeeper:</strong> Kafka 3.3에서 KRaft(Kafka Raft)가 GA가 됐다. ZooKeeper 제거로 운영 복잡도가 낮아지고, 클러스터 메타데이터 처리 성능이 개선됐다. 신규 클러스터는 KRaft 모드로 구성하는 것이 권장된다. ZooKeeper에서 KRaft로의 마이그레이션 도구(<code>kafka-storage.sh</code>)도 제공된다.
+</div>
+
+<!-- §04 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Hands-On</div>
+      <h2 class="section-title">실전 코드</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    <em>kafka-python</em>과 <em>confluent-kafka</em> 기준. 프로덕션에서는 confluent-kafka(librdkafka 기반)가 성능과 EOS 지원 면에서 권장된다.
+  </p>
+
+  <!-- 코드 01: Producer -->
+  <div class="code-card">
+    <div class="code-head">
+      <h4>01. 고처리량 Producer</h4>
+      <div class="head-right">
+        <span class="tag">producer</span>
+      </div>
+    </div>
+    <pre><span class="kw">from</span> confluent_kafka <span class="kw">import</span> Producer
+<span class="kw">import</span> json
+
+<span class="com"># 배치 + 압축 + 멱등성 설정</span>
+producer = <span class="fn">Producer</span>({
+    <span class="str">'bootstrap.servers'</span>: <span class="str">'kafka-1:9092,kafka-2:9092,kafka-3:9092'</span>,
+    <span class="str">'acks'</span>: <span class="str">'all'</span>,                    <span class="com"># ISR 전체 확인</span>
+    <span class="str">'enable.idempotence'</span>: <span class="str">'true'</span>,       <span class="com"># 중복 제거</span>
+    <span class="str">'compression.type'</span>: <span class="str">'zstd'</span>,          <span class="com"># ZSTD 압축</span>
+    <span class="str">'linger.ms'</span>: <span class="str">'10'</span>,                  <span class="com"># 10ms 배치 대기</span>
+    <span class="str">'batch.size'</span>: <span class="str">'131072'</span>,             <span class="com"># 128KB 배치</span>
+    <span class="str">'buffer.memory'</span>: <span class="str">'33554432'</span>,        <span class="com"># 32MB 버퍼</span>
+    <span class="str">'retries'</span>: <span class="str">'2147483647'</span>,            <span class="com"># 무한 재시도</span>
+    <span class="str">'max.in.flight.requests.per.connection'</span>: <span class="str">'5'</span>,
+})
+
+<span class="kw">def</span> <span class="fn">delivery_report</span>(err, msg):
+    <span class="kw">if</span> err:
+        <span class="fn">print</span>(<span class="str">f'전달 실패: {err}'</span>)
+
+<span class="kw">def</span> <span class="fn">produce_events</span>(events: list[dict]):
+    <span class="kw">for</span> event <span class="kw">in</span> events:
+        producer.<span class="fn">produce</span>(
+            topic=<span class="str">'orders'</span>,
+            key=event[<span class="str">'user_id'</span>].<span class="fn">encode</span>(),     <span class="com"># 키 기반 파티셔닝</span>
+            value=json.<span class="fn">dumps</span>(event).<span class="fn">encode</span>(),
+            on_delivery=delivery_report,
+        )
+        producer.<span class="fn">poll</span>(<span class="str">0</span>)   <span class="com"># 논블로킹 이벤트 처리</span>
+
+    producer.<span class="fn">flush</span>()       <span class="com"># 버퍼 전부 전송 후 반환</span></pre>
+    <div class="note"><strong>포인트.</strong> <code>enable.idempotence=true</code>는 자동으로 <code>acks=all</code>, <code>max.in.flight=5 이하</code>를 강제한다. 멱등성과 고처리량을 동시에 달성한다.</div>
+  </div>
+
+  <!-- 코드 02: Consumer -->
+  <div class="code-card">
+    <div class="code-head">
+      <h4>02. Consumer 그룹 — 수동 오프셋 커밋</h4>
+      <div class="head-right">
+        <span class="tag">consumer</span>
+      </div>
+    </div>
+    <pre><span class="kw">from</span> confluent_kafka <span class="kw">import</span> Consumer, KafkaError
+
+consumer = <span class="fn">Consumer</span>({
+    <span class="str">'bootstrap.servers'</span>: <span class="str">'kafka-1:9092'</span>,
+    <span class="str">'group.id'</span>: <span class="str">'order-processor-v2'</span>,
+    <span class="str">'auto.offset.reset'</span>: <span class="str">'earliest'</span>,
+    <span class="str">'enable.auto.commit'</span>: <span class="str">'false'</span>,     <span class="com"># 수동 커밋</span>
+    <span class="str">'max.poll.interval.ms'</span>: <span class="str">'300000'</span>,  <span class="com"># 처리 최대 5분</span>
+    <span class="str">'session.timeout.ms'</span>: <span class="str">'45000'</span>,
+    <span class="str">'isolation.level'</span>: <span class="str">'read_committed'</span>, <span class="com"># EOS: 커밋된 것만 읽기</span>
+})
+
+consumer.<span class="fn">subscribe</span>([<span class="str">'orders'</span>])
+
+<span class="kw">try</span>:
+    <span class="kw">while</span> <span class="kw">True</span>:
+        msg = consumer.<span class="fn">poll</span>(timeout=<span class="str">1.0</span>)
+        <span class="kw">if</span> msg <span class="kw">is None</span>:
+            <span class="kw">continue</span>
+        <span class="kw">if</span> msg.<span class="fn">error</span>():
+            <span class="kw">if</span> msg.<span class="fn">error</span>().<span class="fn">code</span>() == KafkaError._PARTITION_EOF:
+                <span class="kw">continue</span>
+            <span class="kw">raise</span> <span class="fn">Exception</span>(msg.<span class="fn">error</span>())
+
+        <span class="com"># 비즈니스 처리</span>
+        <span class="fn">process_order</span>(msg.<span class="fn">value</span>())
+
+        <span class="com"># 처리 성공 후에만 커밋</span>
+        consumer.<span class="fn">commit</span>(asynchronous=<span class="kw">False</span>)
+
+<span class="kw">finally</span>:
+    consumer.<span class="fn">close</span>()</pre>
+    <div class="note"><strong>포인트.</strong> <code>enable.auto.commit=false</code> + 수동 커밋으로 at-least-once를 보장한다. 처리 실패 시 재처리되므로 비즈니스 로직을 멱등하게 설계해야 한다.</div>
+  </div>
+
+  <!-- 코드 03: EOS -->
+  <div class="code-card">
+    <div class="code-head">
+      <h4>03. Exactly-Once — 트랜잭션 프로듀서</h4>
+      <div class="head-right">
+        <span class="tag">exactly-once</span>
+      </div>
+    </div>
+    <pre><span class="kw">from</span> confluent_kafka <span class="kw">import</span> Producer
+
+producer = <span class="fn">Producer</span>({
+    <span class="str">'bootstrap.servers'</span>: <span class="str">'kafka-1:9092'</span>,
+    <span class="str">'transactional.id'</span>: <span class="str">'order-txn-producer-1'</span>,  <span class="com"># 트랜잭션 ID</span>
+    <span class="str">'enable.idempotence'</span>: <span class="str">'true'</span>,
+})
+
+producer.<span class="fn">init_transactions</span>()
+
+<span class="kw">def</span> <span class="fn">process_with_eos</span>(input_msg, consumer):
+    <span class="kw">try</span>:
+        producer.<span class="fn">begin_transaction</span>()
+
+        <span class="com"># 처리 결과 쓰기 (두 토픽에 원자적으로)</span>
+        producer.<span class="fn">produce</span>(<span class="str">'processed-orders'</span>, value=<span class="fn">transform</span>(input_msg))
+        producer.<span class="fn">produce</span>(<span class="str">'audit-log'</span>, value=<span class="fn">audit_record</span>(input_msg))
+
+        <span class="com"># 컨슈머 오프셋도 같은 트랜잭션에 포함</span>
+        producer.<span class="fn">send_offsets_to_transaction</span>(
+            consumer.<span class="fn">position</span>(consumer.<span class="fn">assignment</span>()),
+            consumer.<span class="fn">consumer_group_metadata</span>(),
+        )
+
+        producer.<span class="fn">commit_transaction</span>()
+
+    <span class="kw">except</span> <span class="fn">Exception</span> <span class="kw">as</span> e:
+        producer.<span class="fn">abort_transaction</span>()
+        <span class="kw">raise</span></pre>
+    <div class="note"><strong>포인트.</strong> <code>send_offsets_to_transaction</code>으로 소비 오프셋을 트랜잭션에 묶는다. 커밋 실패 시 오프셋도 롤백되어 정확히-한-번 read-process-write가 보장된다.</div>
+  </div>
+
+  <!-- 코드 04: Schema Registry -->
+  <div class="code-card">
+    <div class="code-head">
+      <h4>04. Schema Registry + Avro 직렬화</h4>
+      <div class="head-right">
+        <span class="tag">schema</span>
+      </div>
+    </div>
+    <pre><span class="kw">from</span> confluent_kafka.schema_registry <span class="kw">import</span> SchemaRegistryClient
+<span class="kw">from</span> confluent_kafka.schema_registry.avro <span class="kw">import</span> AvroSerializer, AvroDeserializer
+<span class="kw">from</span> confluent_kafka.serialization <span class="kw">import</span> SerializationContext, MessageField
+
+schema_str = <span class="str">"""
+{
+  "type": "record",
+  "name": "Order",
+  "fields": [
+    {"name": "order_id", "type": "string"},
+    {"name": "user_id", "type": "string"},
+    {"name": "amount", "type": "double"},
+    {"name": "created_at", "type": "long", "logicalType": "timestamp-millis"}
+  ]
+}
+"""</span>
+
+sr_client = <span class="fn">SchemaRegistryClient</span>({<span class="str">'url'</span>: <span class="str">'http://schema-registry:8081'</span>})
+avro_serializer = <span class="fn">AvroSerializer</span>(sr_client, schema_str)
+
+<span class="com"># 직렬화 후 프로듀싱</span>
+<span class="kw">def</span> <span class="fn">produce_avro</span>(order: dict):
+    producer.<span class="fn">produce</span>(
+        topic=<span class="str">'orders'</span>,
+        value=avro_serializer(
+            order,
+            <span class="fn">SerializationContext</span>(<span class="str">'orders'</span>, MessageField.VALUE)
+        ),
+    )
+    producer.<span class="fn">flush</span>()</pre>
+    <div class="note"><strong>포인트.</strong> Schema Registry는 스키마 ID를 메시지 앞 5바이트에 기록한다. 컨슈머가 스키마 버전을 자동으로 해석하므로 프로듀서/컨슈머 독립 배포와 스키마 진화가 가능하다.</div>
+  </div>
+
+  <!-- 코드 05: Kafka Streams -->
+  <div class="code-card">
+    <div class="code-head">
+      <h4>05. 대용량 설정 — 고처리량 프로덕션</h4>
+      <div class="head-right">
+        <span class="tag">tuning</span>
+      </div>
+    </div>
+    <pre><span class="com"># server.properties — 브로커 튜닝</span>
+<span class="com"># I/O 스레드: 디스크 수의 2배</span>
+num.io.threads=<span class="str">16</span>
+num.network.threads=<span class="str">8</span>
+
+<span class="com"># 소켓 버퍼: 고처리량을 위해 증가</span>
+socket.send.buffer.bytes=<span class="str">1048576</span>    <span class="com"># 1MB</span>
+socket.receive.buffer.bytes=<span class="str">1048576</span>
+socket.request.max.bytes=<span class="str">104857600</span>  <span class="com"># 100MB</span>
+
+<span class="com"># 로그 플러시: OS에 위임 (성능 최대화)</span>
+log.flush.interval.messages=<span class="str">9223372036854775807</span>
+log.flush.interval.ms=<span class="str">9223372036854775807</span>
+
+<span class="com"># 컨트롤러 처리량</span>
+num.replica.fetchers=<span class="str">4</span>
+replica.fetch.max.bytes=<span class="str">10485760</span>    <span class="com"># 10MB</span>
+
+<span class="com"># JVM 설정 (KAFKA_HEAP_OPTS)</span>
+<span class="com"># -Xmx6g -Xms6g</span>
+<span class="com"># -XX:+UseG1GC</span>
+<span class="com"># -XX:MaxGCPauseMillis=20</span>
+<span class="com"># -XX:InitiatingHeapOccupancyPercent=35</span>
+<span class="com"># OS 페이지 캐시를 위해 힙은 6~8GB로 제한</span></pre>
+    <div class="note"><strong>포인트.</strong> <code>log.flush</code>를 OS에 위임하는 것이 핵심이다. Kafka는 복제로 내구성을 보장하므로 강제 플러시로 성능을 희생할 필요가 없다. G1GC + 낮은 힙으로 페이지 캐시를 최대화한다.</div>
+  </div>
+
+  <!-- 코드 06: 컨슈머 랙 모니터링 -->
+  <div class="code-card">
+    <div class="code-head">
+      <h4>06. 컨슈머 랙 모니터링</h4>
+      <div class="head-right">
+        <span class="tag">monitoring</span>
+      </div>
+    </div>
+    <pre><span class="kw">from</span> confluent_kafka <span class="kw">import</span> Consumer, TopicPartition
+
+<span class="kw">def</span> <span class="fn">get_consumer_lag</span>(group_id: str, topic: str) -> dict[int, int]:
+    consumer = <span class="fn">Consumer</span>({
+        <span class="str">'bootstrap.servers'</span>: <span class="str">'kafka-1:9092'</span>,
+        <span class="str">'group.id'</span>: group_id,
+    })
+
+    <span class="com"># 토픽 메타데이터로 파티션 목록 조회</span>
+    metadata = consumer.<span class="fn">list_topics</span>(topic)
+    partitions = [
+        <span class="fn">TopicPartition</span>(topic, p)
+        <span class="kw">for</span> p <span class="kw">in</span> metadata.topics[topic].partitions
+    ]
+
+    <span class="com"># 커밋 오프셋 vs 최신 오프셋 비교</span>
+    committed = consumer.<span class="fn">committed</span>(partitions)
+    lags = {}
+
+    <span class="kw">for</span> tp <span class="kw">in</span> committed:
+        lo, hi = consumer.<span class="fn">get_watermark_offsets</span>(tp)
+        committed_offset = tp.offset <span class="kw">if</span> tp.offset &gt;= <span class="str">0</span> <span class="kw">else</span> lo
+        lags[tp.partition] = hi - committed_offset
+
+    consumer.<span class="fn">close</span>()
+    <span class="kw">return</span> lags
+
+<span class="com"># 사용 예시</span>
+lags = <span class="fn">get_consumer_lag</span>(<span class="str">'order-processor-v2'</span>, <span class="str">'orders'</span>)
+<span class="kw">for</span> partition, lag <span class="kw">in</span> lags.<span class="fn">items</span>():
+    <span class="fn">print</span>(<span class="str">f'Partition {partition}: lag={lag}'</span>)</pre>
+    <div class="note"><strong>포인트.</strong> 프로덕션에서는 Burrow나 kminion 같은 전용 모니터링 도구를 사용한다. 랙이 임계치를 넘으면 PagerDuty/Slack 알럿을 보내고, Kubernetes HPA로 컨슈머를 자동 스케일한다.</div>
+  </div>
+</section>
+
+<footer>
+  <span class="lockup">Apache Kafka</span>
+  <div>
+    <a href="https://kafka.apache.org/documentation/" target="_blank" rel="noopener">원문 · kafka.apache.org/documentation</a>
+  </div>
+</footer>
+
+<script>
+(function () {
+  const btn = document.getElementById('menuBtn');
+  const panel = document.getElementById('tocPanel');
+  const backdrop = document.getElementById('tocBackdrop');
+
+  function openMenu() {
+    btn.classList.add('open');
+    panel.classList.add('open');
+    backdrop.classList.add('open');
+    document.body.classList.add('menu-open');
+    btn.setAttribute('aria-expanded', 'true');
+    panel.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeMenu() {
+    btn.classList.remove('open');
+    panel.classList.remove('open');
+    backdrop.classList.remove('open');
+    document.body.classList.remove('menu-open');
+    btn.setAttribute('aria-expanded', 'false');
+    panel.setAttribute('aria-hidden', 'true');
+  }
+
+  btn.addEventListener('click', () => btn.classList.contains('open') ? closeMenu() : openMenu());
+  backdrop.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', e => e.key === 'Escape' && closeMenu());
+  panel.querySelectorAll('[data-close]').forEach(a => a.addEventListener('click', closeMenu));
+
+  // 코드 카드: 헤드 클릭 토글 + copy 버튼 주입
+  document.querySelectorAll('.code-card').forEach(card => {
+    const head = card.querySelector('.code-head');
+    const headRight = card.querySelector('.head-right');
+
+    const indicator = document.createElement('span');
+    indicator.className = 'expand-indicator';
+    indicator.textContent = '▸';
+    headRight.prepend(indicator);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.textContent = 'copy';
+    headRight.appendChild(copyBtn);
+
+    head.addEventListener('click', () => card.classList.toggle('expanded'));
+
+    copyBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const code = card.querySelector('pre').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        copyBtn.textContent = 'copied';
+        copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = 'copy'; copyBtn.classList.remove('copied'); }, 1500);
+      }).catch(() => {
+        copyBtn.textContent = 'failed';
+        copyBtn.classList.add('failed');
+        setTimeout(() => { copyBtn.textContent = 'copy'; copyBtn.classList.remove('failed'); }, 1500);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MongoDB — 학습 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+  .hero { max-width: 1200px; margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); position: relative; }
+  .hero::before { content: ""; position: absolute; top: 2rem; left: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); height: 1px; background: var(--ink); }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.5rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.95; font-weight: 600; margin-top: clamp(2rem, 5vw, 3rem); letter-spacing: -0.035em; }
+  .hero-title em { font-style: normal; font-weight: 300; color: var(--accent-deep); }
+  .hero-sub { margin-top: 1.4rem; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: var(--ink-soft); max-width: 42rem; line-height: 1.5; font-weight: 300; }
+  .hero-grid { margin-top: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .hero-grid > div { background: var(--paper); padding: 1.25rem 1.5rem; }
+  .hero-grid .k { display: block; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 0.4rem; }
+  .hero-grid .v { font-size: 1.2rem; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .hero-grid .v small { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; font-weight: 400; }
+
+  .section { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem); }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head { display: grid; grid-template-columns: auto 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: baseline; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .section-num { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.85; color: var(--accent); font-weight: 200; letter-spacing: -0.04em; }
+  .section-titles { border-left: 1px solid var(--ink); padding-left: clamp(1rem, 3vw, 2rem); padding-top: 0.5rem; }
+  .section-kicker { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .section-title { font-size: clamp(1.65rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.028em; }
+
+  .tldr-grid { display: grid; grid-template-columns: 1fr; }
+  @media (min-width: 720px) { .tldr-grid { grid-template-columns: repeat(12, 1fr); } }
+  .tldr-lead { grid-column: 1/-1; font-size: clamp(1.2rem, 2.1vw, 1.6rem); line-height: 1.45; color: var(--ink); padding-bottom: 2rem; border-bottom: 1px solid var(--rule); margin-bottom: 2.5rem; font-weight: 300; letter-spacing: -0.012em; }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead::first-letter { font-size: 3.4em; float: left; line-height: 0.9; padding-right: 0.12em; padding-top: 0.08em; color: var(--accent-deep); font-weight: 200; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  @media (min-width: 720px) { .tldr-lead { grid-column: 2/12; } }
+  .points { display: contents; }
+  .point { grid-column: 1/-1; display: grid; grid-template-columns: 4ch 1fr; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 720px) { .point { grid-column: 2/12; grid-template-columns: 5ch 1fr; gap: 2rem; } }
+  .point .n { font-size: 1.25rem; color: var(--accent); line-height: 1; font-weight: 300; letter-spacing: 0.05em; }
+  .point h3 { font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.3; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.015em; }
+  .point p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
+  .point p strong { color: var(--ink); font-weight: 600; }
+  .point p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+
+  .diagram-block { margin-bottom: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .db-text h4 { font-size: clamp(1.3rem, 2.3vw, 1.75rem); line-height: 1.25; margin-bottom: 0.8rem; font-weight: 600; letter-spacing: -0.022em; }
+  .db-text h4 .num { display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em; color: var(--accent-deep); vertical-align: middle; background: var(--accent-wash); padding: 0.28rem 0.55rem; border-radius: 999px; margin-right: 0.65rem; font-weight: 600; position: relative; top: -0.15em; }
+  .db-text p { color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.65; font-size: 0.95rem; }
+  .db-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .db-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .db-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas { background: var(--paper-deep); border: 1px solid var(--rule); padding: clamp(1.25rem, 3vw, 2rem); position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .canvas::before { content: attr(data-label); position: absolute; top: 0.7rem; left: 0.9rem; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; }
+
+  .box { display: flex; align-items: center; justify-content: center; text-align: center; padding: 0.6rem 0.85rem; border: 1.5px solid var(--ink); background: var(--paper); font-size: 0.76rem; font-weight: 500; color: var(--ink); line-height: 1.3; min-width: 0; max-width: 100%; flex-direction: column; word-break: keep-all; }
+  .box.accent { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); }
+  .box.soft { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .box.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .box small { display: block; font-size: 0.6rem; font-weight: 400; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.18rem; }
+  .box.dark small { color: oklch(0.75 0.01 260); }
+
+  /* 문서 구조 다이어그램 */
+  .d-doc { display: flex; flex-direction: column; gap: 0; width: 100%; font-family: var(--mono); font-size: 0.68rem; border: 1.5px solid var(--rule); }
+  .d-doc .doc-line { padding: 0.2rem 0.7rem; border-bottom: 1px solid var(--rule); display: flex; align-items: center; gap: 0.4rem; }
+  .d-doc .doc-line:last-child { border-bottom: none; }
+  .d-doc .doc-line.header { background: var(--ink); color: var(--paper); font-weight: 600; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.25rem 0.7rem; }
+  .d-doc .doc-key { color: oklch(0.78 0.13 30); flex-shrink: 0; }
+  .d-doc .doc-val { color: oklch(0.80 0.12 130); }
+  .d-doc .doc-val.num { color: oklch(0.82 0.11 220); }
+  .d-doc .doc-val.bool { color: oklch(0.75 0.14 60); }
+  .d-doc .doc-nest { padding-left: 1rem; }
+  .d-doc .doc-line.nest { background: var(--paper-deep); }
+
+  /* 레플리카셋 다이어그램 */
+  .d-rs { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+  .d-rs .rs-member { display: flex; align-items: center; gap: 0.5rem; }
+  .d-rs .rs-role { font-size: 0.6rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); min-width: 4rem; flex-shrink: 0; }
+  .d-rs .rs-node { flex: 1; padding: 0.45rem 0.7rem; border: 1.5px solid var(--rule); font-size: 0.68rem; font-weight: 500; text-align: center; }
+  .d-rs .rs-node.primary { border-color: var(--ink); background: var(--ink); color: var(--paper); font-weight: 600; }
+  .d-rs .rs-node.secondary { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .d-rs .rs-node.arbiter { border-style: dashed; color: var(--ink-faint); }
+  .d-rs .rs-arr { font-family: var(--mono); font-size: 0.65rem; color: var(--ink-faint); }
+
+  /* 샤딩 다이어그램 */
+  .d-sharding { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+  .d-sharding .sh-row { display: flex; gap: 0.3rem; }
+  .d-sharding .sh-box { flex: 1; padding: 0.5rem 0.4rem; border: 1.5px solid var(--rule); font-size: 0.64rem; font-weight: 500; text-align: center; }
+  .d-sharding .sh-box.mongos { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+  .d-sharding .sh-box.config { border-color: var(--accent); background: var(--accent-wash); color: var(--accent-deep); }
+  .d-sharding .sh-box.shard { background: var(--paper-deep); }
+  .d-sharding .sh-box small { display: block; font-size: 0.55rem; margin-top: 0.1rem; }
+  .d-sharding .sh-box.mongos small { color: oklch(0.65 0.01 260); }
+  .d-sharding .sh-box.config small { color: var(--accent); }
+  .d-sharding .sh-arr { text-align: center; font-family: var(--mono); font-size: 0.65rem; color: var(--ink-faint); }
+
+  /* 인덱스 종류 */
+  .d-index { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
+  .d-index .idx { padding: 0.45rem 0.7rem; border: 1.5px solid var(--rule); display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; }
+  .d-index .idx.best { border-color: var(--ink); background: var(--paper-deep); }
+  .d-index .idx-name { font-family: var(--mono); font-weight: 600; color: var(--accent-deep); }
+  .d-index .idx-desc { color: var(--ink-soft); font-size: 0.62rem; }
+
+  /* 대용량 */
+  .ls-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .ls-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .ls-block { margin-bottom: clamp(3rem, 5vw, 4.5rem); padding-bottom: clamp(3rem, 5vw, 4.5rem); border-bottom: 1px solid var(--rule); }
+  .ls-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .ls-kicker { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.35rem; }
+  .ls-title { font-size: clamp(1.15rem, 1.9vw, 1.45rem); font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.2rem; color: var(--ink); }
+  .ls-body { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .ls-body { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .ls-text p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.65; margin-bottom: 0.9rem; }
+  .ls-text p:last-child { margin-bottom: 0; }
+  .ls-text p strong { color: var(--ink); font-weight: 600; }
+  .ls-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .ls-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .ls-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .ls-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+  .company-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+  .company-row .cl { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; }
+  .badge { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; padding: 0.18rem 0.5rem; border: 1px solid var(--accent); color: var(--accent-deep); background: var(--accent-wash); }
+
+  .config-ref { margin-top: 1.5rem; border-top: 2px solid var(--ink); }
+  .config-ref-head { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.5rem 0; border-bottom: 1px solid var(--ink-faint); }
+  .config-ref-head span { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; }
+  .config-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.65rem 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .config-row:last-child { border-bottom: none; }
+  .config-row .ck { font-family: var(--mono); font-size: 0.71rem; color: var(--accent-deep); word-break: break-all; line-height: 1.4; }
+  .config-row .cv { font-family: var(--mono); font-size: 0.75rem; color: var(--ink); font-weight: 600; }
+  .config-row .cd { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.4; }
+
+  .code-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card { margin-bottom: 2.5rem; border: 1px solid var(--rule); overflow: hidden; }
+  .code-head { display: flex; align-items: baseline; justify-content: space-between; padding: 1rem 1.4rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; gap: 0.5rem; }
+  .code-head h4 { font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .code-head .tag { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--accent); color: var(--paper); border-radius: 2px; }
+  .code-head .head-right { display: flex; align-items: center; gap: 0.5rem; }
+  .copy-btn { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; font-weight: 600; }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .code-card pre { margin: 0; padding: 1.35rem 1.5rem; overflow-x: auto; background: oklch(0.18 0.02 260); color: oklch(0.92 0.015 75); font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note { padding: 1rem 1.4rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper-deep); line-height: 1.6; }
+  .code-card .note strong { color: var(--accent-deep); }
+  .code-card pre, .code-card .note { display: none; }
+  .code-card.expanded pre, .code-card.expanded .note { display: block; }
+  .code-card .code-head { cursor: pointer; user-select: none; }
+  .code-card .code-head:hover { background: var(--paper); }
+  .expand-indicator { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-faint); transition: transform 0.2s; display: inline-block; }
+  .code-card.expanded .expand-indicator { transform: rotate(90deg); color: var(--accent-deep); }
+
+  .margin-note { max-width: 1200px; margin: 0 auto; color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; padding: 1.1rem clamp(1.5rem, 5vw, 4rem); background: var(--paper-deep); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); font-weight: 300; }
+  .margin-note::before { content: "노트"; font-weight: 600; color: var(--accent-deep); font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-right: 0.8rem; display: inline-block; padding-right: 0.7rem; border-right: 1px solid var(--rule); }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  footer { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: var(--ink-faint); }
+  footer .lockup { font-size: 1.1rem; color: var(--ink); font-weight: 600; }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  .home-link { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 60; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0 0.95rem; height: 48px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.04em; transition: background 0.2s, color 0.2s; }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow { font-family: var(--mono); font-size: 0.95rem; transition: transform 0.25s cubic-bezier(0.22,1,0.36,1); }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  .menu-btn { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span { display: block; width: 20px; height: 1.5px; background: var(--ink); transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.2s, background 0.2s; transform-origin: center; }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  .toc-backdrop { position: fixed; inset: 0; background: oklch(0.18 0.015 260 / 0.35); backdrop-filter: blur(2px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+  .toc-panel { position: fixed; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--ink); z-index: 55; transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.22,1,0.36,1); overflow-y: auto; padding: 6rem 2.5rem 3rem; }
+  .toc-panel.open { transform: translateX(0); }
+  .toc-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .toc-title { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 2.2rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule); }
+  .toc-list { list-style: none; counter-reset: toc; }
+  .toc-list > li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a { display: grid; grid-template-columns: 2.5rem 1fr; align-items: baseline; text-decoration: none; color: var(--ink); font-weight: 500; font-size: 1.05rem; transition: color 0.2s; }
+  .toc-list > li > a::before { counter-increment: toc; content: counter(toc, decimal-leading-zero); color: var(--accent); font-weight: 300; font-size: 0.85rem; }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+  .toc-sub { list-style: none; margin-top: 0.6rem; margin-left: 2.5rem; padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a { color: var(--ink-soft); text-decoration: none; font-size: 0.88rem; transition: color 0.2s; display: flex; align-items: baseline; gap: 0.6rem; }
+  .toc-sub a span { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; min-width: 1.6rem; }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); }
+  body.menu-open { overflow: hidden; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card { animation: rise 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+    @keyframes rise { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html"><span class="arrow">←</span><span>notebook</span></a>
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false"><span></span><span></span><span></span></button>
+<div class="toc-backdrop" id="tocBackdrop"></div>
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#concepts" data-close>핵심 개념 도감</a>
+      <ul class="toc-sub">
+        <li><a href="#d-doc" data-close><span>01</span>도큐먼트 모델</a></li>
+        <li><a href="#d-rs" data-close><span>02</span>레플리카셋</a></li>
+        <li><a href="#d-sharding" data-close><span>03</span>샤딩 클러스터</a></li>
+        <li><a href="#d-index" data-close><span>04</span>인덱스 유형</a></li>
+        <li><a href="#d-agg" data-close><span>05</span>집계 파이프라인</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#largescale" data-close>대용량 처리</a>
+      <ul class="toc-sub">
+        <li><a href="#ls-shardkey" data-close><span>01</span>샤드 키 설계</a></li>
+        <li><a href="#ls-index" data-close><span>02</span>인덱스 전략</a></li>
+        <li><a href="#ls-wiredtiger" data-close><span>03</span>WiredTiger 스토리지</a></li>
+        <li><a href="#ls-config" data-close><span>04</span>핵심 설정 참조</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+  <div class="toc-foot">MongoDB — 도큐먼트 데이터베이스<br>학습 노트 · 2026.05.28</div>
+</aside>
+
+<header class="hero" id="top">
+  <div class="meta-row"><span>karellen-kim · notebook</span><span>NoSQL / 데이터베이스</span></div>
+  <h1 class="hero-title">Mongo<em>DB</em></h1>
+  <p class="hero-sub">BSON 도큐먼트 기반 분산 데이터베이스 — 스키마 유연성, 수평 샤딩, 집계 파이프라인, 트랜잭션</p>
+  <div class="hero-grid">
+    <div><span class="k">출시</span><span class="v">2009<small>10gen</small></span></div>
+    <div><span class="k">스토리지</span><span class="v">WiredTiger<small>기본 엔진</small></span></div>
+    <div><span class="k">쿼리</span><span class="v">MQL<small>집계 파이프라인</small></span></div>
+    <div><span class="k">트랜잭션</span><span class="v">ACID<small>4.0+</small></span></div>
+    <div><span class="k">작성</span><span class="v">2026<small>.05.28</small></span></div>
+  </div>
+</header>
+
+<!-- §01 -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <div class="section-kicker">TL;DR</div>
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      MongoDB는 <em>BSON 도큐먼트</em>를 기본 단위로 하는 NoSQL 데이터베이스다. 중첩 배열과 서브 도큐먼트를 하나의 도큐먼트에 담아 <span class="hl">JOIN 없이 관련 데이터를 함께 읽는</span> 패턴이 핵심이다. WiredTiger 스토리지 엔진, 레플리카셋 기반 HA, 샤딩 클러스터로 수평 확장을 지원한다.
+    </p>
+    <div class="points">
+      <div class="point">
+        <span class="n">01</span>
+        <div>
+          <h3>도큐먼트 모델 — 데이터 지역성</h3>
+          <p>관련 데이터를 하나의 도큐먼트에 <strong>임베드(embed)</strong>하면 단일 읽기 작업으로 완결된다. RDBMS의 JOIN은 네트워크 왕복과 인덱스 조인 비용을 유발한다. <strong>임베드 vs 참조</strong>: 함께 읽히는 데이터는 임베드, 독립적으로 갱신되거나 크기가 큰 데이터는 별도 컬렉션으로 참조한다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">02</span>
+        <div>
+          <h3>WiredTiger — MVCC + 압축</h3>
+          <p>WiredTiger는 <strong>MVCC(Multi-Version Concurrency Control)</strong>를 사용한다. 읽기와 쓰기가 서로를 차단하지 않는다. 체크포인트는 60초마다 수행되며, 그 사이의 변경은 WAL(Journal)에 기록된다. 기본 압축: snappy(50~70% 저장 절약).</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">03</span>
+        <div>
+          <h3>레플리카셋 · 오퍼튜니스틱 읽기</h3>
+          <p>레플리카셋은 Primary 1개 + Secondary N개(최소 3개 권장)로 구성된다. Primary 장애 시 Secondary가 선거(Election)로 새 Primary를 선출한다. <strong>ReadPreference</strong>: <code>secondaryPreferred</code>로 읽기를 Secondary에 분산하면 Primary 부하를 줄인다(단, 복제 지연만큼 읽기가 오래될 수 있음).</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">04</span>
+        <div>
+          <h3>샤딩 — 수평 확장</h3>
+          <p><strong>mongos</strong> 라우터가 샤드 키 기반으로 요청을 적절한 샤드로 라우팅한다. Config Server가 청크 메타데이터를 관리하고, 밸런서가 청크를 자동으로 재분배한다. 각 샤드는 레플리카셋으로 구성된다. <strong>샤드 키 선택이 가장 중요한 설계 결정</strong>이다 — 변경이 매우 어렵다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">05</span>
+        <div>
+          <h3>집계 파이프라인</h3>
+          <p>SQL의 GROUP BY / JOIN / HAVING을 스테이지 파이프라인으로 표현한다. <code>$match</code> → <code>$group</code> → <code>$sort</code> → <code>$project</code> 순서로 스트리밍 처리한다. <strong><code>$lookup</code></strong>: 다른 컬렉션을 LEFT OUTER JOIN. <code>$unwind</code>: 배열을 풀어 각 요소를 별도 도큐먼트로 변환.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">06</span>
+        <div>
+          <h3>Change Stream · 트랜잭션</h3>
+          <p><strong>Change Stream</strong>: Oplog를 구독해 실시간으로 변경 이벤트를 받는다. CDC 파이프라인과 실시간 알림에 사용된다. <strong>트랜잭션</strong>(4.0+): 레플리카셋 내 ACID, 4.2+에서 샤드 클러스터 간 분산 트랜잭션 지원. 단, 트랜잭션은 오버헤드가 크므로 꼭 필요한 경우에만 사용한다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §02 -->
+<section class="section" id="concepts">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Architecture</div>
+      <h2 class="section-title">핵심 개념 도감</h2>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-doc">
+    <div class="db-text">
+      <h4><span class="num">01</span>도큐먼트 모델</h4>
+      <p>BSON은 JSON의 바이너리 인코딩이다. 추가 타입을 지원한다: ObjectId, Date, Decimal128, Binary. 도큐먼트 최대 크기는 16MB.</p>
+      <p>임베디드 도큐먼트는 쿼리 시 점 표기법으로 접근한다: <code>"address.city"</code>. 배열 필드는 <code>$elemMatch</code>로 복합 조건을 적용한다.</p>
+      <div class="use-when">
+        <strong>임베드 한계</strong>
+        <p>무제한 성장하는 배열(예: 이벤트 로그, 댓글)은 임베드하지 않는다. 도큐먼트가 16MB를 초과하거나 자주 갱신되는 서브 필드가 있으면 참조 패턴을 사용한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="BSON Document">
+      <div class="d-doc">
+        <div class="doc-line header">orders collection</div>
+        <div class="doc-line"><span class="doc-key">"_id"</span>:&nbsp;<span class="doc-val">ObjectId("...")</span></div>
+        <div class="doc-line"><span class="doc-key">"user_id"</span>:&nbsp;<span class="doc-val num">1042</span></div>
+        <div class="doc-line"><span class="doc-key">"status"</span>:&nbsp;<span class="doc-val">"confirmed"</span></div>
+        <div class="doc-line"><span class="doc-key">"items"</span>: [&nbsp;</div>
+        <div class="doc-line nest doc-nest"><span class="doc-key">"product_id"</span>:&nbsp;<span class="doc-val num">501</span>,</div>
+        <div class="doc-line nest doc-nest"><span class="doc-key">"qty"</span>:&nbsp;<span class="doc-val num">2</span>,&nbsp;<span class="doc-key">"price"</span>:&nbsp;<span class="doc-val num">29900</span></div>
+        <div class="doc-line">]</div>
+        <div class="doc-line"><span class="doc-key">"created_at"</span>:&nbsp;<span class="doc-val">ISODate("2026-05-28")</span></div>
+        <div class="doc-line"><span class="doc-key">"paid"</span>:&nbsp;<span class="doc-val bool">true</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-rs">
+    <div class="db-text">
+      <h4><span class="num">02</span>레플리카셋</h4>
+      <p>모든 쓰기는 Primary로 가고 Oplog를 통해 Secondary에 비동기 복제된다. <code>writeConcern: majority</code>: 과반 멤버가 기록을 확인해야 응답. <strong>Election</strong>: Primary 장애 시 10~30초 내에 새 Primary 선출.</p>
+      <p>Arbiter는 데이터 없이 선거 투표권만 가진다. 짝수 노드일 때 타이 브레이킹 역할로 추가하지만, Atlas 등 관리형 서비스에서는 권장하지 않는다.</p>
+      <div class="use-when">
+        <strong>PSS vs PSA</strong>
+        <p>PSS(Primary-Secondary-Secondary): 모든 노드가 데이터를 보유, 고가용성 최대. PSA(Primary-Secondary-Arbiter): 스토리지 비용 절약, 하지만 가용성 낮음. 프로덕션은 PSS + 최소 3노드가 권장된다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Replica Set">
+      <div class="d-rs">
+        <div class="rs-member">
+          <span class="rs-role">Primary</span>
+          <div class="rs-node primary">mongod :27017<br><small style="font-size:0.55rem;color:oklch(0.65 0.01 260);">모든 쓰기</small></div>
+        </div>
+        <div style="text-align:center;font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);padding:0.15rem 0;">↓ Oplog 복제</div>
+        <div class="rs-member">
+          <span class="rs-role">Secondary</span>
+          <div class="rs-node secondary">mongod :27018</div>
+        </div>
+        <div class="rs-member">
+          <span class="rs-role">Secondary</span>
+          <div class="rs-node secondary">mongod :27019</div>
+        </div>
+        <div style="font-size:0.58rem;font-family:var(--mono);color:var(--ink-faint);margin-top:0.3rem;">Election 시 과반(2/3) 투표로 Primary 선출</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-sharding">
+    <div class="db-text">
+      <h4><span class="num">03</span>샤딩 클러스터</h4>
+      <p>데이터를 여러 샤드(레플리카셋)에 분산한다. mongos 라우터가 샤드 키 기반으로 요청을 라우팅한다. Config Server(레플리카셋)가 청크 맵을 유지한다.</p>
+      <p><strong>청크(Chunk)</strong>: 기본 64MB 범위의 데이터 단위. 밸런서가 청크 수가 불균형할 때 자동으로 마이그레이션한다. 마이그레이션 중에도 쿼리는 계속 처리된다.</p>
+      <div class="use-when">
+        <strong>대상 쿼리 vs 산탄총 쿼리</strong>
+        <p>샤드 키를 포함한 쿼리는 특정 샤드만 쿼리(Targeted). 샤드 키 없는 쿼리는 모든 샤드에 브로드캐스트(Scatter-Gather). 비용이 선형으로 증가하므로 샤드 키를 쿼리에 항상 포함해야 한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Sharded Cluster">
+      <div class="d-sharding">
+        <div class="sh-row">
+          <div class="sh-box mongos">mongos<small>라우터</small></div>
+          <div class="sh-box mongos">mongos<small>라우터</small></div>
+        </div>
+        <div class="sh-arr">↓</div>
+        <div class="sh-row">
+          <div class="sh-box config">Config Server<small>ReplicaSet</small></div>
+        </div>
+        <div class="sh-arr">↓ 청크 맵 조회 후 라우팅</div>
+        <div class="sh-row">
+          <div class="sh-box shard">Shard 0<small>RS 3노드</small></div>
+          <div class="sh-box shard">Shard 1<small>RS 3노드</small></div>
+          <div class="sh-box shard">Shard 2<small>RS 3노드</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-index">
+    <div class="db-text">
+      <h4><span class="num">04</span>인덱스 유형</h4>
+      <p>모든 인덱스는 B-Tree 기반(Text, Hashed, 2dsphere 제외). <code>_id</code>는 자동으로 유니크 인덱스가 생성된다. 인덱스는 <strong>WiredTiger 캐시에 상주</strong>하므로 인덱스 크기가 캐시를 초과하면 성능이 급락한다.</p>
+      <div class="use-when">
+        <strong>ESR 규칙</strong>
+        <p>복합 인덱스 필드 순서: <strong>E</strong>quality(동등) → <strong>S</strong>ort(정렬) → <strong>R</strong>ange(범위). 이 순서로 필드를 배치하면 인덱스 효율이 최대화된다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Index Types">
+      <div class="d-index">
+        <div class="idx best"><span class="idx-name">Single Field</span><span class="idx-desc">단일 필드 B-Tree</span></div>
+        <div class="idx best"><span class="idx-name">Compound</span><span class="idx-desc">복합 필드 (ESR 규칙)</span></div>
+        <div class="idx"><span class="idx-name">Multikey</span><span class="idx-desc">배열 필드 자동 적용</span></div>
+        <div class="idx"><span class="idx-name">Text</span><span class="idx-desc">전문 검색 (역인덱스)</span></div>
+        <div class="idx"><span class="idx-name">Hashed</span><span class="idx-desc">샤드 키용 균등 분산</span></div>
+        <div class="idx"><span class="idx-name">2dsphere</span><span class="idx-desc">지리공간 쿼리 (GeoJSON)</span></div>
+        <div class="idx"><span class="idx-name">Partial</span><span class="idx-desc">조건 만족 도큐먼트만 인덱싱</span></div>
+        <div class="idx"><span class="idx-name">TTL</span><span class="idx-desc">만료 시간 기반 자동 삭제</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-agg">
+    <div class="db-text">
+      <h4><span class="num">05</span>집계 파이프라인</h4>
+      <p>도큐먼트가 스테이지를 순서대로 통과하며 변환된다. 각 스테이지의 출력이 다음 스테이지의 입력이 된다. <strong>파이프라인 최적화</strong>: <code>$match</code>를 최대한 앞에 배치해 처리 도큐먼트 수를 줄인다.</p>
+      <p><code>$facet</code>: 단일 파이프라인에서 여러 집계를 병렬로 실행. 검색 결과 페이지의 필터 개수를 한 번에 계산할 때 유용하다.</p>
+      <div class="use-when">
+        <strong>allowDiskUse</strong>
+        <p>집계 파이프라인 중간 결과가 100MB를 초과하면 에러 발생. <code>allowDiskUse: true</code>로 디스크 임시 파일을 허용한다. 단, 성능이 크게 저하되므로 쿼리 최적화를 먼저 시도한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Aggregation Pipeline">
+      <div style="display:flex;flex-direction:column;gap:0.3rem;width:100%;align-items:center;">
+        <div style="width:85%;padding:0.4rem 0.7rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-size:0.65rem;font-weight:600;text-align:center;">$match: {status: "confirmed"}</div>
+        <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">↓</div>
+        <div style="width:85%;padding:0.4rem 0.7rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.65rem;font-weight:600;text-align:center;color:var(--accent-deep);">$unwind: "$items"</div>
+        <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">↓</div>
+        <div style="width:85%;padding:0.4rem 0.7rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.65rem;font-weight:500;text-align:center;">$group: {_id: "$items.product_id", total: {$sum: "$items.qty"}}</div>
+        <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">↓</div>
+        <div style="width:85%;padding:0.4rem 0.7rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.65rem;font-weight:500;text-align:center;">$sort: {total: -1}</div>
+        <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">↓</div>
+        <div style="width:85%;padding:0.4rem 0.7rem;border:1px solid var(--rule);font-size:0.65rem;text-align:center;color:var(--ink-soft);">Result: 인기 상품 랭킹</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §03 대용량 처리 -->
+<section class="section" id="largescale">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Large Scale</div>
+      <h2 class="section-title">대용량 처리</h2>
+    </div>
+  </div>
+
+  <p class="ls-intro">Forbes Global 2000 기업의 <em>60%+</em>가 MongoDB를 사용한다. 미국 최대 의료 기록 플랫폼 Epic은 수억 개의 환자 도큐먼트를 처리하고, Booking.com은 수억 개의 숙박 예약을 MongoDB로 관리한다.</p>
+
+  <div class="ls-block" id="ls-shardkey">
+    <div class="ls-kicker">01 · Shard Key</div>
+    <div class="ls-title">샤드 키 설계 — 가장 중요한 결정</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">중요도</span><span class="badge">Critical</span></div>
+        <p>샤드 키는 컬렉션 생성 후 변경이 매우 어렵다(5.0+에서 리샤딩 지원하지만 비용이 큼). 잘못 선택하면 전체 클러스터가 단일 샤드에 집중되는 핫스팟이 발생한다.</p>
+        <p><strong>나쁜 샤드 키 패턴</strong>: (1) 단조 증가값(<code>_id</code>, 타임스탬프) — 항상 마지막 청크에 데이터가 집중. (2) 카디널리티 낮은 필드(예: status 3개 값) — 최대 3개 청크만 생성 가능. (3) 쿼리에 포함되지 않는 필드 — 모든 쿼리가 Scatter-Gather.</p>
+        <p><strong>좋은 패턴</strong>: 해시 샤드 키(<code>hashed</code>)로 균등 분산. 또는 컴포지트 샤드 키(<code>tenant_id + _id</code>)로 tenant 격리와 균등 분산을 동시에 달성한다.</p>
+        <div class="use-when">
+          <strong>Zone Sharding</strong>
+          <p>특정 샤드 키 범위를 특정 샤드(또는 지역)에 고정하는 기능. 지역 데이터 주권(GDPR) 요구나 멀티 테넌시에서 테넌트를 특정 샤드에 격리할 때 사용한다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Shard Key Impact" style="min-height:200px;">
+        <div style="display:flex;flex-direction:column;gap:0.8rem;width:100%;">
+          <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);">나쁜 샤드 키 (단조 _id)</div>
+          <div style="display:flex;gap:0.3rem;">
+            <div style="flex:0.05;background:var(--rule);min-height:1.5rem;"></div>
+            <div style="flex:0.05;background:var(--rule);"></div>
+            <div style="flex:0.9;background:var(--accent);"></div>
+          </div>
+          <div style="font-size:0.58rem;font-family:var(--mono);color:var(--accent-deep);">shard0: 거의 빔 / shard2: 핫스팟</div>
+          <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);margin-top:0.3rem;">좋은 샤드 키 (hashed)</div>
+          <div style="display:flex;gap:0.3rem;">
+            <div style="flex:1;background:var(--ink);min-height:1.5rem;"></div>
+            <div style="flex:1;background:var(--ink);"></div>
+            <div style="flex:1;background:var(--ink);"></div>
+          </div>
+          <div style="font-size:0.58rem;font-family:var(--mono);color:var(--ink-faint);">균등 분산</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="ls-index">
+    <div class="ls-kicker">02 · Index Strategy</div>
+    <div class="ls-title">인덱스 전략 — 캐시 & ESR</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">핵심</span><span class="badge">ESR Rule</span><span class="badge">Partial Index</span></div>
+        <p><strong>인덱스 수 최소화</strong>: 각 인덱스는 쓰기 시 추가 비용을 발생시키고 WiredTiger 캐시를 소비한다. 사용되지 않는 인덱스는 즉시 삭제한다(<code>$indexStats</code>로 확인).</p>
+        <p><strong>Covered Query</strong>: 쿼리에 필요한 필드가 모두 인덱스에 있으면 도큐먼트 자체를 읽지 않는다. <code>explain()</code>에서 <code>IXSCAN</code>만 보이면 Covered이다.</p>
+        <p><strong>Partial Index</strong>: 특정 조건을 만족하는 도큐먼트만 인덱싱한다. 예: 활성 상품만 인덱싱 → <code>{"status": "active"}</code>. 전체 인덱스 대비 크기가 작아 캐시 효율적이다.</p>
+        <div class="use-when">
+          <strong>인덱스 빌드 전략</strong>
+          <p>롤링 인덱스 빌드: Secondary에 순차적으로 빌드 후 Primary를 Secondary로 강등해 빌드. 프로덕션에서 downtime 없이 인덱스를 추가한다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="ESR Rule" style="min-height:180px;">
+        <div style="display:flex;flex-direction:column;gap:0.6rem;width:100%;">
+          <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);">복합 인덱스 필드 순서: ESR</div>
+          <div style="display:flex;gap:0.3rem;">
+            <div style="flex:1;padding:0.5rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-size:0.65rem;text-align:center;font-weight:600;">E<br><small style="font-size:0.55rem;color:oklch(0.65 0.01 260);">Equality<br>status: "active"</small></div>
+            <div style="flex:1;padding:0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.65rem;text-align:center;font-weight:600;color:var(--accent-deep);">S<br><small style="font-size:0.55rem;color:var(--accent);">Sort<br>created_at: -1</small></div>
+            <div style="flex:1;padding:0.5rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.65rem;text-align:center;font-weight:500;">R<br><small style="font-size:0.55rem;color:var(--ink-faint);">Range<br>price: {$gt: 0}</small></div>
+          </div>
+          <div style="font-size:0.6rem;font-family:var(--mono);color:var(--ink-faint);">인덱스: {status:1, created_at:-1, price:1}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="ls-wiredtiger">
+    <div class="ls-kicker">03 · WiredTiger</div>
+    <div class="ls-title">WiredTiger — 캐시 & 체크포인트</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">핵심</span><span class="badge">Cache Sizing</span><span class="badge">Journal</span></div>
+        <p><strong>WiredTiger 캐시</strong>: 기본값은 물리 메모리 절반과 1GB 중 큰 값. 캐시가 부족하면 eviction이 발생하고 성능이 급락한다. 인덱스와 워킹셋 도큐먼트가 캐시에 들어가야 한다.</p>
+        <p><strong>체크포인트</strong>: 60초(또는 2GB 데이터 변경)마다 수행. 체크포인트 중 스냅샷 일관성을 위해 dirty 페이지가 디스크에 기록된다. 체크포인트 사이의 변경은 Journal(WAL)에 기록되어 장애 시 복구한다.</p>
+        <p><strong>압축</strong>: 기본 snappy로 데이터와 인덱스를 압축. zstd로 변경하면 더 높은 압축률(추가 CPU 비용). 콜드 데이터는 zstd가 효과적이다.</p>
+        <div class="use-when">
+          <strong>캐시 크기 설정</strong>
+          <p><code>storage.wiredTiger.engineConfig.cacheSizeGB</code>. 전용 서버에서는 물리 메모리의 60~70%로 설정한다. OS 파일 캐시를 위한 공간도 남겨야 한다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="WiredTiger Memory" style="min-height:200px;">
+        <div style="display:flex;flex-direction:column;gap:0.5rem;width:100%;">
+          <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);">64GB 서버 메모리 배분</div>
+          <div style="display:flex;gap:0.3rem;height:2rem;">
+            <div style="flex:0.4;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:600;color:var(--paper);">WT Cache<br><span style="font-size:0.55rem;color:oklch(0.7 0.01 260);">~38GB</span></div>
+            <div style="flex:0.25;background:var(--accent-wash);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:0.58rem;font-weight:600;color:var(--accent-deep);">OS Cache</div>
+            <div style="flex:0.15;background:var(--paper-deep);border:1px solid var(--rule);display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:var(--ink-faint);">App</div>
+            <div style="flex:0.2;border:1px dashed var(--rule);display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:var(--ink-faint);">여유</div>
+          </div>
+          <div style="font-size:0.58rem;font-family:var(--mono);color:var(--ink-faint);">인덱스 + 워킹셋이 캐시 안에 들어와야 한다</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="ls-config">
+    <div class="ls-kicker">04 · Configuration</div>
+    <div class="ls-title">핵심 설정 참조표</div>
+    <div class="config-ref">
+      <div class="config-ref-head"><span>파라미터</span><span>권장값</span><span>설명</span></div>
+      <div class="config-row"><span class="ck">wiredTiger.cacheSizeGB</span><span class="cv">RAM×0.6</span><span class="cd">WiredTiger 캐시 크기. 인덱스+워킹셋을 수용해야 한다</span></div>
+      <div class="config-row"><span class="ck">writeConcern.w</span><span class="cv">majority</span><span class="cd">과반 멤버 기록 확인. 데이터 내구성과 성능의 균형점</span></div>
+      <div class="config-row"><span class="ck">readPreference</span><span class="cv">secondaryPreferred</span><span class="cd">읽기를 Secondary로 분산. 복제 지연 허용 시 사용</span></div>
+      <div class="config-row"><span class="ck">maxPoolSize</span><span class="cv">100</span><span class="cd">드라이버 연결 풀 크기. CPU 코어 수의 4~5배가 시작점</span></div>
+      <div class="config-row"><span class="ck">oplogSizeMB</span><span class="cv">데이터 5~10%</span><span class="cd">Oplog 크기. 최소 24시간의 쓰기를 수용해야 한다</span></div>
+      <div class="config-row"><span class="ck">slowOpThresholdMs</span><span class="cv">100</span><span class="cd">슬로우 쿼리 로깅 임계치(ms). 분석 및 인덱스 최적화에 활용</span></div>
+      <div class="config-row"><span class="ck">storage.journal.commitIntervalMs</span><span class="cv">100</span><span class="cd">Journal flush 간격. 낮을수록 내구성 높고 I/O 증가</span></div>
+      <div class="config-row"><span class="ck">net.compression.compressors</span><span class="cv">zstd</span><span class="cd">드라이버-서버 간 네트워크 압축. 대역폭 절약</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="margin-note">
+  <strong>MongoDB vs PostgreSQL JSONB:</strong> JSON 데이터를 다룰 때 MongoDB와 PostgreSQL JSONB 사이에서 선택해야 하는 경우가 있다. JSONB는 강력한 JOIN, 트랜잭션, 기존 관계형 데이터와의 통합이 강점이다. MongoDB는 도큐먼트 임베딩과 수평 샤딩이 강점이다. 애플리케이션이 이미 PostgreSQL을 사용한다면 JSONB로 충분한 경우가 많다.
+</div>
+
+<!-- §04 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Hands-On</div>
+      <h2 class="section-title">실전 코드</h2>
+    </div>
+  </div>
+
+  <p class="code-intro"><em>pymongo</em> 4.x 기준. 비동기 처리가 필요하면 <em>motor</em>(asyncio 기반 MongoDB 드라이버)를 사용한다.</p>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>01. 연결 설정 — 레플리카셋 + 연결 풀</h4>
+      <div class="head-right"><span class="tag">connection</span></div>
+    </div>
+    <pre><span class="kw">from</span> pymongo <span class="kw">import</span> MongoClient, ReadPreference, WriteConcern
+<span class="kw">from</span> pymongo.read_concern <span class="kw">import</span> ReadConcern
+
+<span class="com"># 레플리카셋 연결</span>
+client = <span class="fn">MongoClient</span>(
+    <span class="str">"mongodb://user:pass@host1:27017,host2:27017,host3:27017/"</span>,
+    replicaSet=<span class="str">"rs0"</span>,
+    maxPoolSize=<span class="str">100</span>,
+    minPoolSize=<span class="str">10</span>,
+    serverSelectionTimeoutMS=<span class="str">5000</span>,
+    connectTimeoutMS=<span class="str">3000</span>,
+    socketTimeoutMS=<span class="str">10000</span>,
+    compressors=<span class="str">"zstd"</span>,      <span class="com"># 네트워크 압축</span>
+)
+
+<span class="com"># 내구성 있는 쓰기 + 읽기 분산</span>
+db = client.get_database(
+    <span class="str">"mydb"</span>,
+    write_concern=<span class="fn">WriteConcern</span>(w=<span class="str">"majority"</span>, j=<span class="kw">True</span>),
+    read_preference=ReadPreference.SECONDARY_PREFERRED,
+    read_concern=<span class="fn">ReadConcern</span>(<span class="str">"majority"</span>),
+)
+
+orders = db[<span class="str">"orders"</span>]</pre>
+    <div class="note"><strong>포인트.</strong> <code>w="majority"</code>는 과반 레플리카 확인 후 응답한다. <code>j=True</code>는 Journal flush까지 기다린다. 성능이 중요하면 <code>w=1, j=False</code>로 낮추되 장애 시 최대 100ms 데이터를 잃을 수 있다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>02. 집계 파이프라인 — 카테고리별 매출 분석</h4>
+      <div class="head-right"><span class="tag">aggregation</span></div>
+    </div>
+    <pre><span class="kw">from</span> datetime <span class="kw">import</span> datetime, timedelta
+
+<span class="kw">def</span> <span class="fn">sales_by_category</span>(days: int = <span class="str">30</span>) -> list[dict]:
+    since = datetime.<span class="fn">utcnow</span>() - <span class="fn">timedelta</span>(days=days)
+
+    pipeline = [
+        <span class="com"># 1단계: 날짜 필터 (인덱스 활용)</span>
+        {<span class="str">"$match"</span>: {
+            <span class="str">"status"</span>: <span class="str">"confirmed"</span>,
+            <span class="str">"created_at"</span>: {<span class="str">"$gte"</span>: since},
+        }},
+        <span class="com"># 2단계: 상품 배열 펼치기</span>
+        {<span class="str">"$unwind"</span>: <span class="str">"$items"</span>},
+        <span class="com"># 3단계: 카테고리로 조인</span>
+        {<span class="str">"$lookup"</span>: {
+            <span class="str">"from"</span>: <span class="str">"products"</span>,
+            <span class="str">"localField"</span>: <span class="str">"items.product_id"</span>,
+            <span class="str">"foreignField"</span>: <span class="str">"_id"</span>,
+            <span class="str">"as"</span>: <span class="str">"product"</span>,
+            <span class="str">"pipeline"</span>: [{<span class="str">"$project"</span>: {<span class="str">"category"</span>: <span class="str">1</span>}}],
+        }},
+        {<span class="str">"$unwind"</span>: <span class="str">"$product"</span>},
+        <span class="com"># 4단계: 카테고리별 집계</span>
+        {<span class="str">"$group"</span>: {
+            <span class="str">"_id"</span>: <span class="str">"$product.category"</span>,
+            <span class="str">"revenue"</span>: {<span class="str">"$sum"</span>: {<span class="str">"$multiply"</span>: [<span class="str">"$items.qty"</span>, <span class="str">"$items.price"</span>]}},
+            <span class="str">"count"</span>: {<span class="str">"$sum"</span>: <span class="str">1</span>},
+        }},
+        {<span class="str">"$sort"</span>: {<span class="str">"revenue"</span>: <span class="str">-1</span>}},
+    ]
+
+    <span class="kw">return</span> <span class="fn">list</span>(orders.<span class="fn">aggregate</span>(pipeline, allowDiskUse=<span class="kw">True</span>))</pre>
+    <div class="note"><strong>포인트.</strong> <code>$lookup pipeline</code>은 조인 시 불필요한 필드를 미리 제거해 메모리 효율을 높인다. <code>$match</code>는 항상 파이프라인 최상단에 배치해 처리 도큐먼트 수를 최소화한다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>03. 트랜잭션 — 재고 차감 + 주문 생성</h4>
+      <div class="head-right"><span class="tag">transaction</span></div>
+    </div>
+    <pre><span class="kw">from</span> pymongo <span class="kw">import</span> MongoClient
+<span class="kw">from</span> pymongo.errors <span class="kw">import</span> PyMongoError
+
+<span class="kw">def</span> <span class="fn">create_order_with_inventory</span>(
+    user_id: int,
+    product_id: int,
+    qty: int,
+    price: float,
+) -> str:
+    <span class="kw">with</span> client.<span class="fn">start_session</span>() <span class="kw">as</span> session:
+        <span class="kw">with</span> session.<span class="fn">start_transaction</span>():
+            <span class="kw">try</span>:
+                <span class="com"># 재고 차감 (낙관적 동시성 제어)</span>
+                result = db.inventory.<span class="fn">find_one_and_update</span>(
+                    {<span class="str">"product_id"</span>: product_id, <span class="str">"stock"</span>: {<span class="str">"$gte"</span>: qty}},
+                    {<span class="str">"$inc"</span>: {<span class="str">"stock"</span>: -qty}},
+                    session=session,
+                    return_document=<span class="kw">True</span>,
+                )
+                <span class="kw">if not</span> result:
+                    <span class="kw">raise</span> <span class="fn">ValueError</span>(<span class="str">"재고 부족"</span>)
+
+                <span class="com"># 주문 생성</span>
+                order = {
+                    <span class="str">"user_id"</span>: user_id,
+                    <span class="str">"items"</span>: [{<span class="str">"product_id"</span>: product_id, <span class="str">"qty"</span>: qty, <span class="str">"price"</span>: price}],
+                    <span class="str">"status"</span>: <span class="str">"confirmed"</span>,
+                    <span class="str">"created_at"</span>: datetime.<span class="fn">utcnow</span>(),
+                }
+                insert_result = db.orders.<span class="fn">insert_one</span>(order, session=session)
+
+                <span class="com"># 세션이 with 블록 끝에 자동 커밋</span>
+                <span class="kw">return</span> <span class="fn">str</span>(insert_result.inserted_id)
+
+            <span class="kw">except</span> <span class="fn">Exception</span> <span class="kw">as</span> e:
+                <span class="com"># 예외 시 자동 롤백</span>
+                <span class="kw">raise</span></pre>
+    <div class="note"><strong>포인트.</strong> <code>$inc: {stock: -qty}</code>는 원자적 연산이다. 트랜잭션 없이 사용해도 단일 도큐먼트 수준에서는 안전하다. 트랜잭션은 여러 도큐먼트/컬렉션에 걸친 원자성이 필요할 때만 사용한다(오버헤드 3~10배).</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>04. Change Stream — 실시간 이벤트 구독</h4>
+      <div class="head-right"><span class="tag">change-stream</span></div>
+    </div>
+    <pre><span class="kw">import</span> threading
+<span class="kw">from</span> pymongo <span class="kw">import</span> MongoClient
+
+<span class="kw">def</span> <span class="fn">watch_orders</span>(callback):
+    <span class="com"># 관심 이벤트 필터</span>
+    pipeline = [
+        {<span class="str">"$match"</span>: {
+            <span class="str">"operationType"</span>: {<span class="str">"$in"</span>: [<span class="str">"insert"</span>, <span class="str">"update"</span>]},
+            <span class="str">"fullDocument.status"</span>: <span class="str">"confirmed"</span>,
+        }}
+    ]
+
+    resume_token = <span class="kw">None</span>
+
+    <span class="kw">while True</span>:
+        <span class="kw">try</span>:
+            <span class="com"># resume_after로 중단 지점부터 재개</span>
+            <span class="kw">with</span> orders.<span class="fn">watch</span>(
+                pipeline,
+                full_document=<span class="str">"updateLookup"</span>,  <span class="com"># update 시 전체 도큐먼트 포함</span>
+                resume_after=resume_token,
+            ) <span class="kw">as</span> stream:
+                <span class="kw">for</span> change <span class="kw">in</span> stream:
+                    <span class="fn">callback</span>(change[<span class="str">"fullDocument"</span>])
+                    resume_token = change[<span class="str">"_id"</span>]  <span class="com"># 재개 토큰 저장</span>
+
+        <span class="kw">except Exception</span> <span class="kw">as</span> e:
+            <span class="com"># 재연결 후 resume_token으로 이어받음</span>
+            <span class="fn">print</span>(<span class="str">f"재연결 중: {e}"</span>)
+            <span class="kw">continue</span></pre>
+    <div class="note"><strong>포인트.</strong> <code>resume_after</code>는 Change Stream이 중단된 지점부터 이벤트를 다시 받는다. Oplog 보존 기간 안에서만 재개가 가능하다. 프로덕션에서는 resume_token을 외부 저장소(Redis, DB)에 주기적으로 저장해야 한다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>05. 대량 쓰기 — bulk_write 최적화</h4>
+      <div class="head-right"><span class="tag">bulk</span></div>
+    </div>
+    <pre><span class="kw">from</span> pymongo <span class="kw">import</span> UpdateOne, InsertOne, DeleteOne
+
+<span class="kw">def</span> <span class="fn">batch_upsert_products</span>(products: list[dict], batch_size: int = <span class="str">1000</span>) -> dict:
+    total_matched = <span class="str">0</span>
+    total_modified = <span class="str">0</span>
+    total_upserted = <span class="str">0</span>
+
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="str">0</span>, <span class="fn">len</span>(products), batch_size):
+        batch = products[i : i + batch_size]
+        operations = [
+            <span class="fn">UpdateOne</span>(
+                {<span class="str">"product_id"</span>: p[<span class="str">"product_id"</span>]},
+                {<span class="str">"$set"</span>: p, <span class="str">"$currentDate"</span>: {<span class="str">"updated_at"</span>: <span class="kw">True</span>}},
+                upsert=<span class="kw">True</span>,
+            )
+            <span class="kw">for</span> p <span class="kw">in</span> batch
+        ]
+
+        result = db.products.<span class="fn">bulk_write</span>(
+            operations,
+            ordered=<span class="kw">False</span>,  <span class="com"># 병렬 실행, 오류 계속 처리</span>
+        )
+        total_matched += result.matched_count
+        total_modified += result.modified_count
+        total_upserted += result.upserted_count
+
+    <span class="kw">return</span> {
+        <span class="str">"matched"</span>: total_matched,
+        <span class="str">"modified"</span>: total_modified,
+        <span class="str">"upserted"</span>: total_upserted,
+    }</pre>
+    <div class="note"><strong>포인트.</strong> <code>ordered=False</code>는 오류가 발생해도 나머지 작업을 계속 처리한다. 대량 업서트 시 처리량이 2~3배 향상된다. <code>$currentDate</code>는 서버 시간 기준으로 타임스탬프를 설정한다 — 클라이언트 시계 차이를 피할 수 있다.</div>
+  </div>
+</section>
+
+<footer>
+  <span class="lockup">MongoDB</span>
+  <div><a href="https://www.mongodb.com/docs/manual/" target="_blank" rel="noopener">원문 · mongodb.com/docs/manual</a></div>
+</footer>
+
+<script>
+(function () {
+  const btn = document.getElementById('menuBtn');
+  const panel = document.getElementById('tocPanel');
+  const backdrop = document.getElementById('tocBackdrop');
+  function openMenu() { btn.classList.add('open'); panel.classList.add('open'); backdrop.classList.add('open'); document.body.classList.add('menu-open'); }
+  function closeMenu() { btn.classList.remove('open'); panel.classList.remove('open'); backdrop.classList.remove('open'); document.body.classList.remove('menu-open'); }
+  btn.addEventListener('click', () => btn.classList.contains('open') ? closeMenu() : openMenu());
+  backdrop.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', e => e.key === 'Escape' && closeMenu());
+  panel.querySelectorAll('[data-close]').forEach(a => a.addEventListener('click', closeMenu));
+
+  document.querySelectorAll('.code-card').forEach(card => {
+    const head = card.querySelector('.code-head');
+    const headRight = card.querySelector('.head-right');
+    const indicator = document.createElement('span');
+    indicator.className = 'expand-indicator';
+    indicator.textContent = '▸';
+    headRight.prepend(indicator);
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.textContent = 'copy';
+    headRight.appendChild(copyBtn);
+    head.addEventListener('click', () => card.classList.toggle('expanded'));
+    copyBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const code = card.querySelector('pre').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        copyBtn.textContent = 'copied'; copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = 'copy'; copyBtn.classList.remove('copied'); }, 1500);
+      }).catch(() => { copyBtn.textContent = 'failed'; });
+    });
+  });
+})();
+</script>
+</body>
+</html>

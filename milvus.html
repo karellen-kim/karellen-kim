@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Milvus — 학습 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+  .hero { max-width: 1200px; margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); position: relative; }
+  .hero::before { content: ""; position: absolute; top: 2rem; left: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); height: 1px; background: var(--ink); }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.5rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.95; font-weight: 600; margin-top: clamp(2rem, 5vw, 3rem); letter-spacing: -0.035em; }
+  .hero-title em { font-style: normal; font-weight: 300; color: var(--accent-deep); }
+  .hero-sub { margin-top: 1.4rem; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: var(--ink-soft); max-width: 42rem; line-height: 1.5; font-weight: 300; }
+  .hero-grid { margin-top: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .hero-grid > div { background: var(--paper); padding: 1.25rem 1.5rem; }
+  .hero-grid .k { display: block; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 0.4rem; }
+  .hero-grid .v { font-size: 1.2rem; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .hero-grid .v small { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; font-weight: 400; }
+
+  .section { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem); }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head { display: grid; grid-template-columns: auto 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: baseline; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .section-num { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.85; color: var(--accent); font-weight: 200; letter-spacing: -0.04em; }
+  .section-titles { border-left: 1px solid var(--ink); padding-left: clamp(1rem, 3vw, 2rem); padding-top: 0.5rem; }
+  .section-kicker { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .section-title { font-size: clamp(1.65rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.028em; }
+
+  .tldr-grid { display: grid; grid-template-columns: 1fr; }
+  @media (min-width: 720px) { .tldr-grid { grid-template-columns: repeat(12, 1fr); } }
+  .tldr-lead { grid-column: 1/-1; font-size: clamp(1.2rem, 2.1vw, 1.6rem); line-height: 1.45; color: var(--ink); padding-bottom: 2rem; border-bottom: 1px solid var(--rule); margin-bottom: 2.5rem; font-weight: 300; letter-spacing: -0.012em; }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead::first-letter { font-size: 3.4em; float: left; line-height: 0.9; padding-right: 0.12em; padding-top: 0.08em; color: var(--accent-deep); font-weight: 200; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  @media (min-width: 720px) { .tldr-lead { grid-column: 2/12; } }
+  .points { display: contents; }
+  .point { grid-column: 1/-1; display: grid; grid-template-columns: 4ch 1fr; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 720px) { .point { grid-column: 2/12; grid-template-columns: 5ch 1fr; gap: 2rem; } }
+  .point .n { font-size: 1.25rem; color: var(--accent); line-height: 1; font-weight: 300; letter-spacing: 0.05em; }
+  .point h3 { font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.3; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.015em; }
+  .point p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
+  .point p strong { color: var(--ink); font-weight: 600; }
+  .point p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+
+  .diagram-block { margin-bottom: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .db-text h4 { font-size: clamp(1.3rem, 2.3vw, 1.75rem); line-height: 1.25; margin-bottom: 0.8rem; font-weight: 600; letter-spacing: -0.022em; }
+  .db-text h4 .num { display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em; color: var(--accent-deep); vertical-align: middle; background: var(--accent-wash); padding: 0.28rem 0.55rem; border-radius: 999px; margin-right: 0.65rem; font-weight: 600; position: relative; top: -0.15em; }
+  .db-text p { color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.65; font-size: 0.95rem; }
+  .db-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .db-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .db-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas { background: var(--paper-deep); border: 1px solid var(--rule); padding: clamp(1.25rem, 3vw, 2rem); position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .canvas::before { content: attr(data-label); position: absolute; top: 0.7rem; left: 0.9rem; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; }
+
+  .box { display: flex; align-items: center; justify-content: center; text-align: center; padding: 0.6rem 0.85rem; border: 1.5px solid var(--ink); background: var(--paper); font-size: 0.76rem; font-weight: 500; color: var(--ink); line-height: 1.3; min-width: 0; max-width: 100%; flex-direction: column; word-break: keep-all; }
+  .box.accent { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); }
+  .box.soft { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .box.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .box small { display: block; font-size: 0.6rem; font-weight: 400; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.18rem; }
+  .box.dark small { color: oklch(0.75 0.01 260); }
+
+  /* HNSW 다이어그램 */
+  .d-hnsw { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+  .d-hnsw .layer { padding: 0.5rem 0.7rem; border: 1.5px solid var(--rule); display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+  .d-hnsw .layer.top { border-color: var(--ink); background: var(--ink); }
+  .d-hnsw .layer.mid { border-color: var(--accent); background: var(--accent-wash); }
+  .d-hnsw .layer.bot { border-color: var(--rule); background: var(--paper); }
+  .d-hnsw .l-label { font-size: 0.6rem; font-family: var(--mono); color: var(--ink-faint); min-width: 2.5rem; flex-shrink: 0; }
+  .d-hnsw .layer.top .l-label { color: oklch(0.65 0.01 260); }
+  .d-hnsw .layer.mid .l-label { color: var(--accent); }
+  .d-hnsw .node { width: 1.2rem; height: 1.2rem; border: 1.5px solid var(--rule); background: var(--paper); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-family: var(--mono); }
+  .d-hnsw .layer.top .node { background: oklch(0.45 0.01 260); border-color: oklch(0.55 0.01 260); color: var(--paper); }
+  .d-hnsw .layer.mid .node { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .d-hnsw .node.query { background: var(--accent-deep); border-color: var(--accent-deep); color: var(--paper); }
+
+  /* 세그먼트 다이어그램 */
+  .d-segment { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
+  .d-segment .seg { padding: 0.5rem 0.7rem; border: 1.5px solid var(--rule); font-size: 0.68rem; font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
+  .d-segment .seg.growing { border-color: var(--accent); background: var(--accent-wash); color: var(--accent-deep); }
+  .d-segment .seg.sealed { border-color: var(--ink); background: var(--paper-deep); }
+  .d-segment .seg-tag { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; }
+  .d-segment .seg.growing .seg-tag { color: var(--accent); }
+  .d-segment .seg.sealed .seg-tag { color: var(--ink-faint); }
+
+  /* 아키텍처 다이어그램 */
+  .d-arch { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
+  .d-arch .arch-layer { display: flex; gap: 0.3rem; }
+  .d-arch .arch-box { flex: 1; padding: 0.5rem 0.4rem; border: 1.5px solid var(--rule); font-size: 0.65rem; font-weight: 500; text-align: center; }
+  .d-arch .arch-box.coord { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+  .d-arch .arch-box.query { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .d-arch .arch-box.data { background: var(--paper-deep); }
+  .d-arch .arch-box small { display: block; font-size: 0.55rem; color: var(--ink-faint); margin-top: 0.1rem; }
+  .d-arch .arch-box.coord small { color: oklch(0.65 0.01 260); }
+  .d-arch .arch-box.query small { color: var(--accent); }
+  .d-arch .arch-label { font-size: 0.58rem; font-family: var(--mono); color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.1em; }
+  .d-arch .arch-arr { text-align: center; font-family: var(--mono); font-size: 0.65rem; color: var(--ink-faint); }
+
+  /* 인덱스 비교 표 */
+  .index-table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+  .index-table th { font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; padding: 0.6rem 0.8rem; border-bottom: 2px solid var(--ink); text-align: left; }
+  .index-table td { padding: 0.65rem 0.8rem; border-bottom: 1px solid var(--rule); vertical-align: top; color: var(--ink-soft); font-size: 0.88rem; line-height: 1.5; }
+  .index-table tr:last-child td { border-bottom: none; }
+  .index-table .in { font-weight: 600; color: var(--ink); font-family: var(--mono); font-size: 0.82rem; }
+  .index-table .best { color: var(--accent-deep); font-weight: 600; }
+
+  /* 대용량 */
+  .ls-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .ls-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .ls-block { margin-bottom: clamp(3rem, 5vw, 4.5rem); padding-bottom: clamp(3rem, 5vw, 4.5rem); border-bottom: 1px solid var(--rule); }
+  .ls-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .ls-kicker { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.35rem; }
+  .ls-title { font-size: clamp(1.15rem, 1.9vw, 1.45rem); font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.2rem; color: var(--ink); }
+  .ls-body { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .ls-body { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .ls-text p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.65; margin-bottom: 0.9rem; }
+  .ls-text p:last-child { margin-bottom: 0; }
+  .ls-text p strong { color: var(--ink); font-weight: 600; }
+  .ls-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .ls-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .ls-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .ls-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+  .company-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+  .company-row .cl { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; }
+  .badge { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; padding: 0.18rem 0.5rem; border: 1px solid var(--accent); color: var(--accent-deep); background: var(--accent-wash); }
+
+  .config-ref { margin-top: 1.5rem; border-top: 2px solid var(--ink); }
+  .config-ref-head { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.5rem 0; border-bottom: 1px solid var(--ink-faint); }
+  .config-ref-head span { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; }
+  .config-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.65rem 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .config-row:last-child { border-bottom: none; }
+  .config-row .ck { font-family: var(--mono); font-size: 0.71rem; color: var(--accent-deep); word-break: break-all; line-height: 1.4; }
+  .config-row .cv { font-family: var(--mono); font-size: 0.75rem; color: var(--ink); font-weight: 600; }
+  .config-row .cd { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.4; }
+
+  .code-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card { margin-bottom: 2.5rem; border: 1px solid var(--rule); overflow: hidden; }
+  .code-head { display: flex; align-items: baseline; justify-content: space-between; padding: 1rem 1.4rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; gap: 0.5rem; }
+  .code-head h4 { font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .code-head .tag { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--accent); color: var(--paper); border-radius: 2px; }
+  .code-head .head-right { display: flex; align-items: center; gap: 0.5rem; }
+  .copy-btn { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; font-weight: 600; }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .code-card pre { margin: 0; padding: 1.35rem 1.5rem; overflow-x: auto; background: oklch(0.18 0.02 260); color: oklch(0.92 0.015 75); font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note { padding: 1rem 1.4rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper-deep); line-height: 1.6; }
+  .code-card .note strong { color: var(--accent-deep); }
+  .code-card pre, .code-card .note { display: none; }
+  .code-card.expanded pre, .code-card.expanded .note { display: block; }
+  .code-card .code-head { cursor: pointer; user-select: none; }
+  .code-card .code-head:hover { background: var(--paper); }
+  .expand-indicator { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-faint); transition: transform 0.2s; display: inline-block; }
+  .code-card.expanded .expand-indicator { transform: rotate(90deg); color: var(--accent-deep); }
+
+  .margin-note { max-width: 1200px; margin: 0 auto; color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; padding: 1.1rem clamp(1.5rem, 5vw, 4rem); background: var(--paper-deep); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); font-weight: 300; }
+  .margin-note::before { content: "노트"; font-weight: 600; color: var(--accent-deep); font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-right: 0.8rem; display: inline-block; padding-right: 0.7rem; border-right: 1px solid var(--rule); }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  footer { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: var(--ink-faint); }
+  footer .lockup { font-size: 1.1rem; color: var(--ink); font-weight: 600; }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  .home-link { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 60; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0 0.95rem; height: 48px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.04em; transition: background 0.2s, color 0.2s; }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow { font-family: var(--mono); font-size: 0.95rem; transition: transform 0.25s cubic-bezier(0.22,1,0.36,1); }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  .menu-btn { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span { display: block; width: 20px; height: 1.5px; background: var(--ink); transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.2s, background 0.2s; transform-origin: center; }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  .toc-backdrop { position: fixed; inset: 0; background: oklch(0.18 0.015 260 / 0.35); backdrop-filter: blur(2px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+  .toc-panel { position: fixed; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--ink); z-index: 55; transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.22,1,0.36,1); overflow-y: auto; padding: 6rem 2.5rem 3rem; }
+  .toc-panel.open { transform: translateX(0); }
+  .toc-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .toc-title { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 2.2rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule); }
+  .toc-list { list-style: none; counter-reset: toc; }
+  .toc-list > li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a { display: grid; grid-template-columns: 2.5rem 1fr; align-items: baseline; text-decoration: none; color: var(--ink); font-weight: 500; font-size: 1.05rem; transition: color 0.2s; }
+  .toc-list > li > a::before { counter-increment: toc; content: counter(toc, decimal-leading-zero); color: var(--accent); font-weight: 300; font-size: 0.85rem; }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+  .toc-sub { list-style: none; margin-top: 0.6rem; margin-left: 2.5rem; padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a { color: var(--ink-soft); text-decoration: none; font-size: 0.88rem; transition: color 0.2s; display: flex; align-items: baseline; gap: 0.6rem; }
+  .toc-sub a span { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; min-width: 1.6rem; }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); }
+  body.menu-open { overflow: hidden; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card { animation: rise 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+    @keyframes rise { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html"><span class="arrow">←</span><span>notebook</span></a>
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false"><span></span><span></span><span></span></button>
+<div class="toc-backdrop" id="tocBackdrop"></div>
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#concepts" data-close>핵심 개념 도감</a>
+      <ul class="toc-sub">
+        <li><a href="#d-hnsw" data-close><span>01</span>HNSW 인덱스</a></li>
+        <li><a href="#d-segment" data-close><span>02</span>Growing / Sealed 세그먼트</a></li>
+        <li><a href="#d-arch" data-close><span>03</span>클러스터 아키텍처</a></li>
+        <li><a href="#d-index" data-close><span>04</span>인덱스 유형 비교</a></li>
+        <li><a href="#d-hybrid" data-close><span>05</span>하이브리드 검색</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#largescale" data-close>대용량 처리</a>
+      <ul class="toc-sub">
+        <li><a href="#ls-memory" data-close><span>01</span>메모리 계층</a></li>
+        <li><a href="#ls-index" data-close><span>02</span>인덱스 빌드 최적화</a></li>
+        <li><a href="#ls-scalar" data-close><span>03</span>스칼라 필터링</a></li>
+        <li><a href="#ls-config" data-close><span>04</span>핵심 설정 참조</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+  <div class="toc-foot">Milvus — 클라우드 네이티브 벡터 DB<br>학습 노트 · 2026.05.28</div>
+</aside>
+
+<header class="hero" id="top">
+  <div class="meta-row"><span>karellen-kim · notebook</span><span>벡터 검색</span></div>
+  <h1 class="hero-title">Mil<em>vus</em></h1>
+  <p class="hero-sub">클라우드 네이티브 벡터 데이터베이스 — HNSW/IVF/DiskANN, Growing/Sealed 세그먼트, 하이브리드 검색</p>
+  <div class="hero-grid">
+    <div><span class="k">출시</span><span class="v">2019<small>Zilliz</small></span></div>
+    <div><span class="k">최대 규모</span><span class="v">10억+<small>벡터</small></span></div>
+    <div><span class="k">인덱스</span><span class="v">HNSW<small>IVF · DiskANN</small></span></div>
+    <div><span class="k">스토리지</span><span class="v">S3<small>오브젝트 스토어</small></span></div>
+    <div><span class="k">작성</span><span class="v">2026<small>.05.28</small></span></div>
+  </div>
+</header>
+
+<!-- §01 -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <div class="section-kicker">TL;DR</div>
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      Milvus는 <em>클라우드 네이티브 벡터 데이터베이스</em>다. 스토리지(S3), 계산(QueryNode), 코디네이션을 분리해 각 레이어를 독립 스케일한다. 수십억 벡터에서 <span class="hl">밀리초 단위 ANN</span> 검색을 제공하며, 전문 검색과 스칼라 필터를 결합한 하이브리드 검색을 지원한다.
+    </p>
+    <div class="points">
+      <div class="point">
+        <span class="n">01</span>
+        <div>
+          <h3>HNSW — 계층 탐색 그래프</h3>
+          <p>HNSW(Hierarchical Navigable Small World)는 계층적 그래프로 ANN 검색을 수행한다. 최상위 레이어는 소수의 허브 노드로 구성되어 진입점 역할을 하고, 최하위 레이어는 모든 벡터를 포함한다. <strong><code>ef_construction</code></strong>: 빌드 시 탐색 후보 수(높을수록 정확하지만 빌드 시간 증가). <strong><code>M</code></strong>: 노드당 최대 엣지 수(메모리-정확도 트레이드오프).</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">02</span>
+        <div>
+          <h3>Growing · Sealed 세그먼트</h3>
+          <p>새로 삽입된 벡터는 <strong>Growing 세그먼트</strong>에 들어간다. Growing은 메모리에 존재하며 HNSW 없이 선형 스캔으로 검색된다. 크기 임계치(기본 512MB)를 넘으면 <strong>Sealed 세그먼트</strong>로 변환되고 HNSW/IVF 인덱스가 빌드된다. Sealed 세그먼트는 S3에 영속 저장된다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">03</span>
+        <div>
+          <h3>컴퓨트-스토리지 분리</h3>
+          <p>Milvus 2.x는 스토리지(S3/MinIO), 계산(QueryNode, IndexNode), 코디네이션(Coordinator)을 분리한다. <strong>QueryNode</strong>는 세그먼트를 로드하고 벡터 검색을 수행한다. 스케일 아웃 시 QueryNode만 추가하면 된다. Etcd가 메타데이터 저장소로 사용된다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">04</span>
+        <div>
+          <h3>IVF-PQ — 대규모 메모리 절약</h3>
+          <p>IVF(Inverted File Index): 벡터 공간을 클러스터로 나눠 관련 클러스터만 탐색. PQ(Product Quantization): 벡터를 서브스페이스로 분해해 압축 저장. <strong>IVF-PQ</strong>로 HNSW 대비 메모리 사용량을 10~100배 줄일 수 있다. 단, recall이 떨어지므로 메모리 제약이 클 때 선택한다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">05</span>
+        <div>
+          <h3>DiskANN — 디스크 기반 십억 규모</h3>
+          <p>Microsoft에서 개발한 그래프 기반 인덱스로 SSD에 그래프를 저장한다. 메모리에는 압축(PQ) 버전만 올리고 상세 거리 계산은 디스크에서 수행한다. <strong>메모리 사용량이 HNSW의 1/10 수준</strong>으로 10억+ 규모 단일 노드 배포가 가능하다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">06</span>
+        <div>
+          <h3>하이브리드 검색 · 재정렬</h3>
+          <p>Milvus 2.4+에서 BM25(희소 벡터)와 Dense 벡터 검색을 동시에 수행할 수 있다. 희소 벡터는 <code>SPARSE_INVERTED_INDEX</code>로 색인된다. RRF(Reciprocal Rank Fusion) 또는 가중 점수 결합으로 두 결과를 합친다. <strong>BGE-M3</strong> 같은 모델은 Dense/Sparse/ColBERT 세 가지를 동시에 출력한다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §02 -->
+<section class="section" id="concepts">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Architecture</div>
+      <h2 class="section-title">핵심 개념 도감</h2>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-hnsw">
+    <div class="db-text">
+      <h4><span class="num">01</span>HNSW 인덱스</h4>
+      <p>쿼리가 들어오면 최상위 레이어의 진입점에서 시작해 그리디 탐색으로 하위 레이어로 내려간다. 각 레이어에서 현재 노드보다 쿼리에 가까운 이웃을 찾아 이동한다.</p>
+      <p><strong>ef(Search)</strong>: 검색 시 유지하는 후보 집합 크기. 클수록 recall은 높아지지만 지연이 증가한다. 빌드 후에도 변경 가능한 유일한 파라미터.</p>
+      <div class="use-when">
+        <strong>파라미터 선택 가이드</strong>
+        <p>M=16, ef_construction=200이 일반적인 시작점. 높은 recall이 필요하면 M=32, ef_construction=400. 메모리 제약 시 M=8로 낮춘다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="HNSW Layers">
+      <div class="d-hnsw">
+        <div class="layer top">
+          <span class="l-label">L2</span>
+          <div class="node">1</div><div class="node">5</div>
+        </div>
+        <div class="layer mid">
+          <span class="l-label">L1</span>
+          <div class="node">1</div><div class="node">3</div><div class="node">5</div><div class="node">8</div>
+        </div>
+        <div class="layer bot">
+          <span class="l-label">L0</span>
+          <div class="node">1</div><div class="node">2</div><div class="node">3</div><div class="node">4</div><div class="node">5</div><div class="node">6</div><div class="node">7</div><div class="node query">Q</div>
+        </div>
+        <div style="font-size:0.58rem;font-family:var(--mono);color:var(--ink-faint);">Q = 쿼리 벡터, 진한 노드 = 탐색 경로</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-segment">
+    <div class="db-text">
+      <h4><span class="num">02</span>Growing / Sealed 세그먼트</h4>
+      <p>데이터 삽입 흐름: Proxy → Message Queue(Kafka/Pulsar) → DataNode가 Growing 세그먼트에 기록. 크기 임계치 도달 시 Seal → IndexNode가 인덱스 빌드 → S3 업로드.</p>
+      <p>검색 시 QueryNode는 Growing 세그먼트(선형 스캔)와 Sealed 세그먼트(인덱스) 결과를 합산한다. <strong>실시간 삽입과 검색이 동시에 가능</strong>한 이유다.</p>
+      <div class="use-when">
+        <strong>세그먼트 크기 튜닝</strong>
+        <p><code>dataCoord.segment.maxSize=512</code>(MB). 너무 작으면 빈번한 인덱스 빌드, 너무 크면 메모리 부하. Growing 세그먼트의 선형 스캔 비용을 줄이려면 삽입 빈도를 조절한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Segment Lifecycle">
+      <div class="d-segment">
+        <div class="seg growing">Growing Segment A<span class="seg-tag">메모리 · 선형 스캔</span></div>
+        <div style="text-align:center;font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">↓ 512MB 초과 시 Seal</div>
+        <div class="seg sealed">Sealed Segment B<span class="seg-tag">S3 · HNSW 인덱스</span></div>
+        <div class="seg sealed" style="opacity:0.6;">Sealed Segment C<span class="seg-tag">S3 · HNSW 인덱스</span></div>
+        <div style="text-align:center;font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">↑ QueryNode가 로드</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-arch">
+    <div class="db-text">
+      <h4><span class="num">03</span>클러스터 아키텍처</h4>
+      <p>Milvus는 4개의 코디네이터 역할을 분리한다: <strong>RootCoord</strong>(컬렉션 관리), <strong>DataCoord</strong>(세그먼트 관리), <strong>QueryCoord</strong>(세그먼트 할당), <strong>IndexCoord</strong>(인덱스 빌드 스케줄링).</p>
+      <p>메시지 큐(Kafka/Pulsar)가 DataNode와 QueryNode 사이의 버퍼 역할을 한다. 스케일 아웃 시 QueryNode와 DataNode만 늘리면 된다.</p>
+      <div class="use-when">
+        <strong>Standalone vs Cluster</strong>
+        <p>Standalone: 단일 프로세스로 모든 컴포넌트 실행. 개발·소규모 배포용. Cluster: 수십억 벡터, 고가용성 요구 시. Kubernetes Helm 차트 제공.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Milvus Architecture">
+      <div class="d-arch">
+        <div class="arch-label">클라이언트</div>
+        <div class="arch-layer"><div class="arch-box coord">Proxy<small>gRPC · RESTful</small></div></div>
+        <div class="arch-arr">↓</div>
+        <div class="arch-label">코디네이터</div>
+        <div class="arch-layer">
+          <div class="arch-box query">RootCoord</div>
+          <div class="arch-box query">QueryCoord</div>
+          <div class="arch-box query">DataCoord</div>
+        </div>
+        <div class="arch-arr">↓</div>
+        <div class="arch-label">워커</div>
+        <div class="arch-layer">
+          <div class="arch-box data">QueryNode<small>검색 실행</small></div>
+          <div class="arch-box data">DataNode<small>색인 기록</small></div>
+          <div class="arch-box data">IndexNode<small>인덱스 빌드</small></div>
+        </div>
+        <div class="arch-arr">↓</div>
+        <div class="arch-layer"><div class="arch-box coord" style="flex:1;">S3 / MinIO<small>세그먼트 영속 저장</small></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-index">
+    <div class="db-text">
+      <h4><span class="num">04</span>인덱스 유형 비교</h4>
+      <p>메모리, 처리량, 정확도 세 축에서 트레이드오프가 발생한다. <strong>HNSW</strong>가 최고 recall을 제공하지만 메모리 소비가 크다. 수십억 규모에서는 DiskANN이 현실적인 선택이다.</p>
+      <div class="use-when">
+        <strong>AUTOINDEX</strong>
+        <p>Zilliz Cloud(매니지드 Milvus)의 AUTOINDEX는 데이터 특성에 맞게 인덱스 파라미터를 자동 최적화한다. 자가 호스팅 시 데이터 분포 분석 후 수동 선택한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Index Comparison">
+      <table class="index-table" style="width:100%;">
+        <thead>
+          <tr>
+            <th>인덱스</th>
+            <th>메모리</th>
+            <th>Recall</th>
+            <th>적합 규모</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="in">FLAT</td>
+            <td>높음</td>
+            <td class="best">100%</td>
+            <td>~100만</td>
+          </tr>
+          <tr>
+            <td class="in">HNSW</td>
+            <td>높음</td>
+            <td class="best">95~99%</td>
+            <td>~1억</td>
+          </tr>
+          <tr>
+            <td class="in">IVF-FLAT</td>
+            <td>중간</td>
+            <td>90~95%</td>
+            <td>~1억</td>
+          </tr>
+          <tr>
+            <td class="in">IVF-PQ</td>
+            <td class="best">낮음</td>
+            <td>80~90%</td>
+            <td>~10억</td>
+          </tr>
+          <tr>
+            <td class="in">DiskANN</td>
+            <td class="best">최저</td>
+            <td>95~99%</td>
+            <td class="best">10억+</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-hybrid">
+    <div class="db-text">
+      <h4><span class="num">05</span>하이브리드 검색</h4>
+      <p>Milvus 2.4+에서 같은 컬렉션에 Dense 벡터와 Sparse 벡터 필드를 동시에 가질 수 있다. <code>hybrid_search</code> API로 두 검색을 한 번에 수행하고 RRF로 결합한다.</p>
+      <p>희소 벡터 필드(<code>SPARSE_FLOAT_VECTOR</code>)는 <code>SPARSE_INVERTED_INDEX</code> 인덱스로 BM25 스타일 전문 검색을 지원한다.</p>
+      <div class="use-when">
+        <strong>BGE-M3 활용</strong>
+        <p>하나의 임베딩 모델이 Dense(1024차원), Sparse(BM25 스타일), ColBERT(다중 벡터) 세 가지를 동시 출력한다. 세 채널의 결과를 RRF로 결합하면 단독 대비 recall이 크게 향상된다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Hybrid Search">
+      <div style="display:flex;flex-direction:column;gap:0.6rem;width:100%;">
+        <div style="display:flex;gap:0.5rem;">
+          <div style="flex:1;padding:0.6rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-size:0.68rem;text-align:center;">
+            <div style="font-weight:600;margin-bottom:0.2rem;">Dense ANN</div>
+            <div style="font-size:0.58rem;color:oklch(0.75 0.01 260);">HNSW / DiskANN</div>
+          </div>
+          <div style="flex:1;padding:0.6rem;border:1.5px solid var(--accent);background:var(--accent-wash);color:var(--accent-deep);font-size:0.68rem;text-align:center;">
+            <div style="font-weight:600;margin-bottom:0.2rem;">Sparse BM25</div>
+            <div style="font-size:0.58rem;color:var(--accent);">SPARSE_INVERTED</div>
+          </div>
+        </div>
+        <div style="text-align:center;font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">↓ RRF Fusion</div>
+        <div style="padding:0.6rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.68rem;text-align:center;">
+          <div style="font-weight:600;margin-bottom:0.2rem;color:var(--ink);">Hybrid Result</div>
+          <div style="font-size:0.58rem;color:var(--ink-soft);">rank = 1/(k+r_dense) + 1/(k+r_sparse)</div>
+        </div>
+        <div style="font-size:0.58rem;font-family:var(--mono);color:var(--ink-faint);text-align:center;">k=60 (기본값)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §03 대용량 처리 -->
+<section class="section" id="largescale">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Large Scale</div>
+      <h2 class="section-title">대용량 처리</h2>
+    </div>
+  </div>
+
+  <p class="ls-intro">Milvus는 <em>10억+ 벡터</em>를 단일 클러스터에서 처리하도록 설계됐다. Zilliz에 따르면 100억 벡터 클러스터를 운영 중인 고객이 있다. 이 규모에서는 메모리 전략과 인덱스 선택이 전체 비용을 결정한다.</p>
+
+  <div class="ls-block" id="ls-memory">
+    <div class="ls-kicker">01 · Memory Tier</div>
+    <div class="ls-title">메모리 계층 — 비용과 성능의 균형</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">전략</span><span class="badge">Hot/Warm</span><span class="badge">DiskANN</span></div>
+        <p>HNSW는 벡터 데이터를 전부 메모리에 올린다. 1억 개의 768차원 float32 벡터만 약 300GB 메모리를 필요로 한다(벡터 원본 + 그래프 엣지). 이는 클라우드 비용 관점에서 부담이 크다.</p>
+        <p><strong>Hot/Warm 전략</strong>: 자주 검색되는 컬렉션은 메모리에 유지하고(HNSW), 덜 사용되는 컬렉션은 S3에서 필요 시 로드한다. <code>queryNode.loadMmap=true</code>로 메모리 매핑을 사용하면 중간 지점이다.</p>
+        <p><strong>DiskANN</strong>: SSD에 그래프를 저장하고 메모리에는 압축 버전만 유지한다. 1억 벡터 기준 메모리를 30GB 수준으로 줄일 수 있다. QPS는 HNSW 대비 낮지만 비용 효율이 훨씬 높다.</p>
+        <div class="use-when">
+          <strong>비용 기준 선택</strong>
+          <p>QPS &gt; 1000 + 저지연 필요: HNSW. QPS 100~1000 + 대규모: DiskANN. QPS &lt; 100: IVF-PQ로 메모리 최소화.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Memory Usage" style="min-height:200px;">
+        <div style="display:flex;flex-direction:column;gap:0.6rem;width:100%;">
+          <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);">1억 벡터(768dim) 인덱스별 메모리</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.65rem;">
+            <span style="min-width:6rem;font-family:var(--mono);">HNSW</span>
+            <div style="height:0.8rem;background:var(--accent);border:1.5px solid var(--accent-deep);width:100%;"></div>
+            <span style="font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);min-width:4rem;">~300GB</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.65rem;">
+            <span style="min-width:6rem;font-family:var(--mono);">IVF-PQ</span>
+            <div style="height:0.8rem;background:var(--accent-wash);border:1.5px solid var(--accent);width:20%;"></div>
+            <span style="font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);min-width:4rem;">~30GB</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.65rem;">
+            <span style="min-width:6rem;font-family:var(--mono);">DiskANN</span>
+            <div style="height:0.8rem;background:var(--ink);width:10%;"></div>
+            <span style="font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);min-width:4rem;">~10GB</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="ls-index">
+    <div class="ls-kicker">02 · Index Build</div>
+    <div class="ls-title">인덱스 빌드 최적화 — CPU · 시간 절약</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">팁</span><span class="badge">IndexNode</span><span class="badge">GPU Index</span></div>
+        <p>HNSW 인덱스 빌드는 CPU 집약적이다. 1억 벡터 기준 단일 CPU로 수 시간이 걸릴 수 있다. <strong>IndexNode를 독립 노드로 분리</strong>하면 검색 성능에 영향 없이 병렬 빌드가 가능하다.</p>
+        <p><strong>GPU 인덱스(RAFT/FAISS-GPU)</strong>: NVIDIA GPU로 인덱스 빌드 속도를 10~100배 향상. Milvus는 CAGRA(GPU HNSW 변형)를 지원한다. 빌드 시 GPU를 사용하고 검색은 CPU에서 수행하는 혼합 전략도 가능하다.</p>
+        <p><strong>배치 삽입 패턴</strong>: 실시간 스트림보다 대량 배치 후 Flush + Compact → Index Build 순서가 빌드 효율이 높다. 온라인 검색 중에는 최소 인덱스 빌드 작업을 스케줄한다.</p>
+        <div class="use-when">
+          <strong>Compaction 트리거</strong>
+          <p>작은 세그먼트가 많으면 검색 성능이 낮아진다. <code>common.retentionDuration</code>과 <code>dataCoord.compaction</code> 설정으로 자동 컴팩션을 조정한다. 대량 삽입 후 수동 <code>collection.compact()</code> 호출도 효과적이다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Index Build Flow" style="min-height:200px;">
+        <div style="display:flex;flex-direction:column;gap:0.5rem;width:100%;align-items:center;">
+          <div style="width:90%;padding:0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.65rem;text-align:center;color:var(--accent-deep);font-weight:600;">대량 삽입 (Bulk Insert)</div>
+          <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">↓ Seal Trigger</div>
+          <div style="width:90%;padding:0.5rem;border:1.5px solid var(--rule);font-size:0.65rem;text-align:center;">DataNode → S3 Segment Upload</div>
+          <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">↓ IndexCoord 스케줄</div>
+          <div style="width:90%;padding:0.5rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-size:0.65rem;text-align:center;font-weight:600;">IndexNode: HNSW 빌드 (CPU/GPU)</div>
+          <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">↓</div>
+          <div style="width:90%;padding:0.5rem;border:1.5px solid var(--rule);font-size:0.65rem;text-align:center;">S3 Index Upload → QueryNode 로드</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="ls-scalar">
+    <div class="ls-kicker">03 · Scalar Filtering</div>
+    <div class="ls-title">스칼라 필터링 — pre-filter vs post-filter</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">전략</span><span class="badge">Pre-filter</span><span class="badge">Post-filter</span></div>
+        <p>벡터 검색에 <code>expr</code>로 스칼라 조건을 추가할 때 실행 전략이 중요하다. <strong>Pre-filter</strong>: 먼저 스칼라 조건을 만족하는 벡터 ID를 구하고 ANN을 수행. 필터 선택도가 높으면(많은 것이 걸러짐) 검색 공간이 줄어 빠르다.</p>
+        <p><strong>Post-filter</strong>: ANN으로 후보를 구하고 스칼라 조건으로 필터. 필터 선택도가 낮으면(대부분 통과) 후보가 너무 줄어 k개를 못 채울 수 있다.</p>
+        <p>Milvus 2.4+에서 자동으로 비용 기반으로 전략을 선택한다. 수동으로 제어하려면 <code>consistency_level</code>과 <code>search_params</code>를 조정한다.</p>
+        <div class="use-when">
+          <strong>파티셔닝으로 필터 성능 향상</strong>
+          <p>자주 쓰이는 스칼라 조건(예: tenant_id, category)으로 파티션을 나누면 검색 대상 세그먼트를 크게 줄일 수 있다. 파티션당 최대 4,096개까지 지원한다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Filter Strategy" style="min-height:200px;">
+        <div style="display:flex;flex-direction:column;gap:0.7rem;width:100%;">
+          <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);">Pre-filter (선택도 높을 때)</div>
+          <div style="display:flex;gap:0.3rem;align-items:center;font-size:0.62rem;flex-wrap:wrap;">
+            <div style="padding:0.35rem 0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);color:var(--accent-deep);">Scalar Filter</div>
+            <span style="color:var(--ink-faint);">→</span>
+            <div style="padding:0.35rem 0.5rem;border:1px solid var(--rule);">후보 ID 목록</div>
+            <span style="color:var(--ink-faint);">→</span>
+            <div style="padding:0.35rem 0.5rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);">ANN (제한된 공간)</div>
+          </div>
+          <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);">Post-filter (선택도 낮을 때)</div>
+          <div style="display:flex;gap:0.3rem;align-items:center;font-size:0.62rem;flex-wrap:wrap;">
+            <div style="padding:0.35rem 0.5rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);">ANN (전체 공간)</div>
+            <span style="color:var(--ink-faint);">→</span>
+            <div style="padding:0.35rem 0.5rem;border:1px solid var(--rule);">Top-K 후보</div>
+            <span style="color:var(--ink-faint);">→</span>
+            <div style="padding:0.35rem 0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);color:var(--accent-deep);">Scalar Filter</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="ls-config">
+    <div class="ls-kicker">04 · Configuration</div>
+    <div class="ls-title">핵심 설정 참조표</div>
+    <div class="config-ref">
+      <div class="config-ref-head"><span>파라미터</span><span>권장값</span><span>설명</span></div>
+      <div class="config-row"><span class="ck">HNSW M</span><span class="cv">16~32</span><span class="cd">노드당 최대 엣지 수. 클수록 recall 높고 메모리 증가</span></div>
+      <div class="config-row"><span class="ck">HNSW ef_construction</span><span class="cv">200~400</span><span class="cd">빌드 시 후보 크기. 클수록 품질 높고 빌드 시간 증가</span></div>
+      <div class="config-row"><span class="ck">HNSW ef (search)</span><span class="cv">64~256</span><span class="cd">검색 시 후보 크기. 런타임 변경 가능. recall-latency 트레이드오프</span></div>
+      <div class="config-row"><span class="ck">IVF nlist</span><span class="cv">sqrt(N)</span><span class="cd">클러스터 수. 벡터 수의 제곱근이 일반적인 시작점</span></div>
+      <div class="config-row"><span class="ck">IVF nprobe</span><span class="cv">16~64</span><span class="cd">검색 시 탐색 클러스터 수. 클수록 recall 높고 느림</span></div>
+      <div class="config-row"><span class="ck">dataCoord.segment.maxSize</span><span class="cv">512</span><span class="cd">세그먼트 최대 크기(MB). Seal 트리거 임계치</span></div>
+      <div class="config-row"><span class="ck">queryNode.loadMmap</span><span class="cv">false</span><span class="cd">메모리 매핑 사용. 메모리 절약 vs 지연 증가</span></div>
+      <div class="config-row"><span class="ck">common.retentionDuration</span><span class="cv">86400</span><span class="cd">데이터 보존 기간(초). Time Travel 기능에 영향</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="margin-note">
+  <strong>Milvus vs Qdrant vs Weaviate:</strong> Milvus는 최대 규모와 다양한 인덱스 유형이 강점. Qdrant는 Rust 기반으로 단순하고 빠른 배포가 강점(소~중규모). Weaviate는 모듈 시스템으로 GraphQL API와 다중 모달 지원이 강점. 자가 호스팅 소규모 프로젝트라면 pgvector(PostgreSQL 확장)도 충분하다.
+</div>
+
+<!-- §04 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Hands-On</div>
+      <h2 class="section-title">실전 코드</h2>
+    </div>
+  </div>
+
+  <p class="code-intro"><em>pymilvus</em> 2.4.x 기준. MilvusClient(새 API)와 ORM 스타일(기존 API) 모두 지원하며, 아래 예제는 MilvusClient를 사용한다.</p>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>01. 컬렉션 생성 — HNSW 인덱스</h4>
+      <div class="head-right"><span class="tag">collection</span></div>
+    </div>
+    <pre><span class="kw">from</span> pymilvus <span class="kw">import</span> MilvusClient, DataType
+
+client = <span class="fn">MilvusClient</span>(uri=<span class="str">"http://localhost:19530"</span>)
+
+<span class="com"># 스키마 정의</span>
+schema = MilvusClient.<span class="fn">create_schema</span>(
+    auto_id=<span class="kw">False</span>,
+    enable_dynamic_field=<span class="kw">True</span>,
+)
+
+schema.<span class="fn">add_field</span>(field_name=<span class="str">"id"</span>, datatype=DataType.INT64, is_primary=<span class="kw">True</span>)
+schema.<span class="fn">add_field</span>(field_name=<span class="str">"embedding"</span>, datatype=DataType.FLOAT_VECTOR, dim=<span class="str">768</span>)
+schema.<span class="fn">add_field</span>(field_name=<span class="str">"category"</span>, datatype=DataType.VARCHAR, max_length=<span class="str">64</span>)
+schema.<span class="fn">add_field</span>(field_name=<span class="str">"score"</span>, datatype=DataType.FLOAT)
+
+<span class="com"># HNSW 인덱스 파라미터</span>
+index_params = MilvusClient.<span class="fn">prepare_index_params</span>()
+index_params.<span class="fn">add_index</span>(
+    field_name=<span class="str">"embedding"</span>,
+    index_type=<span class="str">"HNSW"</span>,
+    metric_type=<span class="str">"COSINE"</span>,
+    params={<span class="str">"M"</span>: <span class="str">16</span>, <span class="str">"efConstruction"</span>: <span class="str">200</span>},
+)
+index_params.<span class="fn">add_index</span>(
+    field_name=<span class="str">"category"</span>,
+    index_type=<span class="str">"INVERTED"</span>,  <span class="com"># 스칼라 필터 인덱스</span>
+)
+
+client.<span class="fn">create_collection</span>(
+    collection_name=<span class="str">"products"</span>,
+    schema=schema,
+    index_params=index_params,
+)</pre>
+    <div class="note"><strong>포인트.</strong> 스칼라 필터 필드(<code>category</code>)에도 INVERTED 인덱스를 생성한다. 필터 조건 실행 속도가 크게 향상된다. <code>enable_dynamic_field=True</code>로 스키마에 없는 필드도 저장할 수 있다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>02. 대량 삽입 — 배치 처리</h4>
+      <div class="head-right"><span class="tag">insert</span></div>
+    </div>
+    <pre><span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">from</span> pymilvus <span class="kw">import</span> MilvusClient
+
+client = <span class="fn">MilvusClient</span>(uri=<span class="str">"http://localhost:19530"</span>)
+
+<span class="kw">def</span> <span class="fn">batch_insert</span>(
+    collection_name: str,
+    embeddings: np.ndarray,
+    metadata: list[dict],
+    batch_size: int = <span class="str">1000</span>,
+):
+    total = <span class="fn">len</span>(embeddings)
+    inserted = <span class="str">0</span>
+
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="str">0</span>, total, batch_size):
+        batch_emb = embeddings[i : i + batch_size]
+        batch_meta = metadata[i : i + batch_size]
+
+        data = [
+            {
+                <span class="str">"id"</span>: i + j,
+                <span class="str">"embedding"</span>: batch_emb[j].<span class="fn">tolist</span>(),
+                **batch_meta[j],
+            }
+            <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(batch_emb))
+        ]
+
+        result = client.<span class="fn">insert</span>(
+            collection_name=collection_name,
+            data=data,
+        )
+        inserted += result[<span class="str">"insert_count"</span>]
+
+    <span class="com"># 인덱스 빌드를 즉시 트리거</span>
+    client.<span class="fn">flush</span>(collection_name=collection_name)
+    <span class="kw">return</span> inserted</pre>
+    <div class="note"><strong>포인트.</strong> 대량 삽입 후 <code>flush()</code>를 호출해야 Growing 세그먼트가 Seal되고 인덱스 빌드가 시작된다. 배치 크기 1,000~5,000이 일반적으로 최적 처리량을 제공한다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>03. 벡터 검색 — 스칼라 필터 결합</h4>
+      <div class="head-right"><span class="tag">search</span></div>
+    </div>
+    <pre><span class="kw">def</span> <span class="fn">vector_search</span>(
+    query_vector: list[float],
+    category: str,
+    top_k: int = <span class="str">10</span>,
+    ef: int = <span class="str">64</span>,
+) -> list[dict]:
+    results = client.<span class="fn">search</span>(
+        collection_name=<span class="str">"products"</span>,
+        data=[query_vector],
+        anns_field=<span class="str">"embedding"</span>,
+        search_params={
+            <span class="str">"metric_type"</span>: <span class="str">"COSINE"</span>,
+            <span class="str">"params"</span>: {<span class="str">"ef"</span>: ef},  <span class="com"># 런타임 ef 조정</span>
+        },
+        limit=top_k,
+        filter=<span class="str">f'category == "{category}"'</span>,  <span class="com"># 스칼라 필터</span>
+        output_fields=[<span class="str">"id"</span>, <span class="str">"category"</span>, <span class="str">"score"</span>],
+    )
+
+    <span class="kw">return</span> [
+        {<span class="str">"id"</span>: hit[<span class="str">"id"</span>], <span class="str">"distance"</span>: hit[<span class="str">"distance"</span>], **hit[<span class="str">"entity"</span>]}
+        <span class="kw">for</span> hit <span class="kw">in</span> results[<span class="str">0</span>]
+    ]</pre>
+    <div class="note"><strong>포인트.</strong> <code>ef</code>는 런타임에 변경 가능한 유일한 HNSW 파라미터다. 지연 요구에 따라 동적으로 조정할 수 있다. <code>ef=64</code>는 균형점이며, recall을 높이려면 128~256으로 올린다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>04. 하이브리드 검색 — Dense + Sparse</h4>
+      <div class="head-right"><span class="tag">hybrid</span></div>
+    </div>
+    <pre><span class="kw">from</span> pymilvus <span class="kw">import</span> AnnSearchRequest, RRFRanker, WeightedRanker
+
+<span class="kw">def</span> <span class="fn">hybrid_search</span>(
+    dense_vector: list[float],
+    sparse_vector: dict[int, float],  <span class="com"># BM25 스타일</span>
+    top_k: int = <span class="str">10</span>,
+) -> list[dict]:
+    <span class="com"># Dense ANN 요청</span>
+    dense_req = <span class="fn">AnnSearchRequest</span>(
+        data=[dense_vector],
+        anns_field=<span class="str">"dense_embedding"</span>,
+        param={<span class="str">"metric_type"</span>: <span class="str">"COSINE"</span>, <span class="str">"params"</span>: {<span class="str">"ef"</span>: <span class="str">64</span>}},
+        limit=top_k * <span class="str">3</span>,
+    )
+
+    <span class="com"># Sparse BM25 요청</span>
+    sparse_req = <span class="fn">AnnSearchRequest</span>(
+        data=[sparse_vector],
+        anns_field=<span class="str">"sparse_embedding"</span>,
+        param={<span class="str">"metric_type"</span>: <span class="str">"IP"</span>},
+        limit=top_k * <span class="str">3</span>,
+    )
+
+    <span class="com"># RRF로 두 결과 결합</span>
+    ranker = <span class="fn">RRFRanker</span>(k=<span class="str">60</span>)
+
+    results = client.<span class="fn">hybrid_search</span>(
+        collection_name=<span class="str">"hybrid_products"</span>,
+        reqs=[dense_req, sparse_req],
+        ranker=ranker,
+        limit=top_k,
+        output_fields=[<span class="str">"id"</span>, <span class="str">"title"</span>],
+    )
+
+    <span class="kw">return</span> [
+        {<span class="str">"id"</span>: hit[<span class="str">"id"</span>], <span class="str">"score"</span>: hit[<span class="str">"distance"</span>], **hit[<span class="str">"entity"</span>]}
+        <span class="kw">for</span> hit <span class="kw">in</span> results[<span class="str">0</span>]
+    ]</pre>
+    <div class="note"><strong>포인트.</strong> <code>RRFRanker(k=60)</code>는 두 랭킹을 <code>1/(60+rank)</code>로 합산한다. <code>WeightedRanker([0.7, 0.3])</code>로 가중 평균을 쓸 수도 있다. BGE-M3 모델로 Dense와 Sparse 벡터를 동시에 생성하면 단일 모델로 하이브리드 검색을 구현할 수 있다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>05. DiskANN 컬렉션 설정</h4>
+      <div class="head-right"><span class="tag">diskann</span></div>
+    </div>
+    <pre><span class="com"># DiskANN: 10억+ 벡터 / 메모리 절약</span>
+index_params = MilvusClient.<span class="fn">prepare_index_params</span>()
+index_params.<span class="fn">add_index</span>(
+    field_name=<span class="str">"embedding"</span>,
+    index_type=<span class="str">"DISKANN"</span>,
+    metric_type=<span class="str">"L2"</span>,
+    params={
+        <span class="str">"search_list_size"</span>: <span class="str">100</span>,  <span class="com"># 빌드 시 탐색 크기</span>
+        <span class="str">"pq_code_budget_gb"</span>: <span class="str">2</span>,   <span class="com"># 메모리 압축 예산(GB)</span>
+    },
+)
+
+<span class="com"># DiskANN 검색 파라미터</span>
+search_params = {
+    <span class="str">"metric_type"</span>: <span class="str">"L2"</span>,
+    <span class="str">"params"</span>: {
+        <span class="str">"search_list"</span>: <span class="str">100</span>,   <span class="com"># 검색 시 후보 수</span>
+        <span class="str">"beamwidth"</span>: <span class="str">8</span>,       <span class="com"># 병렬 탐색 경로</span>
+    },
+}
+
+results = client.<span class="fn">search</span>(
+    collection_name=<span class="str">"large_scale"</span>,
+    data=[query_vector],
+    anns_field=<span class="str">"embedding"</span>,
+    search_params=search_params,
+    limit=<span class="str">10</span>,
+)</pre>
+    <div class="note"><strong>포인트.</strong> DiskANN은 <code>pq_code_budget_gb</code>로 메모리 사용량을 직접 제어한다. SSD NVMe 기준으로 초당 수백 QPS를 제공하며, HNSW 대비 메모리를 1/10 이하로 줄일 수 있다.</div>
+  </div>
+</section>
+
+<footer>
+  <span class="lockup">Milvus</span>
+  <div><a href="https://milvus.io/docs" target="_blank" rel="noopener">원문 · milvus.io/docs</a></div>
+</footer>
+
+<script>
+(function () {
+  const btn = document.getElementById('menuBtn');
+  const panel = document.getElementById('tocPanel');
+  const backdrop = document.getElementById('tocBackdrop');
+  function openMenu() { btn.classList.add('open'); panel.classList.add('open'); backdrop.classList.add('open'); document.body.classList.add('menu-open'); }
+  function closeMenu() { btn.classList.remove('open'); panel.classList.remove('open'); backdrop.classList.remove('open'); document.body.classList.remove('menu-open'); }
+  btn.addEventListener('click', () => btn.classList.contains('open') ? closeMenu() : openMenu());
+  backdrop.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', e => e.key === 'Escape' && closeMenu());
+  panel.querySelectorAll('[data-close]').forEach(a => a.addEventListener('click', closeMenu));
+
+  document.querySelectorAll('.code-card').forEach(card => {
+    const head = card.querySelector('.code-head');
+    const headRight = card.querySelector('.head-right');
+    const indicator = document.createElement('span');
+    indicator.className = 'expand-indicator';
+    indicator.textContent = '▸';
+    headRight.prepend(indicator);
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.textContent = 'copy';
+    headRight.appendChild(copyBtn);
+    head.addEventListener('click', () => card.classList.toggle('expanded'));
+    copyBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const code = card.querySelector('pre').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        copyBtn.textContent = 'copied'; copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = 'copy'; copyBtn.classList.remove('copied'); }, 1500);
+      }).catch(() => { copyBtn.textContent = 'failed'; });
+    });
+  });
+})();
+</script>
+</body>
+</html>

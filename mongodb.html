@@ -117,6 +117,23 @@
   .d-sharding .sh-box.config small { color: var(--accent); }
   .d-sharding .sh-arr { text-align: center; font-family: var(--mono); font-size: 0.65rem; color: var(--ink-faint); }
 
+  /* WiredTiger 페이지 구조 */
+  .d-wt { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
+  .d-wt .wt-page { border: 1.5px solid var(--ink); }
+  .d-wt .wt-page-head { padding: 0.28rem 0.6rem; background: var(--ink); color: var(--paper); font-family: var(--mono); font-size: 0.58rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; }
+  .d-wt .wt-page-body { display: flex; }
+  .d-wt .wt-col { flex: 1; padding: 0.35rem 0.5rem; border-right: 1px solid var(--rule); }
+  .d-wt .wt-col:last-child { border-right: none; background: oklch(0.96 0.025 50 / 0.5); }
+  .d-wt .wt-col-label { font-family: var(--mono); font-size: 0.52rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-faint); margin-bottom: 0.2rem; }
+  .d-wt .wt-row { font-family: var(--mono); font-size: 0.6rem; padding: 0.08rem 0; color: oklch(0.78 0.13 30); }
+  .d-wt .wt-row.upd { color: oklch(0.75 0.14 60); }
+  .d-wt .wt-row.del { color: oklch(0.55 0.02 260); }
+  .d-wt .wt-arrow { text-align: center; font-family: var(--mono); font-size: 0.62rem; color: var(--ink-faint); padding: 0.15rem 0; }
+  .d-wt .wt-new { border-color: var(--accent); }
+  .d-wt .wt-new .wt-page-head { background: var(--accent); }
+  .d-wt .wt-new .wt-page-body { background: var(--accent-wash); }
+  .d-wt .wt-new .wt-row { color: var(--accent-deep); }
+
   /* 인덱스 종류 */
   .d-index { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
   .d-index .idx { padding: 0.45rem 0.7rem; border: 1.5px solid var(--rule); display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; }
@@ -248,6 +265,7 @@
         <li><a href="#d-sharding" data-close><span>03</span>샤딩 클러스터</a></li>
         <li><a href="#d-index" data-close><span>04</span>인덱스 유형</a></li>
         <li><a href="#d-agg" data-close><span>05</span>집계 파이프라인</a></li>
+        <li><a href="#d-wt" data-close><span>06</span>WiredTiger 페이지 구조</a></li>
       </ul>
     </li>
     <li>
@@ -480,6 +498,51 @@
       </div>
     </div>
   </div>
+
+  <div class="diagram-block" id="d-wt">
+    <div class="db-text">
+      <h4><span class="num">06</span>WiredTiger 페이지 구조</h4>
+      <p>각 B-Tree 리프 페이지는 <strong>Disk Image(불변)</strong>와 <strong>In-Memory Update List</strong>로 구성된다. 쓰기는 Disk Image를 수정하지 않고 Update List에 새 버전을 추가한다. 읽기는 트랜잭션 시작 시점의 timestamp를 기준으로 visible한 버전만 반환한다.</p>
+      <p>체크포인트(Reconciliation) 시 Update List를 Disk Image에 통합해 새 .wt 파일 블록을 기록한다. 이후 오래된 버전은 해제된다. <strong>장기 트랜잭션</strong>이 오래된 스냅샷을 보유하면 Update List를 비울 수 없어 캐시가 팽창한다.</p>
+      <div class="use-when">
+        <strong>Eviction 임계치</strong>
+        <p><code>eviction_target</code>(기본 80%): 이 아래로 유지하기 위해 background workers 시작. <code>eviction_trigger</code>(기본 95%): 초과 시 application threads도 eviction 참여 → p99 레이턴시 급등. <code>wiredTigerConcurrentReadTransactions</code>(기본 128)로 동시 읽기 트랜잭션 수 제한.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="WiredTiger B-Tree Page">
+      <div class="d-wt" style="width:100%;">
+        <div style="font-size:0.55rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);letter-spacing:0.1em;">쓰기 전: Leaf Page</div>
+        <div class="wt-page">
+          <div class="wt-page-head">Leaf Page — orders.wt</div>
+          <div class="wt-page-body">
+            <div class="wt-col">
+              <div class="wt-col-label">Disk Image (Immutable)</div>
+              <div class="wt-row">_id:001 → {status:"new"}</div>
+              <div class="wt-row">_id:002 → {status:"new"}</div>
+              <div class="wt-row">_id:003 → {status:"new"}</div>
+            </div>
+            <div class="wt-col">
+              <div class="wt-col-label">Update List (In-Memory)</div>
+              <div class="wt-row upd">txn#5: _id:002 status→"ok"</div>
+              <div class="wt-row upd">txn#3: _id:001 status→"ok"</div>
+              <div class="wt-row del">txn#1: _id:003 DELETE</div>
+            </div>
+          </div>
+        </div>
+        <div class="wt-arrow">↓ Checkpoint · Reconciliation (60s)</div>
+        <div style="font-size:0.55rem;font-family:var(--mono);text-transform:uppercase;color:var(--accent-deep);letter-spacing:0.1em;">새 Disk Image</div>
+        <div class="wt-page wt-new">
+          <div class="wt-page-head">New Leaf Page</div>
+          <div class="wt-page-body">
+            <div class="wt-col" style="flex:2;">
+              <div class="wt-col-label">Merged Disk Image — Update List 통합 후 해제</div>
+              <div class="wt-row">_id:001 → {status:"ok"} &nbsp; _id:002 → {status:"ok"}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- §03 대용량 처리 -->
@@ -558,29 +621,57 @@
   </div>
 
   <div class="ls-block" id="ls-wiredtiger">
-    <div class="ls-kicker">03 · WiredTiger</div>
-    <div class="ls-title">WiredTiger — 캐시 & 체크포인트</div>
+    <div class="ls-kicker">03 · WiredTiger Internals</div>
+    <div class="ls-title">WiredTiger — MVCC · Eviction · 체크포인트</div>
     <div class="ls-body">
       <div class="ls-text">
-        <div class="company-row"><span class="cl">핵심</span><span class="badge">Cache Sizing</span><span class="badge">Journal</span></div>
-        <p><strong>WiredTiger 캐시</strong>: 기본값은 물리 메모리 절반과 1GB 중 큰 값. 캐시가 부족하면 eviction이 발생하고 성능이 급락한다. 인덱스와 워킹셋 도큐먼트가 캐시에 들어가야 한다.</p>
-        <p><strong>체크포인트</strong>: 60초(또는 2GB 데이터 변경)마다 수행. 체크포인트 중 스냅샷 일관성을 위해 dirty 페이지가 디스크에 기록된다. 체크포인트 사이의 변경은 Journal(WAL)에 기록되어 장애 시 복구한다.</p>
-        <p><strong>압축</strong>: 기본 snappy로 데이터와 인덱스를 압축. zstd로 변경하면 더 높은 압축률(추가 CPU 비용). 콜드 데이터는 zstd가 효과적이다.</p>
+        <div class="company-row"><span class="cl">핵심</span><span class="badge">MVCC</span><span class="badge">Eviction</span><span class="badge">Checkpoint</span></div>
+
+        <p><strong>MVCC (Multi-Version Concurrency Control)</strong>: 각 쓰기는 페이지의 Disk Image를 수정하지 않고 in-memory Update List에 새 버전을 추가한다. 읽기 트랜잭션은 시작 시점의 global timestamp를 기록하고, 그 이전에 커밋된 버전만 본다. 읽기와 쓰기가 서로를 블로킹하지 않는 이유다.</p>
+
+        <p><strong>Eviction 3단계</strong>: (1) <em>정상 구간</em>(캐시 &lt;80%): background eviction workers(기본 4개) 미작동. (2) <em>eviction_target(80%)</em> 도달: workers가 clean/dirty 페이지를 디스크로 내보내기 시작. (3) <em>eviction_trigger(95%)</em> 초과: application threads 자신이 eviction 수행 → p99 레이턴시 수십 배 급등. <code>mongostat</code>에서 <code>dirty%</code>가 지속 상승하면 캐시 크기를 늘리거나 워킹셋을 줄여야 한다.</p>
+
+        <p><strong>Dirty Eviction vs Clean Eviction</strong>: dirty 페이지(변경된 페이지)는 디스크에 기록 후 제거하므로 I/O가 발생한다. clean 페이지는 단순히 캐시에서 제거만 한다. <code>wiredTiger.engineConfig.eviction.dirtyTargetPercent</code>(기본 5%)를 낮게 유지하면 dirty burst를 방지한다.</p>
+
+        <p><strong>체크포인트 & Journal</strong>: 60초마다(또는 2GB dirty 데이터 누적 시) Reconciliation을 수행해 Update List를 새 Disk Image로 통합한다. 체크포인트 사이의 모든 변경은 Journal(WAL)에 기록된다(<code>commitIntervalMs</code> 기본 100ms마다 fsync). 장애 복구 순서: 마지막 체크포인트 로드 → Journal replay → 데이터 일관성 복원.</p>
+
+        <p><strong>압축</strong>: 기본 snappy(CPU 최소, 압축률 50~60%). zstd로 변경하면 65~75% 압축(CPU 2~3배). 콜드 스토리지 컬렉션은 zstd 권장. 인덱스는 별도 압축 설정 가능(<code>indexConfig.prefixCompression</code>: 기본 활성화).</p>
+
         <div class="use-when">
-          <strong>캐시 크기 설정</strong>
-          <p><code>storage.wiredTiger.engineConfig.cacheSizeGB</code>. 전용 서버에서는 물리 메모리의 60~70%로 설정한다. OS 파일 캐시를 위한 공간도 남겨야 한다.</p>
+          <strong>장기 트랜잭션 주의</strong>
+          <p>트랜잭션이 오래 열려 있으면 해당 트랜잭션의 스냅샷 timestamp 이전 버전을 모두 보존해야 한다. Update List가 누적되어 캐시 압박이 증가하고 eviction이 실패한다. MongoDB 드라이버의 기본 트랜잭션 타임아웃은 60초이며, <code>transactionLifetimeLimitSeconds</code>(기본 60)로 서버 측에서도 강제 종료된다.</p>
         </div>
       </div>
-      <div class="canvas" data-label="WiredTiger Memory" style="min-height:200px;">
-        <div style="display:flex;flex-direction:column;gap:0.5rem;width:100%;">
-          <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);">64GB 서버 메모리 배분</div>
-          <div style="display:flex;gap:0.3rem;height:2rem;">
-            <div style="flex:0.4;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:600;color:var(--paper);">WT Cache<br><span style="font-size:0.55rem;color:oklch(0.7 0.01 260);">~38GB</span></div>
-            <div style="flex:0.25;background:var(--accent-wash);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:0.58rem;font-weight:600;color:var(--accent-deep);">OS Cache</div>
-            <div style="flex:0.15;background:var(--paper-deep);border:1px solid var(--rule);display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:var(--ink-faint);">App</div>
-            <div style="flex:0.2;border:1px dashed var(--rule);display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:var(--ink-faint);">여유</div>
+      <div class="canvas" data-label="WiredTiger Eviction States" style="min-height:260px;">
+        <div style="display:flex;flex-direction:column;gap:0.55rem;width:100%;">
+          <div style="font-size:0.55rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);letter-spacing:0.09em;">64GB RAM 서버 · cacheSizeGB=38</div>
+
+          <div style="display:flex;flex-direction:column;gap:0.25rem;">
+            <div style="display:flex;align-items:center;gap:0.4rem;">
+              <div style="font-family:var(--mono);font-size:0.55rem;color:var(--ink-faint);min-width:3.2rem;">0 ~ 80%</div>
+              <div style="flex:0.8;height:1.5rem;background:var(--ink);"></div>
+              <div style="font-family:var(--mono);font-size:0.55rem;color:var(--ink-faint);">정상 — eviction 없음</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.4rem;">
+              <div style="font-family:var(--mono);font-size:0.55rem;color:var(--ink-faint);min-width:3.2rem;">80 ~ 95%</div>
+              <div style="flex:0.8;height:1.5rem;background:var(--accent-wash);border:1.5px solid var(--accent);"></div>
+              <div style="font-family:var(--mono);font-size:0.55rem;color:var(--accent-deep);">BG workers 시작</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.4rem;">
+              <div style="font-family:var(--mono);font-size:0.55rem;color:var(--ink-faint);min-width:3.2rem;">&gt; 95%</div>
+              <div style="flex:0.8;height:1.5rem;background:var(--accent);"></div>
+              <div style="font-family:var(--mono);font-size:0.55rem;color:var(--accent-deep);font-weight:600;">App threads 참여 → 레이턴시 급등</div>
+            </div>
           </div>
-          <div style="font-size:0.58rem;font-family:var(--mono);color:var(--ink-faint);">인덱스 + 워킹셋이 캐시 안에 들어와야 한다</div>
+
+          <div style="margin-top:0.5rem;font-size:0.55rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);letter-spacing:0.09em;">메모리 구성</div>
+          <div style="display:flex;gap:0.25rem;height:2.2rem;">
+            <div style="flex:38;background:var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.58rem;font-weight:600;color:var(--paper);">WT Cache 38GB</div>
+            <div style="flex:16;background:var(--accent-wash);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.55rem;color:var(--accent-deep);">OS FS 16GB</div>
+            <div style="flex:10;background:var(--paper-deep);border:1px solid var(--rule);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.52rem;color:var(--ink-faint);">App+OS 10GB</div>
+          </div>
+
+          <div style="font-size:0.55rem;font-family:var(--mono);color:var(--ink-faint);">Journal: 100ms fsync · Checkpoint: 60s reconciliation</div>
         </div>
       </div>
     </div>
@@ -599,6 +690,10 @@
       <div class="config-row"><span class="ck">slowOpThresholdMs</span><span class="cv">100</span><span class="cd">슬로우 쿼리 로깅 임계치(ms). 분석 및 인덱스 최적화에 활용</span></div>
       <div class="config-row"><span class="ck">storage.journal.commitIntervalMs</span><span class="cv">100</span><span class="cd">Journal flush 간격. 낮을수록 내구성 높고 I/O 증가</span></div>
       <div class="config-row"><span class="ck">net.compression.compressors</span><span class="cv">zstd</span><span class="cd">드라이버-서버 간 네트워크 압축. 대역폭 절약</span></div>
+      <div class="config-row"><span class="ck">wiredTiger.engineConfig.eviction_target</span><span class="cv">80</span><span class="cd">캐시 사용률 이 값 초과 시 BG eviction workers 시작 (기본값 유지 권장)</span></div>
+      <div class="config-row"><span class="ck">wiredTiger.engineConfig.eviction_trigger</span><span class="cv">95</span><span class="cd">초과 시 app threads가 eviction 참여. 레이턴시 급등 구간</span></div>
+      <div class="config-row"><span class="ck">wiredTiger.engineConfig.eviction.(workers)</span><span class="cv">4→8</span><span class="cd">eviction worker 스레드 수. 쓰기 부하 높을 때 8~16으로 증가</span></div>
+      <div class="config-row"><span class="ck">transactionLifetimeLimitSeconds</span><span class="cv">60</span><span class="cd">장기 트랜잭션 강제 종료 임계치. Update List 누적 방지</span></div>
     </div>
   </div>
 </section>

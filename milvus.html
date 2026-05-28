@@ -226,6 +226,30 @@
   .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); }
   body.menu-open { overflow: hidden; }
 
+  /* 데이터 플로우 */
+  .d-flow { display: flex; flex-direction: column; gap: 0.35rem; width: 100%; }
+  .d-flow .fl-row { display: flex; align-items: stretch; gap: 0.25rem; }
+  .d-flow .fl-node { flex: 1; padding: 0.4rem 0.35rem; border: 1.5px solid var(--rule); font-size: 0.6rem; font-weight: 500; text-align: center; line-height: 1.3; display: flex; flex-direction: column; justify-content: center; }
+  .d-flow .fl-node small { display: block; font-size: 0.52rem; font-weight: 400; color: var(--ink-faint); margin-top: 0.1rem; }
+  .d-flow .fl-node.mq { background: var(--paper-deep); border-color: var(--ink); color: var(--ink); }
+  .d-flow .fl-node.grow { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); font-weight: 600; }
+  .d-flow .fl-node.seal { background: var(--ink); color: var(--paper); font-weight: 600; }
+  .d-flow .fl-node.s3 { border-style: dashed; color: var(--ink-soft); }
+  .d-flow .fl-arr { align-self: center; font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); flex-shrink: 0; }
+
+  /* Consistency Level */
+  .d-cl { display: flex; flex-direction: column; gap: 0.3rem; width: 100%; }
+  .d-cl .cl-row { display: grid; grid-template-columns: 5.5rem 1fr 3.5rem; gap: 0.5rem; align-items: center; padding: 0.35rem 0.5rem; border: 1.5px solid var(--rule); }
+  .d-cl .cl-row.strong { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .d-cl .cl-row.bounded { background: var(--accent-wash); border-color: var(--accent); }
+  .d-cl .cl-row.session { background: var(--paper-deep); }
+  .d-cl .cl-row.eventual { border-style: dashed; }
+  .d-cl .cl-name { font-family: var(--mono); font-size: 0.62rem; font-weight: 600; }
+  .d-cl .cl-desc { font-size: 0.58rem; line-height: 1.35; }
+  .d-cl .cl-desc.inv { color: oklch(0.75 0.01 260); }
+  .d-cl .cl-speed { font-family: var(--mono); font-size: 0.58rem; text-align: right; }
+  .d-cl .cl-speed.inv { color: oklch(0.65 0.01 260); }
+
   @media (prefers-reduced-motion: no-preference) {
     .section, .point, .diagram-block, .code-card { animation: rise 0.6s cubic-bezier(0.22,1,0.36,1) both; }
     @keyframes rise { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
@@ -251,6 +275,8 @@
         <li><a href="#d-arch" data-close><span>03</span>클러스터 아키텍처</a></li>
         <li><a href="#d-index" data-close><span>04</span>인덱스 유형 비교</a></li>
         <li><a href="#d-hybrid" data-close><span>05</span>하이브리드 검색</a></li>
+        <li><a href="#d-flow" data-close><span>06</span>데이터 플로우</a></li>
+        <li><a href="#d-cl" data-close><span>07</span>Consistency Level</a></li>
       </ul>
     </li>
     <li>
@@ -520,6 +546,79 @@
       </div>
     </div>
   </div>
+
+  <div class="diagram-block" id="d-flow">
+    <div class="db-text">
+      <h4><span class="num">06</span>데이터 플로우 — Insert에서 검색까지</h4>
+      <p>삽입된 벡터가 검색 가능한 상태가 되기까지 여러 컴포넌트를 거친다. <strong>Message Queue</strong>(Kafka/Pulsar)가 WAL 역할을 한다. <strong>QueryNode</strong>는 Growing Segment를 메모리에 보유하며 실시간 삽입을 처리한다. Segment 크기가 threshold(기본 512MB)를 넘으면 <strong>DataNode</strong>가 flush하여 S3에 Sealed Segment로 저장한다.</p>
+      <p><strong>IndexNode</strong>가 Sealed Segment를 읽어 HNSW/IVF 인덱스를 비동기로 빌드한다. 빌드 완료 후 QueryNode가 인덱스를 로드하면 Sealed Segment로 서빙된다. <strong>검색은 Growing + Sealed 양쪽을 동시에 쿼리하고 결과를 merge</strong>한다.</p>
+      <div class="use-when">
+        <strong>Flush 시점 제어</strong>
+        <p><code>collection.flush()</code>는 현재 Growing Segment를 즉시 Sealed로 변환한다. 대량 삽입 후 검색 전에 호출하면 인덱스 빌드가 시작된다. 단, flush가 잦으면 작은 Segment가 누적되어 compact가 필요해진다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Milvus Data Flow">
+      <div class="d-flow" style="width:100%;">
+        <div class="fl-row">
+          <div class="fl-node mq">Client Insert<small>pymilvus</small></div>
+          <div class="fl-arr">→</div>
+          <div class="fl-node mq">Message Queue<small>Kafka/Pulsar (WAL)</small></div>
+          <div class="fl-arr">→</div>
+          <div class="fl-node grow">QueryNode<small>Growing Segment (메모리)</small></div>
+        </div>
+        <div style="font-family:var(--mono);font-size:0.58rem;color:var(--ink-faint);text-align:center;">↓ 512MB 초과 or flush() 호출</div>
+        <div class="fl-row">
+          <div class="fl-node s3" style="flex:0.5;">DataNode<small>flush → Sealed</small></div>
+          <div class="fl-arr">→</div>
+          <div class="fl-node s3">S3 / Object Storage<small>Sealed Segment (영구)</small></div>
+          <div class="fl-arr">→</div>
+          <div class="fl-node seal">IndexNode<small>HNSW/IVF 빌드</small></div>
+        </div>
+        <div style="font-family:var(--mono);font-size:0.58rem;color:var(--ink-faint);text-align:center;">↓ 인덱스 완료 → QueryNode 로드</div>
+        <div class="fl-row">
+          <div class="fl-node seal">Search<small>Growing + Sealed 동시 쿼리 → merge</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-cl">
+    <div class="db-text">
+      <h4><span class="num">07</span>Consistency Level</h4>
+      <p>Milvus는 클러스터 환경에서 4가지 일관성 수준을 제공한다. <strong>Strong</strong>: 항상 최신 데이터를 보장. 내부적으로 최신 타임스탬프를 기다린다. <strong>Bounded Staleness</strong>: 최대 T초 이전까지 stale 허용. 성능과 일관성의 균형.</p>
+      <p><strong>Session</strong>: 같은 세션 내 인과적 일관성 — 내가 삽입한 데이터는 내가 즉시 볼 수 있다. <strong>Eventually</strong>: 가장 빠름. 일시적인 stale read 허용. 벡터 검색의 특성상 1~2개 누락이 결과에 거의 영향을 주지 않아 <strong>99%의 use case에서 Eventually로 충분</strong>하다.</p>
+      <div class="use-when">
+        <strong>일관성 수준 선택</strong>
+        <p>금융 추천(최신 거래 반영 필요): Bounded Staleness(T=1s). 사용자 개인화 추천: Session. 대규모 ANN 검색(정밀도보다 처리량): Eventually. Strong은 대부분 불필요한 오버헤드다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Consistency Level">
+      <div class="d-cl" style="width:100%;">
+        <div style="font-size:0.55rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);letter-spacing:0.09em;margin-bottom:0.1rem;">일관성 수준 비교</div>
+        <div class="cl-row strong">
+          <div class="cl-name">Strong</div>
+          <div class="cl-desc inv">항상 최신 데이터. 최신 타임스탬프 동기화 대기</div>
+          <div class="cl-speed inv">느림</div>
+        </div>
+        <div class="cl-row bounded">
+          <div class="cl-name" style="color:var(--accent-deep);">Bounded</div>
+          <div class="cl-desc" style="color:var(--accent-deep);">최대 T초 stale 허용. 처리량과 일관성 균형</div>
+          <div class="cl-speed" style="color:var(--accent);">중간</div>
+        </div>
+        <div class="cl-row session">
+          <div class="cl-name">Session</div>
+          <div class="cl-desc">세션 내 인과적 일관성. 내가 쓴 건 내가 즉시 읽음</div>
+          <div class="cl-speed">빠름</div>
+        </div>
+        <div class="cl-row eventual">
+          <div class="cl-name" style="color:var(--ink-soft);">Eventually</div>
+          <div class="cl-desc" style="color:var(--ink-soft);">최적 성능. 일시 stale 가능. 대부분의 추천 시스템</div>
+          <div class="cl-speed" style="color:var(--accent-deep);font-weight:600;">최고속</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </section>
 
 <!-- §03 대용량 처리 -->

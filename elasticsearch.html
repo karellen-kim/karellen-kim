@@ -121,6 +121,28 @@
   .d-ilm .ilm-phase.frozen { border-style: dashed; color: var(--ink-faint); }
   .d-ilm .ilm-arr { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); flex-shrink: 0; }
 
+  /* Analyzer 파이프라인 */
+  .d-analyzer { display: flex; flex-direction: column; gap: 0.35rem; width: 100%; }
+  .d-analyzer .an-row { display: flex; align-items: center; gap: 0.3rem; }
+  .d-analyzer .an-stage { flex: 1; border: 1.5px solid var(--rule); }
+  .d-analyzer .an-stage-head { padding: 0.22rem 0.5rem; font-family: var(--mono); font-size: 0.55rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--rule); }
+  .d-analyzer .an-stage-head.char { background: var(--paper-deep); color: var(--ink-soft); }
+  .d-analyzer .an-stage-head.tok { background: var(--ink); color: var(--paper); }
+  .d-analyzer .an-stage-head.filter { background: var(--accent); color: var(--paper); }
+  .d-analyzer .an-stage-head.out { background: var(--accent-wash); color: var(--accent-deep); border-color: var(--accent); }
+  .d-analyzer .an-stage-body { padding: 0.3rem 0.5rem; font-family: var(--mono); font-size: 0.58rem; color: var(--ink-soft); line-height: 1.5; }
+  .d-analyzer .an-arr { font-family: var(--mono); font-size: 0.75rem; color: var(--ink-faint); flex-shrink: 0; }
+  .d-analyzer .an-token { display: inline-block; padding: 0.1rem 0.4rem; border: 1px solid var(--accent); background: var(--accent-wash); font-family: var(--mono); font-size: 0.58rem; color: var(--accent-deep); margin: 0.1rem 0.15rem; }
+
+  /* Segment Merge */
+  .d-merge { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
+  .d-merge .mg-row { display: flex; align-items: center; gap: 0.3rem; }
+  .d-merge .mg-seg { padding: 0.3rem 0.4rem; border: 1.5px solid var(--rule); font-family: var(--mono); font-size: 0.58rem; text-align: center; color: var(--ink-soft); min-width: 0; }
+  .d-merge .mg-seg.new { border-color: var(--accent); background: var(--accent-wash); color: var(--accent-deep); font-weight: 600; }
+  .d-merge .mg-seg.merged { border-color: var(--ink); background: var(--ink); color: var(--paper); font-weight: 600; }
+  .d-merge .mg-label { font-family: var(--mono); font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); min-width: 4rem; flex-shrink: 0; }
+  .d-merge .mg-arr { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); flex-shrink: 0; }
+
   /* 대용량 처리 */
   .ls-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
   .ls-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
@@ -248,6 +270,8 @@
         <li><a href="#d-query" data-close><span>03</span>쿼리 실행 경로</a></li>
         <li><a href="#d-ilm" data-close><span>04</span>인덱스 생명주기</a></li>
         <li><a href="#d-knn" data-close><span>05</span>하이브리드 검색</a></li>
+        <li><a href="#d-analyzer" data-close><span>06</span>Analyzer 파이프라인</a></li>
+        <li><a href="#d-merge" data-close><span>07</span>Segment Merge</a></li>
       </ul>
     </li>
     <li>
@@ -492,6 +516,84 @@
       </div>
     </div>
   </div>
+
+  <div class="diagram-block" id="d-analyzer">
+    <div class="db-text">
+      <h4><span class="num">06</span>Analyzer 파이프라인</h4>
+      <p><code>text</code> 타입 필드는 색인과 검색 시 Analyzer를 통과해 Term으로 변환된다. 3단계 파이프라인: <strong>Character Filter</strong> → <strong>Tokenizer</strong> → <strong>Token Filter</strong>. 검색어도 동일한 Analyzer를 통과해야 색인된 Term과 매칭된다.</p>
+      <p><strong>nori_tokenizer</strong>: 한국어 형태소 분석기. "검색엔진" → ["검색", "엔진"]. <strong>synonym_graph</strong>: 동의어 확장, "ES" → ["elasticsearch", "ES"]. <code>keyword</code> 타입은 Analyzer를 거치지 않아 정확 매칭만 된다 — 집계와 정렬에 사용한다.</p>
+      <div class="use-when">
+        <strong>Analyzer 디버깅</strong>
+        <p><code>GET /my-index/_analyze</code> API로 텍스트가 어떤 Term으로 변환되는지 확인한다. 검색이 안 될 때 먼저 이 API부터 확인한다. <code>text</code> 필드에 집계하면 에러가 나는 이유도 Analyzer가 값을 쪼개기 때문이다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Analyzer Pipeline">
+      <div class="d-analyzer" style="width:100%;">
+        <div style="font-size:0.55rem;font-family:var(--mono);color:var(--ink-faint);">입력: "Elasticsearch &amp; Kibana 검색엔진"</div>
+        <div class="an-row">
+          <div class="an-stage">
+            <div class="an-stage-head char">Char Filter</div>
+            <div class="an-stage-body">HTML strip<br>&amp;amp; → and<br>&amp; → and</div>
+          </div>
+          <div class="an-arr">→</div>
+          <div class="an-stage">
+            <div class="an-stage-head tok">Tokenizer</div>
+            <div class="an-stage-body">standard<br>공백·구두점<br>분리</div>
+          </div>
+          <div class="an-arr">→</div>
+          <div class="an-stage">
+            <div class="an-stage-head filter">Token Filter</div>
+            <div class="an-stage-body">lowercase<br>stopword<br>synonym</div>
+          </div>
+        </div>
+        <div style="font-size:0.55rem;font-family:var(--mono);color:var(--ink-faint);">출력 Terms (역인덱스에 저장):</div>
+        <div>
+          <span class="an-token">elasticsearch</span>
+          <span class="an-token">and</span>
+          <span class="an-token">kibana</span>
+          <span class="an-token">검색엔진</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-merge">
+    <div class="db-text">
+      <h4><span class="num">07</span>Segment Merge</h4>
+      <p>Elasticsearch는 Lucene의 <strong>불변 Segment</strong>를 기반으로 한다. 쓰기는 in-memory buffer에 쌓이다가 <strong>refresh</strong>(기본 1초)마다 새 Segment로 변환되어 검색 가능해진다. Segment는 불변이라 삭제는 논리 삭제(.del 파일)이고 merge 시 실제 제거된다.</p>
+      <p>작은 Segment가 누적되면 검색 시 모든 Segment를 순회해야 하므로 성능이 저하된다. <strong>Background Merge</strong>가 자동으로 작은 Segment들을 하나로 합친다. <strong>Force Merge</strong>(<code>POST /index/_forcemerge</code>)로 수동 병합해 최적화하지만, 쓰기가 없는 cold index에만 적용한다 — 활성 인덱스에서는 I/O를 폭발시킨다.</p>
+      <div class="use-when">
+        <strong>refresh_interval 조정</strong>
+        <p>대량 색인 중에는 <code>refresh_interval: -1</code>로 자동 refresh를 끄면 처리량이 2~3배 향상된다. 색인 완료 후 <code>1s</code>로 복원하고 <code>_refresh</code> API를 한 번 호출한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Segment Lifecycle">
+      <div class="d-merge" style="width:100%;">
+        <div class="mg-row">
+          <div class="mg-label">t=0s</div>
+          <div class="mg-seg new" style="flex:1;">buffer</div>
+        </div>
+        <div class="mg-row">
+          <div class="mg-label">refresh(1s)</div>
+          <div class="mg-seg new" style="flex:0.5;">seg1</div>
+          <div class="mg-seg new" style="flex:0.5;">seg2</div>
+        </div>
+        <div class="mg-row">
+          <div class="mg-label">+몇 초</div>
+          <div class="mg-seg" style="flex:0.33;">seg1</div>
+          <div class="mg-seg" style="flex:0.33;">seg2</div>
+          <div class="mg-seg new" style="flex:0.33;">seg3</div>
+        </div>
+        <div style="font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);text-align:center;">↓ Background Merge (자동)</div>
+        <div class="mg-row">
+          <div class="mg-label">merged</div>
+          <div class="mg-seg merged" style="flex:1;">seg_A (seg1+2+3 통합)</div>
+        </div>
+        <div style="font-size:0.55rem;font-family:var(--mono);color:var(--ink-faint);">Force Merge 후: 단일 segment → 검색 최적. 단, 활성 인덱스에서는 금지.</div>
+      </div>
+    </div>
+  </div>
+
 </section>
 
 <!-- §03 대용량 처리 -->

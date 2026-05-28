@@ -117,6 +117,32 @@
   .d-sharding .sh-box.config small { color: var(--accent); }
   .d-sharding .sh-arr { text-align: center; font-family: var(--mono); font-size: 0.65rem; color: var(--ink-faint); }
 
+  /* Write/Read Concern 트라이앵글 */
+  .d-concern { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
+  .d-concern .wc-row { display: flex; gap: 0.3rem; align-items: stretch; }
+  .d-concern .wc-cell { flex: 1; padding: 0.4rem 0.5rem; border: 1.5px solid var(--rule); font-size: 0.62rem; text-align: center; line-height: 1.3; }
+  .d-concern .wc-cell.header { background: var(--ink); color: var(--paper); border-color: var(--ink); font-family: var(--mono); font-size: 0.58rem; font-weight: 600; letter-spacing: 0.06em; }
+  .d-concern .wc-cell.danger { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); font-weight: 600; }
+  .d-concern .wc-cell.warn { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); font-weight: 600; }
+  .d-concern .wc-cell.safe { background: var(--paper-deep); border-color: var(--ink); color: var(--ink); font-weight: 600; }
+  .d-concern .wc-cell small { display: block; font-size: 0.55rem; font-weight: 400; margin-top: 0.1rem; opacity: 0.75; }
+
+  /* Oplog 구조 */
+  .d-oplog { display: flex; flex-direction: column; gap: 0.35rem; width: 100%; }
+  .d-oplog .op-header { display: grid; grid-template-columns: 2rem 3rem 1fr 2.5rem; gap: 0.3rem; padding: 0.25rem 0.5rem; background: var(--ink); font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--paper); font-weight: 600; }
+  .d-oplog .op-row { display: grid; grid-template-columns: 2rem 3rem 1fr 2.5rem; gap: 0.3rem; padding: 0.22rem 0.5rem; border: 1px solid var(--rule); border-top: none; font-family: var(--mono); font-size: 0.6rem; align-items: center; }
+  .d-oplog .op-row:first-of-type { border-top: 1px solid var(--rule); }
+  .d-oplog .op-ts { color: var(--ink-faint); }
+  .d-oplog .op-type { font-weight: 600; color: var(--accent-deep); }
+  .d-oplog .op-type.i { color: oklch(0.55 0.14 150); }
+  .d-oplog .op-type.u { color: oklch(0.55 0.14 220); }
+  .d-oplog .op-type.d { color: oklch(0.55 0.14 20); }
+  .d-oplog .op-ns { color: var(--ink-soft); font-size: 0.58rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .d-oplog .op-sz { color: var(--ink-faint); font-size: 0.55rem; text-align: right; }
+  .d-oplog .op-bar { display: flex; gap: 0.2rem; align-items: center; margin-top: 0.3rem; }
+  .d-oplog .op-used { background: var(--ink); height: 0.9rem; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 0.52rem; color: var(--paper); white-space: nowrap; padding: 0 0.3rem; }
+  .d-oplog .op-free { background: var(--paper-deep); border: 1px solid var(--rule); height: 0.9rem; }
+
   /* WiredTiger 페이지 구조 */
   .d-wt { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
   .d-wt .wt-page { border: 1.5px solid var(--ink); }
@@ -266,6 +292,8 @@
         <li><a href="#d-index" data-close><span>04</span>인덱스 유형</a></li>
         <li><a href="#d-agg" data-close><span>05</span>집계 파이프라인</a></li>
         <li><a href="#d-wt" data-close><span>06</span>WiredTiger 페이지 구조</a></li>
+        <li><a href="#d-concern" data-close><span>07</span>Write/Read Concern</a></li>
+        <li><a href="#d-oplog" data-close><span>08</span>Oplog 구조</a></li>
       </ul>
     </li>
     <li>
@@ -495,6 +523,68 @@
         <div style="width:85%;padding:0.4rem 0.7rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.65rem;font-weight:500;text-align:center;">$sort: {total: -1}</div>
         <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">↓</div>
         <div style="width:85%;padding:0.4rem 0.7rem;border:1px solid var(--rule);font-size:0.65rem;text-align:center;color:var(--ink-soft);">Result: 인기 상품 랭킹</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-concern">
+    <div class="db-text">
+      <h4><span class="num">07</span>Write/Read Concern 트라이앵글</h4>
+      <p><strong>Write Concern(<code>w</code>)</strong>: 쓰기를 몇 개 노드가 확인해야 응답할지. <code>w:1</code>은 Primary만, <code>w:majority</code>는 과반 Secondary 복제 확인 후 응답. 후자는 Primary 장애 시 데이터 손실이 없지만 레이턴시가 약 수 ms 증가한다.</p>
+      <p><strong>Read Preference</strong>: 어느 노드에서 읽을지. <code>primary</code>는 항상 최신, <code>secondaryPreferred</code>는 Secondary에서 읽어 Primary 부하를 분산하지만 복제 지연만큼 stale할 수 있다.</p>
+      <p><strong>Read Concern(<code>majority</code>)</strong>: 과반 노드에 기록된 데이터만 읽는다. <code>w:1</code>로 쓴 뒤 <code>readConcern:majority</code>로 읽으면 방금 쓴 데이터가 보이지 않을 수 있다. 이 조합이 가장 흔한 stale read 원인이다.</p>
+      <div class="use-when">
+        <strong>카운터 패턴 주의</strong>
+        <p><code>w:1</code> + <code>readPreference:secondary</code> 조합으로 재고 카운터를 읽으면 아직 복제되지 않은 값을 읽어 overselling이 발생할 수 있다. 재고·결제 등 정합성이 중요한 읽기는 반드시 <code>primary</code> + <code>readConcern:majority</code>를 사용한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Write / Read Concern Matrix">
+      <div class="d-concern" style="width:100%;">
+        <div style="font-size:0.55rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);letter-spacing:0.09em;margin-bottom:0.1rem;">Write Concern × Read Preference 조합</div>
+        <div class="wc-row">
+          <div class="wc-cell header" style="flex:1.4;">Write Concern</div>
+          <div class="wc-cell header">readPref: primary</div>
+          <div class="wc-cell header">readPref: secondary</div>
+        </div>
+        <div class="wc-row">
+          <div class="wc-cell safe" style="flex:1.4;text-align:left;padding-left:0.6rem;">w: majority<small>내구성 최대</small></div>
+          <div class="wc-cell safe">안전<small>최신 보장, 레이턴시 +몇ms</small></div>
+          <div class="wc-cell warn">주의<small>복제 지연만큼 stale 가능</small></div>
+        </div>
+        <div class="wc-row">
+          <div class="wc-cell" style="flex:1.4;text-align:left;padding-left:0.6rem;border-color:var(--accent);">w: 1<small>성능 우선</small></div>
+          <div class="wc-cell warn">주의<small>Primary 장애 시 롤백 가능</small></div>
+          <div class="wc-cell danger">위험<small>stale read + 롤백 위험 중첩</small></div>
+        </div>
+        <div style="margin-top:0.6rem;font-size:0.55rem;font-family:var(--mono);color:var(--ink-faint);">readConcern:majority → 과반 복제된 데이터만 반환. w:1과 함께 쓰면 방금 쓴 데이터가 보이지 않을 수 있음.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-oplog">
+    <div class="db-text">
+      <h4><span class="num">08</span>Oplog 구조</h4>
+      <p>Oplog(Operations Log)는 <strong>capped collection</strong>(<code>local.oplog.rs</code>)이다. 최대 크기에 도달하면 가장 오래된 항목부터 덮어쓴다. Secondary는 Oplog의 마지막 항목부터 tail하며 변경을 재적용한다.</p>
+      <p>Oplog의 모든 연산은 <strong>멱등성(idempotent)</strong>을 갖도록 변환된다. <code>$inc: 1</code>은 <code>$set: {n: 42}</code>로 변환된다. Secondary가 같은 Oplog 항목을 두 번 적용해도 결과가 동일해야 하기 때문이다.</p>
+      <p><strong>Replication Lag</strong>: Secondary가 Primary Oplog를 따라가지 못하면 Lag이 발생한다. Oplog 크기가 너무 작으면 Secondary가 따라잡기 전에 항목이 덮어쓰여져 <strong>Oplog 윈도우 이탈</strong> 상태가 된다 — 이 경우 Secondary의 초기 동기화가 필요하다.</p>
+      <div class="use-when">
+        <strong>Oplog 크기 계산</strong>
+        <p>최소 24~72시간의 쓰기를 수용해야 한다. <code>rs.printReplicationInfo()</code>로 현재 Oplog 보존 시간을 확인한다. Change Stream의 재개(resume_after) 가능 시간도 Oplog 크기에 의존한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Oplog — local.oplog.rs">
+      <div class="d-oplog" style="width:100%;">
+        <div class="op-header"><span>ts</span><span>op</span><span>ns · o</span><span>size</span></div>
+        <div class="op-row"><span class="op-ts">T+0</span><span class="op-type i">i</span><span class="op-ns">mydb.orders · {_id:001, status:"new"}</span><span class="op-sz">142B</span></div>
+        <div class="op-row"><span class="op-ts">T+1</span><span class="op-type u">u</span><span class="op-ns">mydb.orders · $set:{status:"ok", n:42} ← $inc 변환</span><span class="op-sz">89B</span></div>
+        <div class="op-row"><span class="op-ts">T+2</span><span class="op-type i">i</span><span class="op-ns">mydb.users · {_id:099, name:"kim"}</span><span class="op-sz">118B</span></div>
+        <div class="op-row"><span class="op-ts">T+3</span><span class="op-type d">d</span><span class="op-ns">mydb.sessions · {_id:"abc"}</span><span class="op-sz">52B</span></div>
+        <div style="margin-top:0.5rem;font-size:0.55rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);letter-spacing:0.09em;">Oplog 사용률 (oplogSizeMB 기준)</div>
+        <div class="op-bar">
+          <div class="op-used" style="flex:0.68;">사용 중 68%</div>
+          <div class="op-free" style="flex:0.32;"></div>
+        </div>
+        <div style="font-size:0.55rem;font-family:var(--mono);color:var(--ink-faint);margin-top:0.2rem;">Secondary tail → 이 항목부터 재적용 · capped: 꽉 차면 오래된 항목 덮어씀</div>
       </div>
     </div>
   </div>

@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apache Airflow — 학습 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+  .hero { max-width: 1200px; margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); position: relative; }
+  .hero::before { content: ""; position: absolute; top: 2rem; left: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); height: 1px; background: var(--ink); }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.5rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.95; font-weight: 600; margin-top: clamp(2rem, 5vw, 3rem); letter-spacing: -0.035em; }
+  .hero-title em { font-style: normal; font-weight: 300; color: var(--accent-deep); }
+  .hero-sub { margin-top: 1.4rem; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: var(--ink-soft); max-width: 42rem; line-height: 1.5; font-weight: 300; }
+  .hero-grid { margin-top: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .hero-grid > div { background: var(--paper); padding: 1.25rem 1.5rem; }
+  .hero-grid .k { display: block; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 0.4rem; }
+  .hero-grid .v { font-size: 1.2rem; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .hero-grid .v small { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; font-weight: 400; }
+
+  .section { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem); }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head { display: grid; grid-template-columns: auto 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: baseline; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .section-num { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.85; color: var(--accent); font-weight: 200; letter-spacing: -0.04em; }
+  .section-titles { border-left: 1px solid var(--ink); padding-left: clamp(1rem, 3vw, 2rem); padding-top: 0.5rem; }
+  .section-kicker { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .section-title { font-size: clamp(1.65rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.028em; }
+
+  .tldr-grid { display: grid; grid-template-columns: 1fr; }
+  @media (min-width: 720px) { .tldr-grid { grid-template-columns: repeat(12, 1fr); } }
+  .tldr-lead { grid-column: 1/-1; font-size: clamp(1.2rem, 2.1vw, 1.6rem); line-height: 1.45; color: var(--ink); padding-bottom: 2rem; border-bottom: 1px solid var(--rule); margin-bottom: 2.5rem; font-weight: 300; letter-spacing: -0.012em; }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead::first-letter { font-size: 3.4em; float: left; line-height: 0.9; padding-right: 0.12em; padding-top: 0.08em; color: var(--accent-deep); font-weight: 200; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  @media (min-width: 720px) { .tldr-lead { grid-column: 2/12; } }
+  .points { display: contents; }
+  .point { grid-column: 1/-1; display: grid; grid-template-columns: 4ch 1fr; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 720px) { .point { grid-column: 2/12; grid-template-columns: 5ch 1fr; gap: 2rem; } }
+  .point .n { font-size: 1.25rem; color: var(--accent); line-height: 1; font-weight: 300; letter-spacing: 0.05em; }
+  .point h3 { font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.3; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.015em; }
+  .point p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
+  .point p strong { color: var(--ink); font-weight: 600; }
+  .point p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+
+  .diagram-block { margin-bottom: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .db-text h4 { font-size: clamp(1.3rem, 2.3vw, 1.75rem); line-height: 1.25; margin-bottom: 0.8rem; font-weight: 600; letter-spacing: -0.022em; }
+  .db-text h4 .num { display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em; color: var(--accent-deep); vertical-align: middle; background: var(--accent-wash); padding: 0.28rem 0.55rem; border-radius: 999px; margin-right: 0.65rem; font-weight: 600; position: relative; top: -0.15em; }
+  .db-text p { color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.65; font-size: 0.95rem; }
+  .db-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .db-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .db-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas { background: var(--paper-deep); border: 1px solid var(--rule); padding: clamp(1.25rem, 3vw, 2rem); position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .canvas::before { content: attr(data-label); position: absolute; top: 0.7rem; left: 0.9rem; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; }
+
+  .box { display: flex; align-items: center; justify-content: center; text-align: center; padding: 0.6rem 0.85rem; border: 1.5px solid var(--ink); background: var(--paper); font-size: 0.76rem; font-weight: 500; color: var(--ink); line-height: 1.3; min-width: 0; max-width: 100%; flex-direction: column; word-break: keep-all; }
+  .box.accent { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); }
+  .box.soft { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .box.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .box small { display: block; font-size: 0.6rem; font-weight: 400; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.18rem; }
+  .box.dark small { color: oklch(0.75 0.01 260); }
+
+  /* DAG 그래프 */
+  .d-dag { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
+  .d-dag .dag-row { display: flex; align-items: center; gap: 0.3rem; }
+  .d-dag .dag-task { flex: 1; padding: 0.4rem 0.5rem; border: 1.5px solid var(--rule); font-family: var(--mono); font-size: 0.6rem; font-weight: 600; text-align: center; color: var(--ink); min-width: 0; }
+  .d-dag .dag-task.start { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+  .d-dag .dag-task.mid { border-color: var(--accent); background: var(--accent-wash); color: var(--accent-deep); }
+  .d-dag .dag-task.end { background: var(--paper-deep); }
+  .d-dag .dag-task small { display: block; font-size: 0.52rem; font-weight: 400; margin-top: 0.1rem; opacity: 0.7; }
+  .d-dag .dag-arr { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); flex-shrink: 0; }
+  .d-dag .dag-spacer { flex: 1; }
+
+  /* 아키텍처 */
+  .d-af-arch { display: flex; flex-direction: column; gap: 0.35rem; width: 100%; }
+  .d-af-arch .af-row { display: flex; gap: 0.3rem; }
+  .d-af-arch .af-box { flex: 1; padding: 0.45rem 0.4rem; border: 1.5px solid var(--rule); font-size: 0.62rem; font-weight: 500; text-align: center; }
+  .d-af-arch .af-box.core { border-color: var(--ink); background: var(--ink); color: var(--paper); font-weight: 600; }
+  .d-af-arch .af-box.db { border-color: var(--accent); background: var(--accent-wash); color: var(--accent-deep); font-weight: 600; }
+  .d-af-arch .af-box.worker { background: var(--paper-deep); }
+  .d-af-arch .af-box small { display: block; font-size: 0.52rem; font-weight: 400; margin-top: 0.1rem; }
+  .d-af-arch .af-box.core small { color: oklch(0.65 0.01 260); }
+  .d-af-arch .af-box.db small { color: var(--accent); }
+  .d-af-arch .af-arr { text-align: center; font-family: var(--mono); font-size: 0.62rem; color: var(--ink-faint); }
+
+  /* Executor 비교 */
+  .d-executor { display: flex; flex-direction: column; gap: 0; width: 100%; border: 1.5px solid var(--ink); }
+  .d-executor .ex-head { display: grid; grid-template-columns: 5.5rem 1fr 1fr; background: var(--ink); color: var(--paper); font-family: var(--mono); font-size: 0.55rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+  .d-executor .ex-head span { padding: 0.3rem 0.5rem; }
+  .d-executor .ex-row { display: grid; grid-template-columns: 5.5rem 1fr 1fr; border-top: 1px solid var(--rule); }
+  .d-executor .ex-cell { padding: 0.4rem 0.5rem; font-size: 0.6rem; border-right: 1px solid var(--rule); }
+  .d-executor .ex-cell:last-child { border-right: none; }
+  .d-executor .ex-cell.name { font-family: var(--mono); font-weight: 600; color: var(--accent-deep); font-size: 0.58rem; }
+  .d-executor .ex-cell.good { color: oklch(0.40 0.12 150); font-weight: 600; }
+  .d-executor .ex-cell.bad { color: var(--accent-deep); }
+
+  /* Task 상태 머신 */
+  .d-state { display: flex; flex-direction: column; gap: 0.35rem; width: 100%; }
+  .d-state .st-row { display: flex; align-items: center; gap: 0.3rem; }
+  .d-state .st-box { padding: 0.32rem 0.5rem; border: 1.5px solid var(--rule); font-family: var(--mono); font-size: 0.6rem; font-weight: 600; text-align: center; flex-shrink: 0; }
+  .d-state .st-box.queued { background: var(--paper-deep); color: var(--ink-soft); }
+  .d-state .st-box.running { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .d-state .st-box.success { background: oklch(0.92 0.06 150); border-color: oklch(0.55 0.14 150); color: oklch(0.30 0.10 150); }
+  .d-state .st-box.failed { background: oklch(0.94 0.05 25); border-color: oklch(0.55 0.14 25); color: oklch(0.35 0.12 25); }
+  .d-state .st-box.retry { border-style: dashed; color: var(--ink-soft); }
+  .d-state .st-box.skipped { background: var(--paper-deep); color: var(--ink-faint); border-style: dashed; }
+  .d-state .st-arr { font-family: var(--mono); font-size: 0.65rem; color: var(--ink-faint); flex-shrink: 0; }
+  .d-state .st-label { font-family: var(--mono); font-size: 0.52rem; color: var(--ink-faint); }
+
+  /* XCom */
+  .d-xcom { display: flex; flex-direction: column; gap: 0.35rem; width: 100%; }
+  .d-xcom .xc-task { display: flex; align-items: center; gap: 0.3rem; }
+  .d-xcom .xc-box { flex: 1; padding: 0.4rem 0.5rem; border: 1.5px solid var(--rule); font-family: var(--mono); font-size: 0.6rem; font-weight: 600; text-align: center; }
+  .d-xcom .xc-box.producer { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+  .d-xcom .xc-box.store { border-color: var(--accent); background: var(--accent-wash); color: var(--accent-deep); }
+  .d-xcom .xc-box.consumer { background: var(--paper-deep); }
+  .d-xcom .xc-arr { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); flex-shrink: 0; }
+
+  /* 대용량 처리 */
+  .ls-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .ls-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .ls-block { margin-bottom: clamp(3rem, 5vw, 4.5rem); padding-bottom: clamp(3rem, 5vw, 4.5rem); border-bottom: 1px solid var(--rule); }
+  .ls-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .ls-kicker { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.35rem; }
+  .ls-title { font-size: clamp(1.15rem, 1.9vw, 1.45rem); font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.2rem; color: var(--ink); }
+  .ls-body { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .ls-body { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .ls-text p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.65; margin-bottom: 0.9rem; }
+  .ls-text p:last-child { margin-bottom: 0; }
+  .ls-text p strong { color: var(--ink); font-weight: 600; }
+  .ls-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .ls-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .ls-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .ls-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+  .company-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+  .company-row .cl { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; }
+  .badge { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; padding: 0.18rem 0.5rem; border: 1px solid var(--accent); color: var(--accent-deep); background: var(--accent-wash); }
+
+  .config-ref { margin-top: 1.5rem; border-top: 2px solid var(--ink); }
+  .config-ref-head { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.5rem 0; border-bottom: 1px solid var(--ink-faint); }
+  .config-ref-head span { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; }
+  .config-row { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.65rem 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .config-row:last-child { border-bottom: none; }
+  .config-row .ck { font-family: var(--mono); font-size: 0.68rem; color: var(--accent-deep); word-break: break-all; line-height: 1.4; }
+  .config-row .cv { font-family: var(--mono); font-size: 0.75rem; color: var(--ink); font-weight: 600; }
+  .config-row .cd { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.4; }
+
+  .code-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card { margin-bottom: 2.5rem; border: 1px solid var(--rule); overflow: hidden; }
+  .code-head { display: flex; align-items: baseline; justify-content: space-between; padding: 1rem 1.4rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; gap: 0.5rem; }
+  .code-head h4 { font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .code-head .tag { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--accent); color: var(--paper); border-radius: 2px; }
+  .code-head .head-right { display: flex; align-items: center; gap: 0.5rem; }
+  .copy-btn { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; font-weight: 600; }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .code-card pre { margin: 0; padding: 1.35rem 1.5rem; overflow-x: auto; background: oklch(0.18 0.02 260); color: oklch(0.92 0.015 75); font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note { padding: 1rem 1.4rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper-deep); line-height: 1.6; }
+  .code-card .note strong { color: var(--accent-deep); }
+  .code-card pre, .code-card .note { display: none; }
+  .code-card.expanded pre, .code-card.expanded .note { display: block; }
+  .code-card .code-head { cursor: pointer; user-select: none; }
+  .code-card .code-head:hover { background: var(--paper); }
+  .expand-indicator { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-faint); transition: transform 0.2s; display: inline-block; }
+  .code-card.expanded .expand-indicator { transform: rotate(90deg); color: var(--accent-deep); }
+
+  .margin-note { max-width: 1200px; margin: 0 auto; color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; padding: 1.1rem clamp(1.5rem, 5vw, 4rem); background: var(--paper-deep); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); font-weight: 300; }
+  .margin-note::before { content: "노트"; font-weight: 600; color: var(--accent-deep); font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-right: 0.8rem; display: inline-block; padding-right: 0.7rem; border-right: 1px solid var(--rule); }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  footer { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: var(--ink-faint); }
+  footer .lockup { font-size: 1.1rem; color: var(--ink); font-weight: 600; }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  .home-link { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 60; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0 0.95rem; height: 48px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.04em; transition: background 0.2s, color 0.2s; }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow { font-family: var(--mono); font-size: 0.95rem; transition: transform 0.25s cubic-bezier(0.22,1,0.36,1); }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  .menu-btn { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span { display: block; width: 20px; height: 1.5px; background: var(--ink); transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.2s, background 0.2s; transform-origin: center; }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  .toc-backdrop { position: fixed; inset: 0; background: oklch(0.18 0.015 260 / 0.35); backdrop-filter: blur(2px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+  .toc-panel { position: fixed; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--ink); z-index: 55; transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.22,1,0.36,1); overflow-y: auto; padding: 6rem 2.5rem 3rem; }
+  .toc-panel.open { transform: translateX(0); }
+  .toc-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .toc-title { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 2.2rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule); }
+  .toc-list { list-style: none; counter-reset: toc; }
+  .toc-list > li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a { display: grid; grid-template-columns: 2.5rem 1fr; align-items: baseline; text-decoration: none; color: var(--ink); font-weight: 500; font-size: 1.05rem; transition: color 0.2s; }
+  .toc-list > li > a::before { counter-increment: toc; content: counter(toc, decimal-leading-zero); color: var(--accent); font-weight: 300; font-size: 0.85rem; }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+  .toc-sub { list-style: none; margin-top: 0.6rem; margin-left: 2.5rem; padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a { color: var(--ink-soft); text-decoration: none; font-size: 0.88rem; transition: color 0.2s; display: flex; align-items: baseline; gap: 0.6rem; }
+  .toc-sub a span { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; min-width: 1.6rem; }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); }
+  body.menu-open { overflow: hidden; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card { animation: rise 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+    @keyframes rise { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html"><span class="arrow">←</span><span>notebook</span></a>
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false"><span></span><span></span><span></span></button>
+<div class="toc-backdrop" id="tocBackdrop"></div>
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#concepts" data-close>핵심 개념 도감</a>
+      <ul class="toc-sub">
+        <li><a href="#d-dag" data-close><span>01</span>DAG 구조</a></li>
+        <li><a href="#d-arch" data-close><span>02</span>컴포넌트 아키텍처</a></li>
+        <li><a href="#d-executor" data-close><span>03</span>Executor 비교</a></li>
+        <li><a href="#d-state" data-close><span>04</span>Task 상태 머신</a></li>
+        <li><a href="#d-xcom" data-close><span>05</span>XCom 데이터 흐름</a></li>
+        <li><a href="#d-sensor" data-close><span>06</span>Sensor 동작 방식</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#largescale" data-close>대용량 처리</a>
+      <ul class="toc-sub">
+        <li><a href="#ls-scheduler" data-close><span>01</span>Scheduler 성능</a></li>
+        <li><a href="#ls-executor" data-close><span>02</span>Executor 스케일링</a></li>
+        <li><a href="#ls-db" data-close><span>03</span>Metadata DB 관리</a></li>
+        <li><a href="#ls-config" data-close><span>04</span>핵심 설정 참조</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+  <div class="toc-foot">Apache Airflow — 워크플로우 오케스트레이터<br>학습 노트 · 2026.05.29</div>
+</aside>
+
+<header class="hero" id="top">
+  <div class="meta-row"><span>karellen-kim · notebook</span><span>데이터 엔지니어링 / 오케스트레이션</span></div>
+  <h1 class="hero-title">Apache <em>Airflow</em></h1>
+  <p class="hero-sub">Python 코드로 DAG를 정의하는 배치 파이프라인 오케스트레이터 — Scheduler, Executor, XCom, TaskFlow API</p>
+  <div class="hero-grid">
+    <div><span class="k">출시</span><span class="v">2015<small>Airbnb 오픈소스</small></span></div>
+    <div><span class="k">현재 버전</span><span class="v">2.x<small>TaskFlow API</small></span></div>
+    <div><span class="k">스케줄러</span><span class="v">단일 루프<small>DAG 파싱·큐잉</small></span></div>
+    <div><span class="k">메타데이터</span><span class="v">PostgreSQL<small>권장 DB</small></span></div>
+    <div><span class="k">작성</span><span class="v">2026<small>.05.29</small></span></div>
+  </div>
+</header>
+
+<!-- §01 -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <div class="section-kicker">TL;DR</div>
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      Airflow는 <em>Python 코드로 DAG를 정의</em>하는 배치 파이프라인 오케스트레이터다. 실행 엔진이 아니라 <span class="hl">무엇을, 언제, 어떤 순서로 실행할지를 조율하는 조율자(Orchestrator)</span>다. Scheduler가 DAG 파일을 주기적으로 파싱하고, 실행 가능한 Task를 Executor에게 위임한다.
+    </p>
+    <div class="points">
+      <div class="point">
+        <span class="n">01</span>
+        <div>
+          <h3>DAG — Python 코드가 곧 파이프라인 정의</h3>
+          <p>DAG(Directed Acyclic Graph)는 Task들의 의존성 그래프다. <strong>cron 표현식</strong>으로 스케줄링하고, <code>start_date</code>와 <code>schedule_interval</code>로 실행 주기를 정의한다. DAG 파일은 Python이므로 조건문·반복문·함수를 모두 사용할 수 있다. Airflow는 DAG를 <strong>구성 도구로만</strong> 사용하며 실제 데이터는 처리하지 않는다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">02</span>
+        <div>
+          <h3>Operator — Task의 실행 단위</h3>
+          <p><strong>PythonOperator</strong>는 Python 함수를 실행. <strong>BashOperator</strong>는 쉘 명령. <strong>SparkSubmitOperator</strong>는 Spark 잡 제출. <strong>HttpSensor</strong>는 HTTP 엔드포인트 polling. Operator는 Task의 청사진이고, TaskInstance가 실제 실행 객체다. 같은 Operator를 여러 Task에서 재사용할 수 있다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">03</span>
+        <div>
+          <h3>Scheduler — 단일 루프로 파싱·큐잉</h3>
+          <p>Scheduler는 주기적으로 <code>dags/</code> 폴더를 스캔해 DAG 파일을 파싱하고, 실행 가능 상태(upstream 완료, 스케줄 도달)의 Task를 <strong>Executor 큐에 넣는다</strong>. 단일 프로세스이므로 DAG 파일 수와 파싱 시간이 성능 병목이다. Airflow 2.0+에서는 DAG를 Metadata DB에 직렬화(serialization)해 Webserver가 DB에서 직접 읽도록 개선됐다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">04</span>
+        <div>
+          <h3>Executor — Task를 실제 실행하는 방식</h3>
+          <p><strong>LocalExecutor</strong>: 단일 서버에서 subprocess로 실행. 소규모 적합. <strong>CeleryExecutor</strong>: Redis/RabbitMQ 큐를 통해 Worker 프로세스에 분산. 수십~수백 Worker 지원. <strong>KubernetesExecutor</strong>: Task마다 독립 Pod를 생성. 완전 격리와 자원 효율. 단, Pod 생성 오버헤드(~수십 초)가 있다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">05</span>
+        <div>
+          <h3>XCom — Task 간 소량 데이터 교환</h3>
+          <p>XCom(Cross-Communication)은 Task 간 소량의 데이터를 Metadata DB를 통해 공유한다. <code>xcom_push</code>로 저장하고 <code>xcom_pull</code>로 읽는다. <strong>수 KB 이하의 메타데이터(파일 경로, 레코드 수, 상태 코드)에만 사용</strong>해야 한다. 대용량 데이터는 S3/GCS 경로를 XCom으로 전달하고 실제 데이터는 외부 저장소를 거친다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">06</span>
+        <div>
+          <h3>TaskFlow API — @task 데코레이터</h3>
+          <p>Airflow 2.0+의 현대적 API. <code>@task</code> 데코레이터가 붙은 Python 함수가 자동으로 Task가 된다. 함수 반환값이 자동으로 XCom으로 전달되어 <strong>의존성이 코드 흐름으로 표현</strong>된다. <strong>Dynamic Task Mapping</strong>(2.3+): <code>.expand()</code>로 런타임에 태스크 수를 결정한다. 입력 리스트 크기만큼 Task가 자동 생성된다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §02 -->
+<section class="section" id="concepts">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Architecture</div>
+      <h2 class="section-title">핵심 개념 도감</h2>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-dag">
+    <div class="db-text">
+      <h4><span class="num">01</span>DAG 구조</h4>
+      <p>DAG는 Task들의 방향 비순환 그래프다. 화살표 방향이 의존성을 나타낸다. <code>task_a >> task_b</code>는 task_a가 완료된 후 task_b가 실행된다는 의미다. 다수의 upstream Task를 기다리거나, 다수의 downstream Task를 병렬로 실행하는 팬인/팬아웃 패턴이 가능하다.</p>
+      <p><strong>execution_date</strong>: 논리적 실행 날짜. 매일 실행 DAG의 2026-05-29 실행은 2026-05-29 데이터를 처리한다는 의미다. Backfill 시 과거 execution_date로 재실행할 수 있다.</p>
+      <div class="use-when">
+        <strong>DAG 설계 원칙</strong>
+        <p>한 DAG는 한 목적만 수행한다. 의존성이 없는 파이프라인을 억지로 같은 DAG에 넣지 않는다. Task는 <strong>멱등성(idempotent)</strong>을 가져야 한다 — 같은 execution_date로 재실행해도 동일한 결과를 내야 한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="DAG Dependency Graph">
+      <div class="d-dag" style="width:100%;">
+        <div class="dag-row">
+          <div class="dag-task start">extract_raw<small>BashOperator</small></div>
+          <div class="dag-arr">→</div>
+          <div class="dag-task mid">validate_schema<small>PythonOperator</small></div>
+          <div class="dag-arr">→</div>
+          <div class="dag-task mid">transform_data<small>SparkSubmit</small></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;font-family:var(--mono);font-size:0.62rem;color:var(--ink-faint);padding-right:0.5rem;">↓ &nbsp; ↓</div>
+        <div class="dag-row">
+          <div class="dag-spacer"></div>
+          <div class="dag-spacer"></div>
+          <div class="dag-task end">load_to_dw<small>PostgresOperator</small></div>
+          <div class="dag-arr">→</div>
+          <div class="dag-task end">notify_slack<small>HttpOperator</small></div>
+        </div>
+        <div style="margin-top:0.5rem;font-size:0.55rem;font-family:var(--mono);color:var(--ink-faint);">extract → validate → transform → [load_to_dw → notify_slack]</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-arch">
+    <div class="db-text">
+      <h4><span class="num">02</span>컴포넌트 아키텍처</h4>
+      <p><strong>Scheduler</strong>: DAG 파일 파싱, 실행 가능 Task 감지, Executor 큐에 전달. <strong>Webserver</strong>: UI 제공, DAG/Task 상태 조회. Airflow 2.0+에서 직렬화된 DAG를 DB에서 직접 읽어 Scheduler 부하 감소. <strong>Metadata DB</strong>(PostgreSQL 권장): 모든 상태의 중심. DAG·Task·XCom·Variable·Connection 모두 여기에 저장된다.</p>
+      <p><strong>Triggerer</strong>(2.2+): deferrable operator를 위한 별도 프로세스. asyncio 기반으로 대량의 Sensor를 효율적으로 처리한다. 기존 poke 모드 Sensor는 Worker 슬롯을 점유하지만, deferrable은 Triggerer가 비동기로 처리해 Worker를 해방한다.</p>
+      <div class="use-when">
+        <strong>프로덕션 배포</strong>
+        <p>Scheduler와 Webserver를 별도 프로세스로 배포한다. Metadata DB는 별도 PostgreSQL 인스턴스를 사용한다(SQLite는 프로덕션 금지). CeleryExecutor 시 Redis/RabbitMQ가 추가된다. Helm chart(공식)로 Kubernetes 배포가 표준이다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Airflow Components">
+      <div class="d-af-arch" style="width:100%;">
+        <div class="af-row">
+          <div class="af-box core">Webserver<small>UI · REST API</small></div>
+          <div class="af-box core">Scheduler<small>파싱 · 큐잉</small></div>
+          <div class="af-box core">Triggerer<small>deferrable 비동기</small></div>
+        </div>
+        <div class="af-arr">↕ 모든 상태 ↕</div>
+        <div class="af-row">
+          <div class="af-box db" style="flex:3;">Metadata DB (PostgreSQL)<small>DAG · TaskInstance · XCom · Variable · Connection</small></div>
+        </div>
+        <div class="af-arr">↓ Task 디스패치 ↓</div>
+        <div class="af-row">
+          <div class="af-box">Executor<small>Local / Celery / K8s</small></div>
+        </div>
+        <div class="af-arr">↓ 실제 실행 ↓</div>
+        <div class="af-row">
+          <div class="af-box worker">Worker 1<small>subprocess/Pod</small></div>
+          <div class="af-box worker">Worker 2<small>subprocess/Pod</small></div>
+          <div class="af-box worker">Worker N<small>subprocess/Pod</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-executor">
+    <div class="db-text">
+      <h4><span class="num">03</span>Executor 비교</h4>
+      <p><strong>SequentialExecutor</strong>: Task를 순차 실행. SQLite와 함께 개발 환경에만 사용. <strong>LocalExecutor</strong>: 동일 프로세스 내에서 subprocess로 병렬 실행. 단일 서버에서 수십 Task/분 처리 가능. <strong>CeleryExecutor</strong>: Celery Worker가 Redis/RabbitMQ 큐에서 Task를 소비. 수십~수백 Worker로 수평 확장.</p>
+      <p><strong>KubernetesExecutor</strong>: Task마다 K8s Pod를 생성하고 완료 후 삭제. 완전한 자원 격리, 태스크별 독립 환경(Docker 이미지). 단, Pod 생성 오버헤드(20~60초)가 있어 짧은 Task에는 비효율적이다. <strong>CeleryKubernetesExecutor</strong>: 두 방식을 혼합해 큐에 따라 Celery 또는 K8s로 라우팅한다.</p>
+      <div class="use-when">
+        <strong>선택 기준</strong>
+        <p>단일 서버 운영이면 LocalExecutor, 분산 처리가 필요하고 Task가 짧으면 CeleryExecutor, Task가 크고 자원 격리가 중요하면 KubernetesExecutor. Airbnb·LinkedIn 규모에서는 KubernetesExecutor가 표준이다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Executor Comparison">
+      <div class="d-executor" style="width:100%;">
+        <div class="ex-head">
+          <span>Executor</span><span>장점</span><span>한계</span>
+        </div>
+        <div class="ex-row">
+          <div class="ex-cell name">Sequential</div>
+          <div class="ex-cell">개발·테스트 간단</div>
+          <div class="ex-cell bad">병렬 불가 / SQLite 전용</div>
+        </div>
+        <div class="ex-row">
+          <div class="ex-cell name">Local</div>
+          <div class="ex-cell good">추가 인프라 없음 · 빠른 시작</div>
+          <div class="ex-cell bad">단일 서버 / 수평 확장 불가</div>
+        </div>
+        <div class="ex-row">
+          <div class="ex-cell name">Celery</div>
+          <div class="ex-cell good">수평 확장 · 기존 Worker 재활용</div>
+          <div class="ex-cell bad">Redis/MQ 추가 / 환경 통일 필요</div>
+        </div>
+        <div class="ex-row">
+          <div class="ex-cell name">Kubernetes</div>
+          <div class="ex-cell good">완전 격리 · 태스크별 이미지</div>
+          <div class="ex-cell bad">Pod 생성 오버헤드 20~60초</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-state">
+    <div class="db-text">
+      <h4><span class="num">04</span>Task 상태 머신</h4>
+      <p>TaskInstance는 실행 중 여러 상태를 거친다. <strong>scheduled</strong>: Scheduler가 실행 가능으로 판단. <strong>queued</strong>: Executor 큐에 전달 완료. <strong>running</strong>: Worker에서 실행 중. <strong>success/failed</strong>: 실행 완료. <strong>up_for_retry</strong>: 재시도 대기(retry 설정 시).</p>
+      <p><strong>Trigger Rule</strong>: downstream Task의 실행 조건을 결정한다. 기본 <code>all_success</code>: 모든 upstream 성공 시. <code>one_failed</code>: upstream 중 하나라도 실패 시 실행 — 알림 Task에 사용. <code>none_failed</code>: 실패가 없으면 실행(skipped 허용). <code>all_done</code>: 성공/실패 무관 모두 완료 시.</p>
+      <div class="use-when">
+        <strong>Task 재시도 설계</strong>
+        <p><code>retries=3</code>, <code>retry_delay=timedelta(minutes=5)</code>로 지수 백오프 없이 고정 지연 재시도. 외부 API 호출이나 네트워크 오류가 예상되는 Task에 설정한다. <code>email_on_failure=True</code>로 실패 시 알림을 받는다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Task State Machine">
+      <div class="d-state" style="width:100%;">
+        <div class="st-row">
+          <div class="st-box queued">none</div>
+          <div class="st-arr">→</div>
+          <div class="st-box queued">scheduled</div>
+          <div class="st-arr">→</div>
+          <div class="st-box queued">queued</div>
+          <div class="st-arr">→</div>
+          <div class="st-box running">running</div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;font-family:var(--mono);font-size:0.62rem;color:var(--ink-faint);padding-right:1rem;">↙ &nbsp; ↘</div>
+        <div class="st-row">
+          <div class="st-box retry">up_for_retry</div>
+          <div class="st-arr">→</div>
+          <div class="st-box failed">failed</div>
+          <div class="st-arr" style="visibility:hidden;">→</div>
+          <div class="st-box success">success</div>
+          <div class="st-arr">→</div>
+          <div class="st-box skipped">skipped</div>
+        </div>
+        <div style="margin-top:0.5rem;font-size:0.55rem;font-family:var(--mono);color:var(--ink-faint);">Trigger Rule이 downstream 실행 여부를 결정: all_success(기본) / one_failed / none_failed / all_done</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-xcom">
+    <div class="db-text">
+      <h4><span class="num">05</span>XCom 데이터 흐름</h4>
+      <p>XCom은 Metadata DB의 <code>xcom</code> 테이블을 통해 Task 간 데이터를 전달한다. <strong>TaskFlow API</strong>에서는 함수 반환값이 자동으로 XCom에 저장되고, 인자로 받는 함수가 자동으로 XCom에서 읽는다. 명시적인 <code>push/pull</code> 호출이 필요 없다.</p>
+      <p>XCom 값은 직렬화되어 DB에 저장되므로 크기 제한이 있다(PostgreSQL: 1GB BLOB, 실용 한계는 수십 KB). <strong>사용 패턴</strong>: 파일 경로, row count, 처리 결과 코드, 다음 처리할 배치 ID 등 메타데이터. 대용량 DataFrame이나 배열을 XCom으로 전달하는 것은 안티패턴이다.</p>
+      <div class="use-when">
+        <strong>Custom XCom Backend</strong>
+        <p>Airflow 2.x에서 XCom 백엔드를 S3/GCS로 대체할 수 있다. 큰 데이터를 반환하는 Task도 자동으로 S3에 저장하고 경로만 DB에 기록한다. AWS MWAA, Astronomer 등에서 기본 제공한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="XCom Flow">
+      <div class="d-xcom" style="width:100%;">
+        <div class="xc-task">
+          <div class="xc-box producer">task_a<br><span style="font-size:0.52rem;font-weight:400;">return {"path": "s3://bucket/file.parquet", "rows": 14200}</span></div>
+        </div>
+        <div style="font-family:var(--mono);font-size:0.62rem;color:var(--ink-faint);text-align:center;">↓ 자동 xcom_push (TaskFlow)</div>
+        <div class="xc-task">
+          <div class="xc-box store">Metadata DB · xcom 테이블<br><span style="font-size:0.52rem;font-weight:400;">key=return_value, dag_id, task_id, run_id</span></div>
+        </div>
+        <div style="font-family:var(--mono);font-size:0.62rem;color:var(--ink-faint);text-align:center;">↓ 자동 xcom_pull (TaskFlow 인자로 전달)</div>
+        <div class="xc-task">
+          <div class="xc-box consumer">task_b(result)<br><span style="font-size:0.52rem;font-weight:400;">result["path"] → S3에서 실제 데이터 읽기</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-sensor">
+    <div class="db-text">
+      <h4><span class="num">06</span>Sensor — 외부 조건 대기</h4>
+      <p>Sensor는 외부 조건이 충족될 때까지 대기하는 특수 Operator다. 파일 도착, API 응답, DB 레코드 존재 등을 polling한다. <strong>poke 모드</strong>(기본): Worker 슬롯을 점유하며 <code>poke_interval</code>마다 조건을 확인. 대기 시간이 길면 Worker 슬롯을 낭비한다.</p>
+      <p><strong>reschedule 모드</strong>: polling 사이에 Task를 해제하고 Worker 슬롯을 반환한다. 다음 poke 시간이 되면 재스케줄된다. 장시간 대기하는 Sensor에 적합하다. <strong>deferrable Operator</strong>(2.2+): Triggerer 프로세스가 asyncio로 비동기 polling. Worker 슬롯을 전혀 소비하지 않는다. 수천 개의 동시 Sensor를 단일 Triggerer로 처리할 수 있다.</p>
+      <div class="use-when">
+        <strong>Sensor 선택 기준</strong>
+        <p>대기 시간 &lt;5분: poke 모드. 대기 시간 5분~수 시간: reschedule 모드. 수백~수천 동시 Sensor, 대기 시간 가변: deferrable(Triggerer). <code>timeout</code>과 <code>soft_fail</code>을 항상 설정해 무한 대기를 방지한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Sensor Modes">
+      <div style="display:flex;flex-direction:column;gap:0.5rem;width:100%;">
+        <div style="font-size:0.55rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);letter-spacing:0.09em;">poke 모드 (기본)</div>
+        <div style="display:flex;gap:0.2rem;align-items:center;">
+          <div style="flex:1;padding:0.3rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.58rem;text-align:center;">Worker 점유</div>
+          <div style="flex:2;padding:0.3rem;border:1px solid var(--rule);background:var(--paper-deep);font-family:var(--mono);font-size:0.55rem;text-align:center;color:var(--ink-faint);">sleep(poke_interval) ... 조건 확인 ... sleep ...</div>
+          <div style="flex:1;padding:0.3rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.58rem;text-align:center;color:var(--accent-deep);">완료</div>
+        </div>
+        <div style="font-size:0.55rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);letter-spacing:0.09em;margin-top:0.2rem;">reschedule 모드</div>
+        <div style="display:flex;gap:0.2rem;align-items:center;">
+          <div style="flex:0.5;padding:0.3rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.55rem;text-align:center;">확인</div>
+          <div style="flex:1;padding:0.3rem;border:1px dashed var(--rule);font-family:var(--mono);font-size:0.55rem;text-align:center;color:var(--ink-faint);">슬롯 해제 대기</div>
+          <div style="flex:0.5;padding:0.3rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.55rem;text-align:center;">확인</div>
+          <div style="flex:0.8;padding:0.3rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.55rem;text-align:center;color:var(--accent-deep);">완료</div>
+        </div>
+        <div style="font-size:0.55rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);letter-spacing:0.09em;margin-top:0.2rem;">deferrable (Triggerer)</div>
+        <div style="padding:0.3rem 0.5rem;border:1px solid var(--rule);background:var(--paper-deep);font-family:var(--mono);font-size:0.55rem;color:var(--ink-soft);">Worker 슬롯 0 소비 · Triggerer asyncio 루프가 수천 Sensor 동시 처리</div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- §03 대용량 처리 -->
+<section class="section" id="largescale">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Large Scale</div>
+      <h2 class="section-title">대용량 처리</h2>
+    </div>
+  </div>
+
+  <p class="ls-intro">Airflow 탄생지인 <em>Airbnb</em>는 3,000+개 DAG, 일 100만+ TaskInstance를 처리한다. <em>LinkedIn</em>은 수천 개의 데이터 파이프라인을, <em>Lyft</em>는 KubernetesExecutor로 완전 전환해 수십만 Task를 처리한다.</p>
+
+  <div class="ls-block" id="ls-scheduler">
+    <div class="ls-kicker">01 · Scheduler</div>
+    <div class="ls-title">Scheduler 성능 — 파싱 병목 해결</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">사례</span><span class="badge">Airbnb</span><span class="badge">LinkedIn</span></div>
+        <p>Scheduler는 <code>dags/</code> 폴더를 <code>dag_dir_list_interval</code>(기본 300초)마다 스캔하고, 각 DAG 파일을 <code>min_file_process_interval</code>(기본 30초)마다 파싱한다. DAG 파일이 많을수록 파싱 루프가 느려지고 스케줄 지연이 발생한다.</p>
+        <p><strong>DAG 파싱 최적화</strong>: (1) DAG 파일 최상단에 무거운 import를 줄인다 — DB 연결, 모델 로드는 Task 함수 내부에서. (2) <code>.airflowignore</code>로 불필요한 파일을 스캔 제외. (3) DAG 직렬화(2.0+): Metadata DB에 DAG 구조를 캐시해 Webserver가 파일 재파싱 없이 DB에서 읽는다. (4) Airbnb 기준 <code>scheduler_heartbeat_sec=5</code>, <code>min_file_process_interval=30</code>으로 튜닝.</p>
+        <p><strong>DAG 파싱 시간 측정</strong>: <code>airflow dags list</code>의 응답 시간, Scheduler 로그의 <code>DAG parsing time</code> 지표로 확인한다. 개별 파일 파싱이 30초를 초과하면 해당 DAG를 분리해야 한다.</p>
+        <div class="use-when">
+          <strong>Scheduler HA (2.0+)</strong>
+          <p>Airflow 2.0+에서 다중 Scheduler를 실행할 수 있다. Row-level lock으로 동일 Task의 중복 실행을 방지한다. Scheduler 하나가 죽어도 나머지가 이어받는다. 단, 모든 Scheduler가 동일한 <code>dags/</code> 경로를 마운트해야 한다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Scheduler Loop" style="min-height:200px;">
+        <div style="display:flex;flex-direction:column;gap:0.5rem;width:100%;">
+          <div style="font-size:0.55rem;font-family:var(--mono);text-transform:uppercase;color:var(--ink-faint);letter-spacing:0.09em;">Scheduler 주요 루프</div>
+          <div style="display:flex;flex-direction:column;gap:0.25rem;">
+            <div style="padding:0.35rem 0.6rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.58rem;">1. dags/ 스캔 (dag_dir_list_interval=300s)</div>
+            <div style="font-family:var(--mono);font-size:0.55rem;color:var(--ink-faint);text-align:center;">↓</div>
+            <div style="padding:0.35rem 0.6rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.58rem;color:var(--accent-deep);">2. DAG 파일 파싱 (min_file_process_interval=30s)</div>
+            <div style="font-family:var(--mono);font-size:0.55rem;color:var(--ink-faint);text-align:center;">↓</div>
+            <div style="padding:0.35rem 0.6rem;border:1px solid var(--rule);background:var(--paper-deep);font-family:var(--mono);font-size:0.58rem;">3. 실행 가능 TaskInstance 감지 → queued 상태로</div>
+            <div style="font-family:var(--mono);font-size:0.55rem;color:var(--ink-faint);text-align:center;">↓</div>
+            <div style="padding:0.35rem 0.6rem;border:1px solid var(--rule);font-family:var(--mono);font-size:0.58rem;">4. Executor 큐에 전달 → heartbeat(5s) 후 반복</div>
+          </div>
+          <div style="font-size:0.52rem;font-family:var(--mono);color:var(--ink-faint);">병목: DAG 파일 수 × 파싱 시간 → parallelism 낮추거나 DAG 분리</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="ls-executor">
+    <div class="ls-kicker">02 · Executor Scaling</div>
+    <div class="ls-title">Executor 스케일링 — CeleryExecutor vs KubernetesExecutor</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">사례</span><span class="badge">Lyft K8s</span><span class="badge">Spotify Celery</span></div>
+        <p><strong>CeleryExecutor 튜닝</strong>: <code>worker_concurrency</code>(기본 16)는 Worker당 동시 Task 수. CPU 바운드 Task는 CPU 코어 수와 동일하게, I/O 바운드 Task는 2~4배로 설정한다. <code>parallelism</code>(기본 32)는 전체 동시 실행 Task 수. Celery Flower UI로 Worker 상태를 모니터링한다.</p>
+        <p><strong>KubernetesExecutor 튜닝</strong>: <code>worker_pods_creation_batch_size</code>(기본 1)를 높이면 Pod 일괄 생성으로 처리량 향상. <code>delete_worker_pods=True</code>(기본)로 완료된 Pod를 즉시 삭제해 리소스 회수. <code>pod_template_file</code>로 리소스 요청(CPU/메모리), tolerations, node affinity를 Task별로 다르게 설정할 수 있다.</p>
+        <p><strong>Lyft 사례</strong>: 전체 파이프라인을 KubernetesExecutor로 전환해 환경 격리와 자원 효율을 동시에 달성했다. Task별로 다른 Docker 이미지를 사용해 의존성 충돌을 완전히 제거했다.</p>
+        <div class="use-when">
+          <strong>Task 큐 분리</strong>
+          <p>CeleryExecutor에서 <code>queue</code> 파라미터로 Task를 특정 Worker 그룹에 배정한다. GPU Task는 <code>queue="gpu"</code> Worker로, 메모리 집약 Task는 high-memory Worker로 라우팅해 자원을 효율적으로 사용한다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="CeleryExecutor Architecture" style="min-height:200px;">
+        <div style="display:flex;flex-direction:column;gap:0.4rem;width:100%;">
+          <div style="display:flex;gap:0.3rem;">
+            <div style="flex:1;padding:0.4rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.58rem;text-align:center;">Scheduler</div>
+            <div style="align-self:center;font-family:var(--mono);font-size:0.7rem;color:var(--ink-faint);">→</div>
+            <div style="flex:1;padding:0.4rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.58rem;text-align:center;color:var(--accent-deep);">Redis Queue<br><span style="font-size:0.52rem;">default / gpu / high-mem</span></div>
+          </div>
+          <div style="font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);text-align:center;">↓ Celery Worker가 소비</div>
+          <div style="display:flex;gap:0.3rem;">
+            <div style="flex:1;padding:0.35rem;border:1px solid var(--rule);background:var(--paper-deep);font-family:var(--mono);font-size:0.55rem;text-align:center;">Worker 1<br>concurrency=16</div>
+            <div style="flex:1;padding:0.35rem;border:1px solid var(--rule);background:var(--paper-deep);font-family:var(--mono);font-size:0.55rem;text-align:center;">Worker 2<br>concurrency=16</div>
+            <div style="flex:1;padding:0.35rem;border:1px dashed var(--rule);font-family:var(--mono);font-size:0.55rem;text-align:center;color:var(--ink-faint);">Worker N<br>수평 확장</div>
+          </div>
+          <div style="font-size:0.52rem;font-family:var(--mono);color:var(--ink-faint);">parallelism=32 → 전체 동시 Task 상한. worker_concurrency=16 → Worker당 동시 Task</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="ls-db">
+    <div class="ls-kicker">03 · Metadata DB</div>
+    <div class="ls-title">Metadata DB 관리 — 비대화 방지</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">중요도</span><span class="badge">Critical</span></div>
+        <p><strong>Metadata DB가 성능의 핵심</strong>이다. <code>task_instance</code>와 <code>dag_run</code> 테이블이 무제한으로 쌓이면 Scheduler의 쿼리가 느려지고 Webserver UI도 응답이 길어진다. 수백만 레코드가 쌓이면 인덱스 스캔도 초 단위 지연이 발생한다.</p>
+        <p><strong>정기 정리</strong>: <code>airflow db clean --clean-before-timestamp "2025-01-01" --tables task_instance,dag_run,xcom</code>로 오래된 레코드를 삭제한다. 또는 <code>max_dagruns_to_create_per_loop</code>로 동시 실행 DAG Run 수를 제한한다. <code>min_serialized_dag_update_interval</code>(기본 30초)으로 직렬화 빈도를 조절한다.</p>
+        <p><strong>XCom 테이블</strong>: 크기가 큰 XCom이 누적되면 테이블이 급격히 커진다. Custom XCom Backend(S3)를 사용하거나, DB 컬럼 타입을 확인해 BLOB 크기를 제한한다.</p>
+        <div class="use-when">
+          <strong>PostgreSQL 권장 설정</strong>
+          <p><code>max_connections=200</code>, Airflow 측 <code>sql_alchemy_pool_size=5</code>, <code>sql_alchemy_max_overflow=10</code>. Connection pool이 부족하면 Scheduler가 DB 연결 대기로 지연된다. PgBouncer로 연결 풀링을 추가하면 수백 Worker 환경에서도 안정적이다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Metadata DB Tables" style="min-height:180px;">
+        <div style="display:flex;flex-direction:column;gap:0.35rem;width:100%;font-family:var(--mono);font-size:0.6rem;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;font-size:0.52rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-faint);">
+            <span>테이블</span><span style="text-align:right;">레코드 수</span><span style="text-align:right;">정리 주기</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;padding:0.3rem 0;border-bottom:1px solid var(--rule);">
+            <span style="color:var(--accent-deep);">task_instance</span><span style="text-align:right;color:var(--accent-deep);">수백만+</span><span style="text-align:right;">월 1회 정리</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;padding:0.3rem 0;border-bottom:1px solid var(--rule);">
+            <span style="color:var(--accent-deep);">dag_run</span><span style="text-align:right;color:var(--accent-deep);">수십만+</span><span style="text-align:right;">월 1회 정리</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;padding:0.3rem 0;border-bottom:1px solid var(--rule);">
+            <span>xcom</span><span style="text-align:right;">가변</span><span style="text-align:right;">S3 Backend 권장</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;padding:0.3rem 0;">
+            <span>serialized_dag</span><span style="text-align:right;">DAG 수</span><span style="text-align:right;">자동 갱신</span>
+          </div>
+          <div style="font-size:0.52rem;color:var(--ink-faint);margin-top:0.3rem;">airflow db clean --clean-before-timestamp으로 정기 정리 필수</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="ls-config">
+    <div class="ls-kicker">04 · Configuration</div>
+    <div class="ls-title">핵심 설정 참조표</div>
+    <div class="config-ref">
+      <div class="config-ref-head"><span>파라미터</span><span>권장값</span><span>설명</span></div>
+      <div class="config-row"><span class="ck">AIRFLOW__CORE__PARALLELISM</span><span class="cv">128</span><span class="cd">전체 동시 실행 Task 수 상한 (기본 32)</span></div>
+      <div class="config-row"><span class="ck">AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG</span><span class="cv">16</span><span class="cd">DAG당 동시 실행 Task 수 (기본 16)</span></div>
+      <div class="config-row"><span class="ck">AIRFLOW__SCHEDULER__SCHEDULER_HEARTBEAT_SEC</span><span class="cv">5</span><span class="cd">Scheduler 루프 간격. 낮을수록 반응 빠름, CPU 증가</span></div>
+      <div class="config-row"><span class="ck">AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL</span><span class="cv">30</span><span class="cd">동일 DAG 파일 재파싱 최소 간격(초)</span></div>
+      <div class="config-row"><span class="ck">AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL</span><span class="cv">30</span><span class="cd">dags/ 폴더 스캔 주기(초). 기본 300초는 너무 느림</span></div>
+      <div class="config-row"><span class="ck">AIRFLOW__CELERY__WORKER_CONCURRENCY</span><span class="cv">16</span><span class="cd">Celery Worker당 동시 Task. I/O 바운드면 높게, CPU면 코어 수</span></div>
+      <div class="config-row"><span class="ck">AIRFLOW__CORE__SQL_ALCHEMY_POOL_SIZE</span><span class="cv">5</span><span class="cd">DB 연결 풀 크기. 과도하게 높이면 PostgreSQL max_connections 초과</span></div>
+      <div class="config-row"><span class="ck">AIRFLOW__CORE__SQL_ALCHEMY_MAX_OVERFLOW</span><span class="cv">10</span><span class="cd">pool_size 초과 시 추가 연결 수</span></div>
+      <div class="config-row"><span class="ck">AIRFLOW__SCHEDULER__MAX_DAGRUNS_TO_CREATE_PER_LOOP</span><span class="cv">10</span><span class="cd">루프당 생성할 최대 DAG Run 수. DB 부하 제어</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="margin-note">
+  <strong>Airflow vs Prefect vs Dagster:</strong> Airflow는 배치 파이프라인 오케스트레이션의 업계 표준이지만 동적 파이프라인 표현이 복잡하다. Prefect는 Python 함수에 데코레이터를 붙이는 방식으로 더 유연하고 Cloud 네이티브지만 커뮤니티가 작다. Dagster는 데이터 자산(Asset) 중심의 설계로 데이터 품질과 타입 안전성에 강점이 있다. 이미 Airflow 생태계에 투자했다면 전환 비용이 크다.
+</div>
+
+<!-- §04 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Hands-On</div>
+      <h2 class="section-title">실전 코드</h2>
+    </div>
+  </div>
+
+  <p class="code-intro"><em>TaskFlow API</em>(Airflow 2.x) 기준. 레거시 <em>PythonOperator</em> 방식과 혼용 가능하다.</p>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>01. TaskFlow API — 기본 ETL DAG</h4>
+      <div class="head-right"><span class="tag">taskflow</span></div>
+    </div>
+    <pre><span class="kw">from</span> airflow.decorators <span class="kw">import</span> dag, task
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime, timedelta
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+
+<span class="dec">@dag</span>(
+    schedule=<span class="str">"0 2 * * *"</span>,          <span class="com"># 매일 02:00 UTC</span>
+    start_date=<span class="fn">datetime</span>(<span class="str">2026</span>, <span class="str">1</span>, <span class="str">1</span>),
+    catchup=<span class="kw">False</span>,                    <span class="com"># 과거 미실행 DAG Run 생성 안 함</span>
+    default_args={
+        <span class="str">"retries"</span>: <span class="str">2</span>,
+        <span class="str">"retry_delay"</span>: <span class="fn">timedelta</span>(minutes=<span class="str">5</span>),
+        <span class="str">"email_on_failure"</span>: <span class="kw">True</span>,
+    },
+    tags=[<span class="str">"etl"</span>, <span class="str">"orders"</span>],
+)
+<span class="kw">def</span> <span class="fn">orders_etl</span>():
+
+    <span class="dec">@task</span>()
+    <span class="kw">def</span> <span class="fn">extract</span>() -> dict:
+        <span class="com"># 반환값이 자동으로 XCom에 저장됨</span>
+        row_count = <span class="fn">_fetch_from_source</span>(<span class="str">"s3://raw/orders/*.parquet"</span>)
+        <span class="kw">return</span> {<span class="str">"s3_path"</span>: <span class="str">"s3://staging/orders/"</span>, <span class="str">"rows"</span>: row_count}
+
+    <span class="dec">@task</span>()
+    <span class="kw">def</span> <span class="fn">transform</span>(extract_result: dict) -> dict:
+        <span class="com"># XCom pull이 인자로 자동 전달됨</span>
+        path = extract_result[<span class="str">"s3_path"</span>]
+        out = <span class="fn">_run_transform</span>(path)
+        <span class="kw">return</span> {<span class="str">"output_path"</span>: out, <span class="str">"rows"</span>: extract_result[<span class="str">"rows"</span>]}
+
+    <span class="dec">@task</span>()
+    <span class="kw">def</span> <span class="fn">load</span>(transform_result: dict) -> <span class="kw">None</span>:
+        <span class="fn">_load_to_warehouse</span>(transform_result[<span class="str">"output_path"</span>])
+
+    <span class="com"># 의존성이 함수 호출 흐름으로 자동 설정됨</span>
+    extracted = <span class="fn">extract</span>()
+    transformed = <span class="fn">transform</span>(extracted)
+    <span class="fn">load</span>(transformed)
+
+<span class="fn">orders_etl</span>()</pre>
+    <div class="note"><strong>포인트.</strong> <code>@dag</code>와 <code>@task</code>만으로 의존성과 XCom이 자동 처리된다. <code>catchup=False</code>는 DAG 활성화 시 과거 실행을 생성하지 않아 의도치 않은 대량 실행을 방지한다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>02. Dynamic Task Mapping — 파티션별 병렬 처리</h4>
+      <div class="head-right"><span class="tag">dynamic</span></div>
+    </div>
+    <pre><span class="kw">from</span> airflow.decorators <span class="kw">import</span> dag, task
+
+<span class="dec">@dag</span>(schedule=<span class="str">"@daily"</span>, start_date=<span class="fn">datetime</span>(<span class="str">2026</span>, <span class="str">1</span>, <span class="str">1</span>), catchup=<span class="kw">False</span>)
+<span class="kw">def</span> <span class="fn">partitioned_pipeline</span>():
+
+    <span class="dec">@task</span>()
+    <span class="kw">def</span> <span class="fn">get_partitions</span>(**context) -> list[str]:
+        <span class="com"># 런타임에 처리할 파티션 목록을 결정</span>
+        ds = context[<span class="str">"ds"</span>]  <span class="com"># execution date (YYYY-MM-DD)</span>
+        <span class="kw">return</span> [<span class="str">f"s3://data/{ds}/region={r}"</span> <span class="kw">for</span> r <span class="kw">in</span> [<span class="str">"KR"</span>, <span class="str">"US"</span>, <span class="str">"JP"</span>, <span class="str">"EU"</span>]]
+
+    <span class="dec">@task</span>()
+    <span class="kw">def</span> <span class="fn">process_partition</span>(partition_path: str) -> str:
+        <span class="com"># 각 파티션이 독립 Task로 병렬 실행됨</span>
+        result = <span class="fn">_process</span>(partition_path)
+        <span class="kw">return</span> result
+
+    <span class="dec">@task</span>()
+    <span class="kw">def</span> <span class="fn">merge_results</span>(results: list[str]) -> <span class="kw">None</span>:
+        <span class="fn">_merge</span>(results)
+
+    partitions = <span class="fn">get_partitions</span>()
+    <span class="com"># .expand()으로 파티션 수만큼 Task 자동 생성</span>
+    processed = process_partition.<span class="fn">expand</span>(partition_path=partitions)
+    <span class="fn">merge_results</span>(processed)
+
+<span class="fn">partitioned_pipeline</span>()</pre>
+    <div class="note"><strong>포인트.</strong> <code>.expand()</code>는 Airflow 2.3+ 기능이다. 입력 리스트 크기만큼 Task가 동적으로 생성되어 병렬 실행된다. <code>merge_results</code>는 모든 <code>process_partition</code> 완료 후 자동으로 실행된다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>03. Sensor + Trigger Rule — 조건 대기 & 실패 알림</h4>
+      <div class="head-right"><span class="tag">sensor</span></div>
+    </div>
+    <pre><span class="kw">from</span> airflow.decorators <span class="kw">import</span> dag, task
+<span class="kw">from</span> airflow.providers.amazon.aws.sensors.s3 <span class="kw">import</span> S3KeySensor
+<span class="kw">from</span> airflow.operators.python <span class="kw">import</span> PythonOperator
+<span class="kw">from</span> airflow.utils.trigger_rule <span class="kw">import</span> TriggerRule
+
+<span class="dec">@dag</span>(schedule=<span class="str">"@hourly"</span>, start_date=<span class="fn">datetime</span>(<span class="str">2026</span>, <span class="str">1</span>, <span class="str">1</span>), catchup=<span class="kw">False</span>)
+<span class="kw">def</span> <span class="fn">sensor_pipeline</span>():
+
+    <span class="com"># reschedule 모드: Worker 슬롯을 점유하지 않음</span>
+    wait_for_file = <span class="fn">S3KeySensor</span>(
+        task_id=<span class="str">"wait_for_file"</span>,
+        bucket_name=<span class="str">"my-data"</span>,
+        bucket_key=<span class="str">"uploads/{{ ds }}/data.parquet"</span>,
+        mode=<span class="str">"reschedule"</span>,
+        poke_interval=<span class="str">60</span>,       <span class="com"># 60초마다 확인</span>
+        timeout=<span class="str">60 * 60 * 6</span>,   <span class="com"># 6시간 후 타임아웃</span>
+        soft_fail=<span class="kw">True</span>,         <span class="com"># 타임아웃 시 failed 대신 skipped</span>
+    )
+
+    <span class="dec">@task</span>()
+    <span class="kw">def</span> <span class="fn">process_file</span>():
+        <span class="fn">_process</span>()
+
+    <span class="com"># 성공/실패 무관 항상 실행되는 알림</span>
+    notify = <span class="fn">PythonOperator</span>(
+        task_id=<span class="str">"notify"</span>,
+        python_callable=<span class="kw">lambda</span>: <span class="fn">_send_slack</span>(),
+        trigger_rule=TriggerRule.ALL_DONE,  <span class="com"># 상위 Task 완료 시 무조건 실행</span>
+    )
+
+    wait_for_file >> <span class="fn">process_file</span>() >> notify
+
+<span class="fn">sensor_pipeline</span>()</pre>
+    <div class="note"><strong>포인트.</strong> <code>mode="reschedule"</code>로 Sensor가 Worker 슬롯을 반환하게 한다. <code>soft_fail=True</code>로 타임아웃 시 전체 DAG Run을 실패시키지 않고 해당 Task만 skipped로 처리한다. <code>TriggerRule.ALL_DONE</code>은 상위 Task의 성공/실패와 무관하게 실행된다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>04. DAG 파라미터화 — Variable & Params</h4>
+      <div class="head-right"><span class="tag">config</span></div>
+    </div>
+    <pre><span class="kw">from</span> airflow.decorators <span class="kw">import</span> dag, task
+<span class="kw">from</span> airflow.models <span class="kw">import</span> Variable
+<span class="kw">from</span> airflow.operators.trigger_dagrun <span class="kw">import</span> TriggerDagRunOperator
+
+<span class="dec">@dag</span>(
+    schedule=<span class="kw">None</span>,  <span class="com"># 수동 트리거 전용</span>
+    start_date=<span class="fn">datetime</span>(<span class="str">2026</span>, <span class="str">1</span>, <span class="str">1</span>),
+    params={
+        <span class="str">"target_date"</span>: <span class="str">"2026-05-01"</span>,   <span class="com"># UI에서 override 가능</span>
+        <span class="str">"max_rows"</span>: <span class="str">1_000_000</span>,
+    },
+)
+<span class="kw">def</span> <span class="fn">backfill_dag</span>():
+
+    <span class="dec">@task</span>()
+    <span class="kw">def</span> <span class="fn">run_backfill</span>(**context) -> dict:
+        params = context[<span class="str">"params"</span>]
+        target = params[<span class="str">"target_date"</span>]
+        max_rows = params[<span class="str">"max_rows"</span>]
+
+        <span class="com"># Variable: Airflow UI에서 관리하는 환경변수</span>
+        db_conn = Variable.<span class="fn">get</span>(<span class="str">"warehouse_conn_string"</span>)
+        env = Variable.<span class="fn">get</span>(<span class="str">"env"</span>, default_var=<span class="str">"prod"</span>)
+
+        result = <span class="fn">_backfill</span>(target, max_rows, db_conn)
+        <span class="kw">return</span> {<span class="str">"processed_date"</span>: target, <span class="str">"rows"</span>: result}
+
+    <span class="fn">run_backfill</span>()
+
+<span class="fn">backfill_dag</span>()</pre>
+    <div class="note"><strong>포인트.</strong> <code>Variable.get()</code>은 호출 시 Metadata DB에서 읽는다. DAG 최상단(모듈 레벨)에서 호출하면 파싱마다 DB 쿼리가 발생해 Scheduler 부하가 증가한다. <strong>반드시 Task 함수 내부에서만 호출</strong>한다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>05. KubernetesExecutor — Pod 리소스 설정</h4>
+      <div class="head-right"><span class="tag">kubernetes</span></div>
+    </div>
+    <pre><span class="kw">from</span> airflow.decorators <span class="kw">import</span> dag, task
+<span class="kw">from</span> airflow.providers.cncf.kubernetes.operators.pod <span class="kw">import</span> KubernetesPodOperator
+<span class="kw">from</span> kubernetes.client <span class="kw">import</span> V1ResourceRequirements
+
+<span class="dec">@dag</span>(schedule=<span class="str">"@daily"</span>, start_date=<span class="fn">datetime</span>(<span class="str">2026</span>, <span class="str">1</span>, <span class="str">1</span>), catchup=<span class="kw">False</span>)
+<span class="kw">def</span> <span class="fn">k8s_pipeline</span>():
+
+    <span class="com"># 독립 Docker 이미지로 실행되는 Task</span>
+    spark_job = <span class="fn">KubernetesPodOperator</span>(
+        task_id=<span class="str">"spark_transform"</span>,
+        image=<span class="str">"my-registry/spark-etl:v2.1.0"</span>,
+        cmds=[<span class="str">"spark-submit"</span>, <span class="str">"--master"</span>, <span class="str">"k8s://..."</span>, <span class="str">"etl.py"</span>],
+        container_resources=<span class="fn">V1ResourceRequirements</span>(
+            requests={<span class="str">"cpu"</span>: <span class="str">"2"</span>, <span class="str">"memory"</span>: <span class="str">"8Gi"</span>},
+            limits={<span class="str">"cpu"</span>: <span class="str">"4"</span>, <span class="str">"memory"</span>: <span class="str">"16Gi"</span>},
+        ),
+        namespace=<span class="str">"airflow-workers"</span>,
+        get_logs=<span class="kw">True</span>,
+        is_delete_operator_pod=<span class="kw">True</span>,  <span class="com"># 완료 후 Pod 삭제</span>
+        env_vars={<span class="str">"DATE"</span>: <span class="str">"{{ ds }}"</span>},
+    )
+
+    <span class="dec">@task</span>()
+    <span class="kw">def</span> <span class="fn">notify</span>():
+        <span class="fn">_send_slack</span>(<span class="str">"spark_transform completed"</span>)
+
+    spark_job >> <span class="fn">notify</span>()
+
+<span class="fn">k8s_pipeline</span>()</pre>
+    <div class="note"><strong>포인트.</strong> <code>KubernetesPodOperator</code>는 Task마다 독립 Pod를 생성해 별도 Docker 이미지와 리소스를 사용할 수 있다. <code>is_delete_operator_pod=True</code>로 완료 Pod를 즉시 정리한다. Jinja 템플릿(<code>{{ ds }}</code>)은 환경변수에서도 사용 가능하다.</div>
+  </div>
+</section>
+
+<footer>
+  <span class="lockup">Apache Airflow</span>
+  <div><a href="https://airflow.apache.org/docs/" target="_blank" rel="noopener">원문 · airflow.apache.org/docs</a></div>
+</footer>
+
+<script>
+(function () {
+  const btn = document.getElementById('menuBtn');
+  const panel = document.getElementById('tocPanel');
+  const backdrop = document.getElementById('tocBackdrop');
+  function openMenu() { btn.classList.add('open'); panel.classList.add('open'); backdrop.classList.add('open'); document.body.classList.add('menu-open'); }
+  function closeMenu() { btn.classList.remove('open'); panel.classList.remove('open'); backdrop.classList.remove('open'); document.body.classList.remove('menu-open'); }
+  btn.addEventListener('click', () => btn.classList.contains('open') ? closeMenu() : openMenu());
+  backdrop.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', e => e.key === 'Escape' && closeMenu());
+  panel.querySelectorAll('[data-close]').forEach(a => a.addEventListener('click', closeMenu));
+
+  document.querySelectorAll('.code-card').forEach(card => {
+    const head = card.querySelector('.code-head');
+    const headRight = card.querySelector('.head-right');
+    const indicator = document.createElement('span');
+    indicator.className = 'expand-indicator';
+    indicator.textContent = '▸';
+    headRight.prepend(indicator);
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.textContent = 'copy';
+    headRight.appendChild(copyBtn);
+    head.addEventListener('click', () => card.classList.toggle('expanded'));
+    copyBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const code = card.querySelector('pre').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        copyBtn.textContent = 'copied'; copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = 'copy'; copyBtn.classList.remove('copied'); }, 1500);
+      }).catch(() => { copyBtn.textContent = 'failed'; });
+    });
+  });
+})();
+</script>
+</body>
+</html>

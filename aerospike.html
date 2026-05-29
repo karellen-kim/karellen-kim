@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aerospike — 학습 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+  .hero { max-width: 1200px; margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); position: relative; }
+  .hero::before { content: ""; position: absolute; top: 2rem; left: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); height: 1px; background: var(--ink); }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.5rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.95; font-weight: 600; margin-top: clamp(2rem, 5vw, 3rem); letter-spacing: -0.035em; }
+  .hero-title em { font-style: normal; font-weight: 300; color: var(--accent-deep); }
+  .hero-sub { margin-top: 1.4rem; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: var(--ink-soft); max-width: 42rem; line-height: 1.5; font-weight: 300; }
+  .hero-grid { margin-top: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .hero-grid > div { background: var(--paper); padding: 1.25rem 1.5rem; }
+  .hero-grid .k { display: block; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 0.4rem; }
+  .hero-grid .v { font-size: 1.2rem; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .hero-grid .v small { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; font-weight: 400; }
+
+  .section { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem); }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head { display: grid; grid-template-columns: auto 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: baseline; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .section-num { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.85; color: var(--accent); font-weight: 200; letter-spacing: -0.04em; }
+  .section-titles { border-left: 1px solid var(--ink); padding-left: clamp(1rem, 3vw, 2rem); padding-top: 0.5rem; }
+  .section-kicker { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .section-title { font-size: clamp(1.65rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.028em; }
+
+  .tldr-grid { display: grid; grid-template-columns: 1fr; }
+  @media (min-width: 720px) { .tldr-grid { grid-template-columns: repeat(12, 1fr); } }
+  .tldr-lead { grid-column: 1/-1; font-size: clamp(1.2rem, 2.1vw, 1.6rem); line-height: 1.45; color: var(--ink); padding-bottom: 2rem; border-bottom: 1px solid var(--rule); margin-bottom: 2.5rem; font-weight: 300; letter-spacing: -0.012em; }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead::first-letter { font-size: 3.4em; float: left; line-height: 0.9; padding-right: 0.12em; padding-top: 0.08em; color: var(--accent-deep); font-weight: 200; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  @media (min-width: 720px) { .tldr-lead { grid-column: 2/12; } }
+  .points { display: contents; }
+  .point { grid-column: 1/-1; display: grid; grid-template-columns: 4ch 1fr; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 720px) { .point { grid-column: 2/12; grid-template-columns: 5ch 1fr; gap: 2rem; } }
+  .point .n { font-size: 1.25rem; color: var(--accent); line-height: 1; font-weight: 300; letter-spacing: 0.05em; }
+  .point h3 { font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.3; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.015em; }
+  .point p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
+  .point p strong { color: var(--ink); font-weight: 600; }
+  .point p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+
+  .diagram-block { margin-bottom: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .db-text h4 { font-size: clamp(1.3rem, 2.3vw, 1.75rem); line-height: 1.25; margin-bottom: 0.8rem; font-weight: 600; letter-spacing: -0.022em; }
+  .db-text h4 .num { display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em; color: var(--accent-deep); vertical-align: middle; background: var(--accent-wash); padding: 0.28rem 0.55rem; border-radius: 999px; margin-right: 0.65rem; font-weight: 600; position: relative; top: -0.15em; }
+  .db-text p { color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.65; font-size: 0.95rem; }
+  .db-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .db-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .db-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas { background: var(--paper-deep); border: 1px solid var(--rule); padding: clamp(1.25rem, 3vw, 2rem); position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .canvas::before { content: attr(data-label); position: absolute; top: 0.7rem; left: 0.9rem; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; }
+
+  .box { display: flex; align-items: center; justify-content: center; text-align: center; padding: 0.6rem 0.85rem; border: 1.5px solid var(--ink); background: var(--paper); font-size: 0.76rem; font-weight: 500; color: var(--ink); line-height: 1.3; min-width: 0; max-width: 100%; flex-direction: column; word-break: keep-all; }
+  .box.accent { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); }
+  .box.soft { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .box.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  /* 대용량 처리 */
+  .ls-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .ls-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .ls-block { margin-bottom: clamp(3rem, 5vw, 4.5rem); padding-bottom: clamp(3rem, 5vw, 4.5rem); border-bottom: 1px solid var(--rule); }
+  .ls-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .ls-kicker { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.35rem; }
+  .ls-title { font-size: clamp(1.15rem, 1.9vw, 1.45rem); font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.2rem; color: var(--ink); }
+  .ls-body { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .ls-body { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .ls-text p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.65; margin-bottom: 0.9rem; }
+  .ls-text p:last-child { margin-bottom: 0; }
+  .ls-text p strong { color: var(--ink); font-weight: 600; }
+  .ls-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .ls-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .ls-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .ls-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+  .company-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+  .company-row .cl { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; }
+  .badge { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; padding: 0.18rem 0.5rem; border: 1px solid var(--accent); color: var(--accent-deep); background: var(--accent-wash); }
+
+  .config-ref { margin-top: 1.5rem; border-top: 2px solid var(--ink); }
+  .config-ref-head { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.5rem 0; border-bottom: 1px solid var(--ink-faint); }
+  .config-ref-head span { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; }
+  .config-row { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.65rem 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .config-row:last-child { border-bottom: none; }
+  .config-row .ck { font-family: var(--mono); font-size: 0.68rem; color: var(--accent-deep); word-break: break-all; line-height: 1.4; }
+  .config-row .cv { font-family: var(--mono); font-size: 0.75rem; color: var(--ink); font-weight: 600; }
+  .config-row .cd { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.4; }
+
+  .code-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card { margin-bottom: 2.5rem; border: 1px solid var(--rule); overflow: hidden; }
+  .code-head { display: flex; align-items: baseline; justify-content: space-between; padding: 1rem 1.4rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; gap: 0.5rem; cursor: pointer; user-select: none; }
+  .code-head:hover { background: var(--paper); }
+  .code-head h4 { font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .code-head .tag { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--accent); color: var(--paper); border-radius: 2px; }
+  .code-head .head-right { display: flex; align-items: center; gap: 0.5rem; }
+  .copy-btn { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; font-weight: 600; }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .code-card pre { margin: 0; padding: 1.35rem 1.5rem; overflow-x: auto; background: oklch(0.18 0.02 260); color: oklch(0.92 0.015 75); font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; display: none; }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note { padding: 1rem 1.4rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper-deep); line-height: 1.6; display: none; }
+  .code-card .note strong { color: var(--accent-deep); }
+  .code-card.expanded pre, .code-card.expanded .note { display: block; }
+  .expand-indicator { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-faint); transition: transform 0.2s; display: inline-block; }
+  .code-card.expanded .expand-indicator { transform: rotate(90deg); color: var(--accent-deep); }
+
+  .margin-note { max-width: 1200px; margin: 0 auto; color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; padding: 1.1rem clamp(1.5rem, 5vw, 4rem); background: var(--paper-deep); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); font-weight: 300; }
+  .margin-note::before { content: "노트"; font-weight: 600; color: var(--accent-deep); font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-right: 0.8rem; display: inline-block; padding-right: 0.7rem; border-right: 1px solid var(--rule); }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  footer { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: var(--ink-faint); }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  .home-link { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 60; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0 0.95rem; height: 48px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.04em; transition: background 0.2s, color 0.2s; }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow { font-family: var(--mono); font-size: 0.95rem; transition: transform 0.25s cubic-bezier(0.22,1,0.36,1); }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  .menu-btn { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span { display: block; width: 20px; height: 1.5px; background: var(--ink); transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.2s, background 0.2s; transform-origin: center; }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  .toc-backdrop { position: fixed; inset: 0; background: oklch(0.18 0.015 260 / 0.35); backdrop-filter: blur(2px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+  .toc-panel { position: fixed; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--ink); z-index: 55; transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.22,1,0.36,1); overflow-y: auto; padding: 6rem 2.5rem 3rem; }
+  .toc-panel.open { transform: translateX(0); }
+  .toc-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .toc-title { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 2.2rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule); }
+  .toc-list { list-style: none; counter-reset: toc; }
+  .toc-list > li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a { display: grid; grid-template-columns: 2.5rem 1fr; align-items: baseline; text-decoration: none; color: var(--ink); font-weight: 500; font-size: 1.05rem; transition: color 0.2s; }
+  .toc-list > li > a::before { counter-increment: toc; content: counter(toc, decimal-leading-zero); color: var(--accent); font-weight: 300; font-size: 0.85rem; }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+  .toc-sub { list-style: none; margin-top: 0.6rem; margin-left: 2.5rem; padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a { color: var(--ink-soft); text-decoration: none; font-size: 0.88rem; transition: color 0.2s; display: flex; align-items: baseline; gap: 0.6rem; }
+  .toc-sub a span { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; min-width: 1.6rem; }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); }
+  body.menu-open { overflow: hidden; }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html"><span class="arrow">←</span><span>notebook</span></a>
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false"><span></span><span></span><span></span></button>
+<div class="toc-backdrop" id="tocBackdrop"></div>
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#concepts" data-close>핵심 개념 도감</a>
+      <ul class="toc-sub">
+        <li><a href="#d-hma" data-close><span>01</span>하이브리드 메모리 아키텍처</a></li>
+        <li><a href="#d-smart" data-close><span>02</span>Smart Client 라우팅</a></li>
+        <li><a href="#d-model" data-close><span>03</span>데이터 모델</a></li>
+        <li><a href="#d-storage" data-close><span>04</span>스토리지 엔진 비교</a></li>
+        <li><a href="#d-xdr" data-close><span>05</span>Cross-Datacenter Replication</a></li>
+        <li><a href="#d-consistency" data-close><span>06</span>Consistency Mode</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#largescale" data-close>대용량 처리</a>
+      <ul class="toc-sub">
+        <li><a href="#ls-ssd" data-close><span>01</span>SSD 직접 접근</a></li>
+        <li><a href="#ls-partition" data-close><span>02</span>파티션 & 리밸런싱</a></li>
+        <li><a href="#ls-hotkey" data-close><span>03</span>핫키 & 처리량 튜닝</a></li>
+        <li><a href="#ls-config" data-close><span>04</span>핵심 설정 참조</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+  <div class="toc-foot">Aerospike — 실시간 NoSQL DB<br>학습 노트 · 2026.05.29</div>
+</aside>
+
+<header class="hero" id="top">
+  <div class="meta-row"><span>karellen-kim · notebook</span><span>데이터베이스 / 실시간 서빙</span></div>
+  <h1 class="hero-title"><em>Aerospike</em></h1>
+  <p class="hero-sub">RTB·사기 탐지·사용자 프로필 서빙을 위한 하이브리드 메모리 NoSQL — 인덱스는 DRAM, 데이터는 SSD, 1ms 미만 P99</p>
+  <div class="hero-grid">
+    <div><span class="k">출시</span><span class="v">2012<small>CitrusLeaf → Aerospike</small></span></div>
+    <div><span class="k">아키텍처</span><span class="v">하이브리드<small>DRAM Index + SSD</small></span></div>
+    <div><span class="k">파티션</span><span class="v">4096<small>consistent hash</small></span></div>
+    <div><span class="k">레이턴시</span><span class="v">&lt;1ms<small>P99 SSD 모드</small></span></div>
+    <div><span class="k">작성</span><span class="v">2026<small>.05.29</small></span></div>
+  </div>
+</header>
+
+<!-- §01 -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <div class="section-kicker">TL;DR</div>
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      Aerospike는 <em>인덱스를 항상 DRAM에, 실제 데이터를 SSD에</em> 저장하는 하이브리드 메모리 아키텍처로 <span class="hl">테라바이트 규모에서도 1ms 미만 P99 레이턴시</span>를 달성한다. AdTech 실시간 입찰(RTB), 사기 탐지, 추천 시스템의 사용자 프로필 서빙처럼 초저지연이 필수인 영역에 특화된 데이터베이스다.
+    </p>
+    <div class="points">
+      <div class="point">
+        <span class="n">01</span>
+        <div>
+          <h3>Hybrid Memory Architecture — 인덱스는 DRAM, 데이터는 SSD</h3>
+          <p>Primary Index는 항상 DRAM에 상주한다. 레코드 1개당 64바이트의 고정 크기 인덱스 엔트리만 메모리에 보관하고, 실제 Bin 값은 SSD/NVMe에 저장한다. 읽기 경로: DRAM 인덱스에서 SSD 오프셋 조회 → SSD 단일 읽기로 완료. <strong>파일시스템을 거치지 않고</strong> raw block device에 직접 I/O해 OS 페이지 캐시 오버헤드를 제거한다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">02</span>
+        <div>
+          <h3>Smart Client — 프록시 없는 직접 라우팅</h3>
+          <p>Aerospike 클라이언트는 클러스터의 <strong>파티션 맵 전체를 로컬에 캐시</strong>한다. 키를 해시해 파티션 ID를 계산하고, 파티션 맵에서 담당 노드를 직접 조회한다. MongoDB의 mongos 라우터나 Redis Cluster의 MOVED 리다이렉션 없이 <strong>단일 네트워크 홉</strong>으로 요청이 처리된다. 노드 변경 시 클라이언트가 자동으로 파티션 맵을 갱신한다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">03</span>
+        <div>
+          <h3>파티션 맵 — 4096 고정 파티션</h3>
+          <p>전체 키 공간을 <strong>4096개 파티션</strong>으로 나눈다(Cassandra의 vnode 방식과 달리 노드당 파티션 수가 균등). RIPEMD-160 해시로 파티션 ID를 계산하고, 각 파티션의 master 노드와 replica 노드를 결정한다. <strong>Rack-Aware Replication</strong>: 복제본은 항상 다른 랙(rack)의 노드에 배치되어 랙 단위 장애를 허용한다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">04</span>
+        <div>
+          <h3>Strong Consistency — 4.0+의 CP 모드</h3>
+          <p>기본은 AP 모드(Eventually Consistent). 4.0+에서 <strong>Roster-based Strong Consistency</strong>를 지원한다. Roster에 등록된 노드의 과반이 응답해야 쓰기가 완료된다(Paxos 유사). <code>strong-consistency true</code>를 Namespace 단위로 설정하면 선형화 가능한(linearizable) 읽기·쓰기를 보장한다. 단, 가용성을 희생하므로 금융·결제 데이터에만 적용한다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">05</span>
+        <div>
+          <h3>Cross-Datacenter Replication (XDR) — 비동기 멀티-DC</h3>
+          <p>XDR은 로컬 클러스터에서 원격 클러스터로 쓰기를 비동기 복제한다. <strong>write digest log</strong>를 기록하고, XDR daemon이 이를 읽어 원격 DC로 전송한다. 충돌 해결: generation 번호가 높은 쪽이 우선(LWW 기반). Active-Active 멀티 DC 구성에서 양방향 XDR로 지역적 쓰기와 글로벌 동기화를 동시에 달성한다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">06</span>
+        <div>
+          <h3>데이터 모델 — Namespace / Set / Record / Bin</h3>
+          <p><strong>Namespace</strong>: 최상위 컨테이너. 스토리지 엔진과 복제 인수를 Namespace 단위로 설정한다. <strong>Set</strong>: RDBMS의 테이블에 해당(선택적). <strong>Record</strong>: Primary Key로 식별되는 데이터 단위. <strong>Bin</strong>: Key-Value 쌍 컬럼(Integer, String, Blob, List, Map, GeoJSON 지원). 스키마가 없어 레코드마다 서로 다른 Bin을 가질 수 있다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §02 -->
+<section class="section" id="concepts">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Architecture</div>
+      <h2 class="section-title">핵심 개념 도감</h2>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-hma">
+    <div class="db-text">
+      <h4><span class="num">01</span>하이브리드 메모리 아키텍처</h4>
+      <p>읽기 경로는 두 단계다. ① DRAM Primary Index에서 키 조회 → 64바이트 인덱스 엔트리에 SSD 블록 오프셋이 담겨 있다. ② 해당 오프셋으로 SSD에서 레코드 읽기(raw I/O). 총 1번의 SSD 읽기로 완료된다. OS 페이지 캐시를 완전히 우회하므로 <strong>캐시 일관성 오버헤드가 없다</strong>.</p>
+      <p>쓰기 경로: 먼저 DRAM 쓰기 버퍼(write buffer)에 기록하고, <strong>128KB 블록 단위</strong>로 묶어 SSD에 순차 기록한다. 순차 쓰기는 랜덤 쓰기보다 SSD 내구성(TBW)을 절약한다. 버퍼가 찰 때까지 DRAM에 남아 있으므로 직후 읽기도 DRAM에서 처리된다.</p>
+      <div class="use-when">
+        <strong>In-Memory 모드</strong>
+        <p>Namespace를 <code>storage-engine memory</code>로 설정하면 인덱스와 데이터 모두 DRAM에 상주한다. 최고 속도지만 노드 재시작 시 데이터가 소실된다. 세션 캐시, 단기 카운터처럼 내구성이 불필요한 경우에만 사용한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Hybrid Memory Architecture">
+      <div style="display:flex;flex-direction:column;gap:0.5rem;width:100%;">
+        <div style="display:flex;gap:0.4rem;align-items:stretch;">
+          <div style="flex:1;padding:0.8rem;border:2px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.62rem;text-align:center;">
+            DRAM<br><span style="font-size:0.52rem;font-weight:400;color:oklch(0.75 0.01 260);">Primary Index<br>64B / record<br>키 → SSD 오프셋</span>
+          </div>
+          <div style="display:flex;flex-direction:column;justify-content:center;gap:0.2rem;font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);">
+            <span>①조회</span>
+            <span>→</span>
+            <span style="font-size:0.5rem;">오프셋 반환</span>
+            <span>←</span>
+          </div>
+          <div style="flex:1;padding:0.8rem;border:2px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.62rem;text-align:center;color:var(--accent-deep);">
+            SSD / NVMe<br><span style="font-size:0.52rem;font-weight:400;">실제 Bin 데이터<br>raw block device<br>128KB 블록 단위</span>
+          </div>
+        </div>
+        <div style="font-family:var(--mono);font-size:0.55rem;color:var(--ink-faint);text-align:center;">② SSD 단일 읽기 → 레코드 반환 (OS page cache 우회)</div>
+        <div style="display:flex;gap:0.3rem;margin-top:0.3rem;">
+          <div style="flex:1;padding:0.35rem;border:1px solid var(--rule);background:var(--paper-deep);font-family:var(--mono);font-size:0.55rem;text-align:center;">Write Buffer (DRAM)<br>128KB 모으면 → SSD 순차 플러시</div>
+          <div style="flex:1;padding:0.35rem;border:1px dashed var(--rule);font-family:var(--mono);font-size:0.55rem;text-align:center;color:var(--ink-faint);">Secondary Index (선택)<br>별도 DRAM 공간</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-smart">
+    <div class="db-text">
+      <h4><span class="num">02</span>Smart Client 라우팅</h4>
+      <p>Aerospike 클라이언트는 클러스터에 처음 연결할 때 <strong>전체 파티션 맵</strong>을 다운로드한다. 이후 클라이언트 프로세스 내에서 키 → 파티션 → 노드 계산을 완료하고 해당 노드에 직접 TCP 연결을 맺는다. MongoDB의 mongos나 Redis Cluster의 MOVED 리다이렉션이 필요 없다.</p>
+      <p>노드가 추가·제거되면 클라이언트가 파티션 맵을 <strong>자동 갱신</strong>한다. 마이그레이션 중에는 두 노드 모두에 시도해 데이터를 찾는다. 클라이언트 라이브러리가 connection pool을 노드별로 관리해 연결 재사용 효율을 높인다.</p>
+      <div class="use-when">
+        <strong>멀티스레드 클라이언트</strong>
+        <p>하나의 AerospikeClient 인스턴스를 스레드 간 공유한다. 내부적으로 노드당 연결 풀을 유지하므로 인스턴스를 여러 개 만드는 것은 불필요한 소켓 낭비다. <code>minConnsPerNode</code>와 <code>maxConnsPerNode</code>로 풀 크기를 조정한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Smart Client Routing">
+      <div style="display:flex;flex-direction:column;gap:0.4rem;width:100%;align-items:center;">
+        <div style="padding:0.4rem 1rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.62rem;text-align:center;width:80%;">Client (파티션 맵 캐시 보유)</div>
+        <div style="font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);">키 해시 → partition_id = key % 4096 → 노드 직접 결정</div>
+        <div style="display:flex;gap:0.4rem;width:100%;">
+          <div style="flex:1;padding:0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.58rem;text-align:center;color:var(--accent-deep);">Node A<br>P0-P1365 master</div>
+          <div style="flex:1;padding:0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.58rem;text-align:center;color:var(--accent-deep);">Node B<br>P1366-P2730 master</div>
+          <div style="flex:1;padding:0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.58rem;text-align:center;color:var(--accent-deep);">Node C<br>P2731-P4095 master</div>
+        </div>
+        <div style="font-family:var(--mono);font-size:0.52rem;color:var(--ink-faint);text-align:center;">단일 홉으로 완료 — mongos / MOVED 리다이렉션 없음</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-model">
+    <div class="db-text">
+      <h4><span class="num">03</span>데이터 모델</h4>
+      <p>Namespace는 가장 큰 단위로 스토리지 엔진, 메모리 크기, TTL, 복제 인수를 결정한다. 하나의 클러스터에 여러 Namespace를 둘 수 있다(예: 핫 데이터용 DRAM Namespace + 웜 데이터용 SSD Namespace).</p>
+      <p>Record는 Primary Key(user_id, device_id 등)로 식별한다. <strong>Digest</strong>: Set + Key를 RIPEMD-160 해시한 20바이트 값으로 실제 파티션 계산에 사용한다. Bin은 동적 스키마를 지원해 레코드마다 다른 Bin을 가질 수 있으며, 지원 타입은 Integer, Double, String, Blob, Boolean, List, Map, HyperLogLog, GeoJSON이다.</p>
+      <div class="use-when">
+        <strong>TTL 설계</strong>
+        <p>Namespace 단위로 <code>default-ttl</code>를 설정하고, 레코드 쓰기 시 개별 TTL을 오버라이드할 수 있다. TTL이 만료된 레코드는 <strong>Expiration Daemon</strong>이 배경에서 삭제한다. RTB 쿠키 데이터처럼 30일 TTL이 필요하면 <code>max-ttl 2592000</code>으로 설정한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Data Model Hierarchy">
+      <div style="display:flex;flex-direction:column;gap:0.3rem;width:100%;font-family:var(--mono);font-size:0.6rem;">
+        <div style="padding:0.4rem;border:2px solid var(--ink);background:var(--ink);color:var(--paper);text-align:center;">Namespace (예: user-profiles)<br><span style="font-size:0.52rem;font-weight:400;color:oklch(0.75 0.01 260);">storage-engine device / memory-size / replication-factor</span></div>
+        <div style="display:flex;justify-content:center;font-size:0.55rem;color:var(--ink-faint);">↓</div>
+        <div style="padding:0.35rem;border:1.5px solid var(--accent);background:var(--accent-wash);text-align:center;color:var(--accent-deep);">Set (선택적, 예: "web-visitors")<br><span style="font-size:0.52rem;">RDBMS 테이블에 해당 · 인덱스 스코핑</span></div>
+        <div style="display:flex;justify-content:center;font-size:0.55rem;color:var(--ink-faint);">↓</div>
+        <div style="padding:0.35rem;border:1px solid var(--rule);background:var(--paper-deep);text-align:center;">Record (PK: "user:123456")<br><span style="font-size:0.52rem;color:var(--ink-faint);">Digest = RIPEMD160(namespace + set + key)</span></div>
+        <div style="display:flex;justify-content:center;font-size:0.55rem;color:var(--ink-faint);">↓</div>
+        <div style="display:flex;gap:0.2rem;">
+          <div style="flex:1;padding:0.3rem;border:1px solid var(--rule);background:var(--paper-deep);text-align:center;font-size:0.55rem;">Bin: age<br>Integer(34)</div>
+          <div style="flex:1;padding:0.3rem;border:1px solid var(--rule);background:var(--paper-deep);text-align:center;font-size:0.55rem;">Bin: segments<br>List(["sports","tech"])</div>
+          <div style="flex:1;padding:0.3rem;border:1px solid var(--rule);background:var(--paper-deep);text-align:center;font-size:0.55rem;">Bin: geo<br>GeoJSON({lat,lng})</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-storage">
+    <div class="db-text">
+      <h4><span class="num">04</span>스토리지 엔진 비교</h4>
+      <p><strong>SSD (device) 모드</strong>가 프로덕션 표준이다. NVMe raw device를 직접 사용해 파일시스템 오버헤드 없이 예측 가능한 레이턴시를 제공한다. 인덱스는 DRAM, 데이터는 SSD에 위치한다.</p>
+      <p><strong>In-Memory 모드</strong>: 인덱스·데이터 모두 DRAM. 재시작 시 소실되므로 내구성이 불필요한 캐시용. <strong>Persistent Memory(PMem)</strong>: Intel Optane 등 바이트 주소 가능 NVDIMM 사용. SSD보다 ~10배 빠른 읽기 레이턴시(수십 μs). <strong>Shadow Device</strong>: PMem에 데이터 보관 + SSD에 내구성 복사본을 동시에 기록하는 혼합 모드.</p>
+      <div class="use-when">
+        <strong>SSD 선택 기준</strong>
+        <p>Aerospike는 SSD 벤치마크 도구(ACT, Aerospike Certification Tool)로 SSD의 Aerospike 호환성을 검증한다. 소비자용 SSD는 쓰기 지연 스파이크가 커서 부적합하다. 엔터프라이즈 NVMe(Samsung PM9A3, Micron 9300 등)를 사용한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Storage Engine Comparison">
+      <div style="display:flex;flex-direction:column;gap:0;width:100%;border:1.5px solid var(--ink);font-family:var(--mono);font-size:0.58rem;">
+        <div style="display:grid;grid-template-columns:1.2fr 0.8fr 0.8fr 1.2fr;background:var(--ink);color:var(--paper);">
+          <span style="padding:0.3rem 0.5rem;">엔진</span><span style="padding:0.3rem 0.5rem;">레이턴시</span><span style="padding:0.3rem 0.5rem;">내구성</span><span style="padding:0.3rem 0.5rem;">용도</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1.2fr 0.8fr 0.8fr 1.2fr;border-top:1px solid var(--rule);">
+          <span style="padding:0.3rem 0.5rem;color:var(--accent-deep);font-weight:600;">device (SSD)</span><span style="padding:0.3rem 0.5rem;">&lt;1ms</span><span style="padding:0.3rem 0.5rem;color:oklch(0.40 0.12 150);">영구</span><span style="padding:0.3rem 0.5rem;font-size:0.52rem;">프로덕션 표준</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1.2fr 0.8fr 0.8fr 1.2fr;border-top:1px solid var(--rule);background:var(--paper-deep);">
+          <span style="padding:0.3rem 0.5rem;color:var(--accent-deep);font-weight:600;">memory</span><span style="padding:0.3rem 0.5rem;">&lt;100μs</span><span style="padding:0.3rem 0.5rem;color:var(--accent-deep);">휘발성</span><span style="padding:0.3rem 0.5rem;font-size:0.52rem;">세션·캐시</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1.2fr 0.8fr 0.8fr 1.2fr;border-top:1px solid var(--rule);">
+          <span style="padding:0.3rem 0.5rem;color:var(--accent-deep);font-weight:600;">pmem (Optane)</span><span style="padding:0.3rem 0.5rem;">&lt;100μs</span><span style="padding:0.3rem 0.5rem;color:oklch(0.40 0.12 150);">영구</span><span style="padding:0.3rem 0.5rem;font-size:0.52rem;">최고 성능</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1.2fr 0.8fr 0.8fr 1.2fr;border-top:1px solid var(--rule);background:var(--paper-deep);">
+          <span style="padding:0.3rem 0.5rem;color:var(--accent-deep);font-weight:600;">shadow device</span><span style="padding:0.3rem 0.5rem;">&lt;100μs</span><span style="padding:0.3rem 0.5rem;color:oklch(0.40 0.12 150);">영구</span><span style="padding:0.3rem 0.5rem;font-size:0.52rem;">PMem + SSD 이중</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-xdr">
+    <div class="db-text">
+      <h4><span class="num">05</span>Cross-Datacenter Replication (XDR)</h4>
+      <p>XDR은 로컬 DC에서 원격 DC로 쓰기를 비동기로 전파한다. 각 노드가 자신이 master인 파티션의 쓰기를 <strong>digest log</strong>에 기록하고, XDR 데몬이 이를 읽어 원격 클러스터의 해당 파티션 master로 전송한다. 원격 클러스터에서 또 다시 로컬 복제가 이루어진다.</p>
+      <p><strong>Active-Active 구성</strong>: 두 DC 모두에서 쓰기가 가능하고 XDR이 양방향으로 동기화한다. 충돌(같은 키를 양쪽에서 동시 수정) 시 <strong>generation 번호</strong>가 높은 쪽이 우긴다. 동일 generation이면 LUT(Last Update Time) 기준 LWW(Last Write Wins). 충돌 해결 커스터마이징은 Lua UDF로 구현 가능하다.</p>
+      <div class="use-when">
+        <strong>단방향 XDR (DR 구성)</strong>
+        <p>Primary DC → DR DC로만 XDR을 흘리면 재해 복구 구성이 된다. 평시에는 DR DC에서 읽기만 허용(read-only). RPO는 XDR 지연(보통 수십 ms~수 초)에 의존한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="XDR Cross-Datacenter Replication">
+      <div style="display:flex;gap:1rem;width:100%;align-items:center;">
+        <div style="flex:1;display:flex;flex-direction:column;gap:0.3rem;">
+          <div style="text-align:center;font-family:var(--mono);font-size:0.55rem;color:var(--ink-faint);letter-spacing:0.08em;text-transform:uppercase;">DC East</div>
+          <div style="padding:0.4rem;border:2px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.58rem;text-align:center;">Node A B C<br><span style="font-size:0.5rem;color:oklch(0.75 0.01 260);">Write + Digest Log</span></div>
+          <div style="padding:0.3rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.55rem;text-align:center;color:var(--accent-deep);">XDR Daemon</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.2rem;font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);">
+          <span>→ 비동기 →</span>
+          <span style="font-size:0.5rem;">수십 ms</span>
+          <span>← 양방향 ←</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:0.3rem;">
+          <div style="text-align:center;font-family:var(--mono);font-size:0.55rem;color:var(--ink-faint);letter-spacing:0.08em;text-transform:uppercase;">DC West</div>
+          <div style="padding:0.4rem;border:2px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.58rem;text-align:center;">Node D E F<br><span style="font-size:0.5rem;color:oklch(0.75 0.01 260);">Write + Digest Log</span></div>
+          <div style="padding:0.3rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.55rem;text-align:center;color:var(--accent-deep);">XDR Daemon</div>
+        </div>
+      </div>
+      <div style="margin-top:0.5rem;font-family:var(--mono);font-size:0.52rem;color:var(--ink-faint);text-align:center;">충돌 해결: generation 높은 쪽 우선 → 동일하면 LUT 기준 LWW</div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-consistency">
+    <div class="db-text">
+      <h4><span class="num">06</span>Consistency Mode — AP vs CP</h4>
+      <p><strong>AP 모드(기본)</strong>: 파티션 split-brain 상황에서도 쓰기를 허용한다. 노드가 복구되면 master가 replica에 최신 버전을 push한다(replica resync). 네트워크 파티션 내에서 availability를 최우선으로 한다.</p>
+      <p><strong>Strong Consistency(CP) 모드</strong>: Roster에 지정된 노드 과반이 살아있어야 쓰기가 성공한다. 선형화 가능성(linearizability)을 보장하므로 읽기 시 <code>policy.readModeAP = ALL</code> 또는 <code>LinearizeRead</code>를 사용한다. split-brain 발생 시 소수 파티션은 읽기·쓰기 모두 불가하다. 금융 거래처럼 데이터 정확성이 가용성보다 중요한 워크로드에 적합하다.</p>
+      <div class="use-when">
+        <strong>혼합 사용</strong>
+        <p>Namespace 단위로 일관성 모드를 설정할 수 있다. 사용자 프로필(AP) + 잔액 데이터(CP)를 동일 클러스터에 둘 수 있다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Consistency Modes">
+      <div style="display:flex;flex-direction:column;gap:0.5rem;width:100%;font-family:var(--mono);font-size:0.6rem;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+          <div style="padding:0.6rem;border:2px solid var(--accent);background:var(--accent-wash);">
+            <div style="font-weight:600;color:var(--accent-deep);margin-bottom:0.3rem;">AP 모드 (기본)</div>
+            <div style="font-size:0.55rem;color:var(--ink-soft);">· 파티션 split-brain → 계속 쓰기<br>· Eventually Consistent<br>· 노드 복구 시 resync<br>· RTB · 광고 · 추천 프로필</div>
+          </div>
+          <div style="padding:0.6rem;border:2px solid var(--ink);background:var(--paper-deep);">
+            <div style="font-weight:600;color:var(--ink);margin-bottom:0.3rem;">Strong Consistency (CP)</div>
+            <div style="font-size:0.55rem;color:var(--ink-soft);">· Roster 과반 필요<br>· Linearizable 읽기·쓰기<br>· 소수 파티션 → 불가<br>· 금융 · 결제 · 재고</div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:0.52rem;color:var(--ink-faint);">strong-consistency true/false — Namespace 단위 설정</div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- §03 대용량 처리 -->
+<section class="section" id="largescale">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Large Scale</div>
+      <h2 class="section-title">대용량 처리</h2>
+    </div>
+  </div>
+
+  <p class="ls-intro"><em>AppNexus(Xandr)</em>는 초당 100만+ 입찰 요청을 1ms 미만으로 처리하기 위해 Aerospike를 RTB 유저 데이터 저장소로 사용한다. <em>Criteo</em>는 수십억 쿠키 프로필을, <em>PayPal</em>은 세션·사기 탐지 데이터를 Aerospike에서 서빙한다.</p>
+
+  <div class="ls-block" id="ls-ssd">
+    <div class="ls-kicker">01 · Storage</div>
+    <div class="ls-title">SSD 직접 접근 — 파일시스템 없이 예측 가능한 레이턴시</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">사례</span><span class="badge">AppNexus</span><span class="badge">Nielsen</span></div>
+        <p>일반 데이터베이스는 OS 파일시스템(ext4, xfs)을 통해 SSD에 접근한다. OS 페이지 캐시가 읽기를 흡수하지만, 캐시 미스 시 레이턴시가 급등하고 캐시 플러시로 인한 예측 불가한 P99 스파이크가 발생한다. Aerospike는 <strong>파일시스템을 완전히 건너뛰고 raw block device에 직접 pread/pwrite</strong>를 호출해 일관된 P99를 달성한다.</p>
+        <p><strong>Defragmentation</strong>: SSD에 128KB 블록으로 데이터를 기록하며, 레코드를 업데이트하면 새 블록에 기록하고 기존 블록을 마크한다. Defrag 데몬이 <code>defrag-lwm-pct</code>(기본 50%)보다 활성 데이터 비율이 낮은 블록을 압축해 공간을 회수한다. SSD의 쓰기 증폭(WAF)을 최소화한다.</p>
+        <p><strong>쓰기 TBW 계획</strong>: NVMe SSD는 TBW(Total Bytes Written) 한계가 있다. Aerospike의 연속 쓰기 패턴(128KB 순차 블록)은 랜덤 쓰기보다 TBW 효율이 좋다. 서버 구매 시 예상 일일 쓰기 GB × 5년 × 365 < SSD TBW를 확인한다.</p>
+        <div class="use-when">
+          <strong>ACT 벤치마크</strong>
+          <p>Aerospike Certification Tool(ACT)로 도입 전 SSD를 검증한다. 초당 2,000 TPS로 24시간 테스트해 P99.9 &lt; 1ms를 통과해야 프로덕션에 사용 가능하다. 소비자용 SSD는 대부분 실패한다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Write Path" style="min-height:200px;">
+        <div style="display:flex;flex-direction:column;gap:0.4rem;width:100%;font-family:var(--mono);font-size:0.58rem;">
+          <div style="padding:0.35rem 0.6rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);">1. Write Request 수신</div>
+          <div style="font-size:0.52rem;color:var(--ink-faint);text-align:center;">↓</div>
+          <div style="padding:0.35rem 0.6rem;border:1.5px solid var(--accent);background:var(--accent-wash);color:var(--accent-deep);">2. DRAM Write Buffer 에 추가 (128KB 단위 묶기)</div>
+          <div style="font-size:0.52rem;color:var(--ink-faint);text-align:center;">↓ 버퍼 가득 차거나 주기적 플러시</div>
+          <div style="padding:0.35rem 0.6rem;border:1px solid var(--rule);background:var(--paper-deep);">3. raw SSD block device에 pwrite() — O_DIRECT</div>
+          <div style="font-size:0.52rem;color:var(--ink-faint);text-align:center;">↓ DRAM Index 업데이트</div>
+          <div style="padding:0.35rem 0.6rem;border:1px solid var(--rule);background:var(--paper-deep);">4. 클라이언트에 ACK 반환</div>
+          <div style="font-size:0.52rem;color:var(--ink-faint);margin-top:0.2rem;">파일시스템(ext4/xfs) / OS page cache 완전 우회</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="ls-partition">
+    <div class="ls-kicker">02 · Cluster</div>
+    <div class="ls-title">파티션 마이그레이션 & 리밸런싱</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">사례</span><span class="badge">Criteo</span><span class="badge">PayPal</span></div>
+        <p>노드가 추가·제거되면 <strong>파티션 마이그레이션</strong>이 시작된다. 새 파티션 맵이 계산되고, 데이터가 구 master에서 신 master로 이동한다. 마이그레이션 중 쿼리는 두 노드를 모두 시도해 응답을 반환하므로 무중단 리밸런싱이 가능하다.</p>
+        <p><strong>마이그레이션 속도 제한</strong>: <code>migrate-threads</code>(기본 1)와 <code>migrate-max-num-incoming</code>(기본 4)로 마이그레이션이 일반 트래픽에 미치는 영향을 조절한다. 대규모 클러스터에서는 마이그레이션 완료까지 수 시간이 걸릴 수 있다.</p>
+        <p><strong>Rack-Aware Replication</strong>: <code>rack-id</code>를 각 노드에 설정하면 replica가 다른 rack-id 노드에 배치된다. 랙 단위 전원 장애나 스위치 장애에서도 데이터를 보호한다. replication-factor=2이면 최소 2개 랙이 필요하다.</p>
+        <div class="use-when">
+          <strong>클러스터 확장 전략</strong>
+          <p>노드를 한 번에 하나씩 추가하고 마이그레이션이 완료된 후 다음 노드를 추가한다. 동시에 여러 노드를 추가하면 마이그레이션 부하가 겹쳐 운영 트래픽에 영향을 준다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Partition Migration" style="min-height:180px;">
+        <div style="display:flex;flex-direction:column;gap:0.4rem;width:100%;font-family:var(--mono);font-size:0.58rem;">
+          <div style="display:flex;gap:0.3rem;">
+            <div style="flex:1;padding:0.35rem;border:2px solid var(--ink);background:var(--ink);color:var(--paper);text-align:center;">기존 3노드<br><span style="font-size:0.5rem;font-weight:400;color:oklch(0.75 0.01 260);">P0-4095 분배</span></div>
+            <div style="align-self:center;font-size:0.7rem;color:var(--ink-faint);">+노드 추가</div>
+            <div style="flex:1;padding:0.35rem;border:2px solid var(--accent);background:var(--accent-wash);text-align:center;color:var(--accent-deep);">4노드 목표<br><span style="font-size:0.5rem;">새 파티션 맵 계산</span></div>
+          </div>
+          <div style="font-size:0.52rem;color:var(--ink-faint);text-align:center;">↓ 마이그레이션 시작</div>
+          <div style="padding:0.3rem 0.5rem;border:1px solid var(--rule);background:var(--paper-deep);">이동 대상 파티션: 구 master → 신 노드로 레코드 복사</div>
+          <div style="padding:0.3rem 0.5rem;border:1px solid var(--rule);background:var(--paper-deep);">마이그레이션 중 읽기: 구·신 노드 모두 시도 → 응답 반환</div>
+          <div style="padding:0.3rem 0.5rem;border:1px solid var(--rule);background:var(--paper-deep);">완료 후 구 노드의 해당 파티션 데이터 삭제</div>
+          <div style="font-size:0.52rem;color:var(--ink-faint);">migrate-threads=1 (기본) → 트래픽 영향 최소화</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="ls-hotkey">
+    <div class="ls-kicker">03 · Throughput</div>
+    <div class="ls-title">핫키 & 처리량 튜닝</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">사례</span><span class="badge">RTB AdTech</span></div>
+        <p><strong>핫키 문제</strong>: 특정 레코드에 요청이 집중되면 해당 파티션의 master 노드가 병목이 된다. Aerospike는 <code>read-replica</code> 설정으로 replica에서도 읽기를 허용한다. Client-side에서 round-robin으로 master와 replica를 번갈아 읽으면 핫키 읽기 부하를 분산한다.</p>
+        <p><strong>배치 요청</strong>: <code>client.batchGet()</code>으로 여러 키를 단일 요청으로 묶어 처리한다. 내부적으로 노드별로 요청을 그루핑해 노드당 1번의 RTT로 처리한다. 수천 키를 개별 요청으로 보내는 것보다 90% 이상 레이턴시가 줄어든다.</p>
+        <p><strong>Pipeline(async)</strong>: Aerospike 클라이언트의 async API로 inflight 요청을 다수 유지한다. 동기 API 대비 동일 CPU에서 처리량이 5~10배 향상된다. Node.js, Java, Go 클라이언트에서 기본 지원한다.</p>
+        <div class="use-when">
+          <strong>Secondary Index 주의</strong>
+          <p>Secondary Index 조회는 전체 노드에 scatter-gather 방식으로 쿼리를 보내므로 레이턴시가 높다. 고빈도 쿼리에는 Secondary Index 대신 Primary Key 기반 접근 + 애플리케이션 레벨 인덱스를 사용한다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Batch Get Flow" style="min-height:180px;">
+        <div style="display:flex;flex-direction:column;gap:0.35rem;width:100%;font-family:var(--mono);font-size:0.58rem;">
+          <div style="padding:0.35rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);text-align:center;">batchGet([key1, key2, ..., key1000])</div>
+          <div style="font-size:0.52rem;color:var(--ink-faint);text-align:center;">↓ 클라이언트가 파티션 맵으로 노드별 분류</div>
+          <div style="display:flex;gap:0.3rem;">
+            <div style="flex:1;padding:0.3rem;border:1.5px solid var(--accent);background:var(--accent-wash);text-align:center;color:var(--accent-deep);font-size:0.55rem;">Node A<br>key1,key5,...<br>(340개)</div>
+            <div style="flex:1;padding:0.3rem;border:1.5px solid var(--accent);background:var(--accent-wash);text-align:center;color:var(--accent-deep);font-size:0.55rem;">Node B<br>key2,key7,...<br>(330개)</div>
+            <div style="flex:1;padding:0.3rem;border:1.5px solid var(--accent);background:var(--accent-wash);text-align:center;color:var(--accent-deep);font-size:0.55rem;">Node C<br>key3,key9,...<br>(330개)</div>
+          </div>
+          <div style="font-size:0.52rem;color:var(--ink-faint);text-align:center;">병렬 처리 → 결과 병합 → 1번의 round-trip으로 완료</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="ls-config">
+    <div class="ls-kicker">04 · Configuration</div>
+    <div class="ls-title">핵심 설정 참조</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <p>아래 설정은 Namespace 단위(aerospike.conf)와 클라이언트 단위로 구분된다. 프로덕션 배포 전 각 값을 워크로드에 맞게 조정한다.</p>
+      </div>
+      <div>
+        <div class="config-ref">
+          <div class="config-ref-head"><span>파라미터</span><span>기본값</span><span>권장 / 이유</span></div>
+          <div class="config-row"><span class="ck">replication-factor</span><span class="cv">2</span><span class="cd">3으로 올리면 내구성↑ but 쓰기 레이턴시↑, 스토리지 3배</span></div>
+          <div class="config-row"><span class="ck">memory-size</span><span class="cv">4G</span><span class="cd">Primary Index 크기 = 레코드 수 × 64B. 여유 20% 확보</span></div>
+          <div class="config-row"><span class="ck">write-block-size</span><span class="cv">128K</span><span class="cd">SSD 최적 블록 크기. 레코드가 크면 512K~1M로 조정</span></div>
+          <div class="config-row"><span class="ck">defrag-lwm-pct</span><span class="cv">50</span><span class="cd">블록 활성 비율 50% 미만 시 defrag. 낮추면 I/O 증가</span></div>
+          <div class="config-row"><span class="ck">default-ttl</span><span class="cv">0(영구)</span><span class="cd">캐시성 데이터는 86400(1일) 또는 용도별 설정 필수</span></div>
+          <div class="config-row"><span class="ck">migrate-threads</span><span class="cv">1</span><span class="cd">리밸런싱 속도 vs 운영 트래픽 영향 트레이드오프</span></div>
+          <div class="config-row"><span class="ck">min-avail-pct</span><span class="cv">5</span><span class="cd">SSD 여유 공간 5% 미만 시 쓰기 거부. 10%로 높이길 권장</span></div>
+          <div class="config-row"><span class="ck">maxConnsPerNode (client)</span><span class="cv">300</span><span class="cd">노드당 연결 수. 고부하 환경에선 1000+로 설정</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<div class="margin-note">Aerospike는 Redis와 비교될 때가 많지만 목적이 다르다. <strong>Redis</strong>는 캐시 레이어로 데이터 크기가 수 GB~수십 GB 수준이고, Aerospike는 수 TB의 데이터를 1ms 미만으로 서빙하는 기본 스토어로 사용된다. Aerospike Enterprise Edition은 ACID 트랜잭션(단일 레코드 수준)과 Strong Consistency를 제공한다. 멀티 레코드 ACID는 지원하지 않으므로 트랜잭션이 필요하면 애플리케이션 레벨에서 처리해야 한다.</div>
+
+<!-- §04 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Code</div>
+      <h2 class="section-title">실전 코드</h2>
+    </div>
+  </div>
+  <p class="code-intro">Python <em>aerospike</em> 클라이언트(aerospike-client-python)를 사용한 핵심 패턴. 클라이언트 연결, CRUD, Batch, 정책(Policy) 설정을 다룬다.</p>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>클라이언트 연결 & 기본 CRUD</h4>
+      <div class="head-right"><span class="tag">client</span></div>
+    </div>
+    <pre><span class="kw">import</span> aerospike
+<span class="kw">from</span> aerospike <span class="kw">import</span> exception <span class="kw">as</span> ex
+
+<span class="com"># 클러스터 연결 — seed 노드 하나만 있으면 나머지 노드 자동 발견</span>
+config = {
+    <span class="str">"hosts"</span>: [(<span class="str">"as-node-1.internal"</span>, <span class="dec">3000</span>)],
+    <span class="str">"policies"</span>: {
+        <span class="str">"timeout"</span>: <span class="dec">1000</span>,          <span class="com"># ms</span>
+        <span class="str">"max_retries"</span>: <span class="dec">2</span>,
+        <span class="str">"connect_timeout"</span>: <span class="dec">3000</span>,
+    },
+    <span class="str">"max_connections_per_node"</span>: <span class="dec">1000</span>,
+    <span class="str">"min_connections_per_node"</span>: <span class="dec">10</span>,
+}
+client = aerospike.<span class="fn">client</span>(config).<span class="fn">connect</span>()
+
+<span class="com"># (namespace, set, primary_key) 튜플이 key</span>
+key = (<span class="str">"user-profiles"</span>, <span class="str">"web"</span>, <span class="str">"user:123456"</span>)
+
+<span class="com"># Write</span>
+bins = {<span class="str">"age"</span>: <span class="dec">34</span>, <span class="str">"segments"</span>: [<span class="str">"sports"</span>, <span class="str">"tech"</span>], <span class="str">"score"</span>: <span class="dec">0.87</span>}
+write_policy = {<span class="str">"ttl"</span>: <span class="dec">86400</span>, <span class="str">"gen"</span>: aerospike.POLICY_GEN_IGNORE}
+client.<span class="fn">put</span>(key, bins, meta={<span class="str">"ttl"</span>: <span class="dec">86400</span>}, policy=write_policy)
+
+<span class="com"># Read</span>
+<span class="kw">try</span>:
+    key_out, meta, bins_out = client.<span class="fn">get</span>(key)
+    print(bins_out[<span class="str">"age"</span>])
+<span class="kw">except</span> ex.RecordNotFound:
+    print(<span class="str">"키 없음"</span>)
+
+<span class="com"># Atomic increment (다른 클라이언트와 레이스 없이)</span>
+client.<span class="fn">increment</span>(key, <span class="str">"page_views"</span>, <span class="dec">1</span>)
+
+<span class="com"># Delete</span>
+client.<span class="fn">remove</span>(key)</pre>
+    <div class="note"><strong>연결 풀.</strong> AerospikeClient 인스턴스를 싱글톤으로 유지한다. 스레드/코루틴마다 생성하면 소켓 고갈이 발생한다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>Batch Get — 다중 키 단일 요청</h4>
+      <div class="head-right"><span class="tag">batch</span></div>
+    </div>
+    <pre><span class="com"># 1000개 키를 노드별로 그루핑해 병렬 처리</span>
+user_ids = [<span class="str">f"user:{i}"</span> <span class="kw">for</span> i <span class="kw">in</span> range(<span class="dec">1000</span>)]
+keys = [(<span class="str">"user-profiles"</span>, <span class="str">"web"</span>, uid) <span class="kw">for</span> uid <span class="kw">in</span> user_ids]
+
+<span class="com"># batch_get은 (key, meta, bins) 리스트 반환. 없는 키는 None</span>
+results = client.<span class="fn">get_many</span>(keys)
+
+profiles = {}
+<span class="kw">for</span> key_out, meta, bins <span class="kw">in</span> results:
+    <span class="kw">if</span> bins <span class="kw">is not None</span>:
+        uid = key_out[<span class="dec">2</span>]   <span class="com"># (namespace, set, pk)</span>
+        profiles[uid] = bins
+
+<span class="com"># Batch Write (aerospike-client-python 7.0+)</span>
+<span class="kw">from</span> aerospike_helpers.batch <span class="kw">import</span> records <span class="kw">as</span> br
+
+batch_records = [
+    br.<span class="fn">Write</span>(
+        key=(<span class="str">"user-profiles"</span>, <span class="str">"web"</span>, <span class="str">f"user:{i}"</span>),
+        ops=[aerospike.operations.<span class="fn">write</span>(<span class="str">"score"</span>, i * <span class="dec">0.01</span>)],
+    )
+    <span class="kw">for</span> i <span class="kw">in</span> range(<span class="dec">100</span>)
+]
+client.<span class="fn">batch_write</span>(batch_records)</pre>
+    <div class="note"><strong>배치 최적화.</strong> 1000개 개별 요청은 ~300ms, batch_get은 ~3ms. 클라이언트가 노드당 1번의 RTT로 요청을 병합한다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>Operate — 복합 원자 연산</h4>
+      <div class="head-right"><span class="tag">operate</span></div>
+    </div>
+    <pre"><span class="kw">from</span> aerospike_helpers <span class="kw">import</span> operations <span class="kw">as</span> ops
+<span class="kw">from</span> aerospike_helpers.operations <span class="kw">import</span> list_operations <span class="kw">as</span> lops
+
+key = (<span class="str">"user-profiles"</span>, <span class="str">"web"</span>, <span class="str">"user:999"</span>)
+
+<span class="com"># 여러 Bin에 대한 원자적 복합 연산</span>
+operations = [
+    ops.<span class="fn">increment</span>(<span class="str">"page_views"</span>, <span class="dec">1</span>),              <span class="com"># 카운터 증가</span>
+    lops.<span class="fn">list_append</span>(<span class="str">"recent_pages"</span>, <span class="str">"/sports"</span>), <span class="com"># List에 추가</span>
+    lops.<span class="fn">list_trim</span>(<span class="str">"recent_pages"</span>, -<span class="dec">10</span>, <span class="dec">10</span>),     <span class="com"># 최근 10개만 유지</span>
+    ops.<span class="fn">read</span>(<span class="str">"page_views"</span>),                      <span class="com"># 업데이트 후 값 읽기</span>
+]
+key_out, meta, result = client.<span class="fn">operate</span>(key, operations)
+print(result[<span class="str">"page_views"</span>])  <span class="com"># 증가 후 최신 값</span>
+
+<span class="com"># CAS (Check-and-Set) — generation 기반 낙관적 잠금</span>
+_, meta, _ = client.<span class="fn">get</span>(key)
+current_gen = meta[<span class="str">"gen"</span>]
+
+write_policy = {
+    <span class="str">"gen"</span>: aerospike.POLICY_GEN_EQ,   <span class="com"># generation이 일치할 때만 쓰기</span>
+}
+<span class="kw">try</span>:
+    client.<span class="fn">put</span>(key, {<span class="str">"score"</span>: <span class="dec">0.99</span>},
+               meta={<span class="str">"gen"</span>: current_gen},
+               policy=write_policy)
+<span class="kw">except</span> ex.RecordGenerationError:
+    print(<span class="str">"다른 프로세스가 먼저 수정함 — 재시도 필요"</span>)</pre>
+    <div class="note"><strong>원자 연산 활용.</strong> operate()로 읽기-수정-쓰기를 서버 사이드에서 원자적으로 처리한다. 클라이언트 레벨 RMW는 레이스 컨디션이 발생하므로 사용하지 않는다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>Async API — 고처리량 비동기 요청</h4>
+      <div class="head-right"><span class="tag">async</span></div>
+    </div>
+    <pre"><span class="kw">import</span> asyncio
+<span class="kw">import</span> aerospike_client_python <span class="kw">as</span> asc  <span class="com"># async 지원 클라이언트</span>
+
+<span class="com"># aerospike-client-python의 async는 실험적; 실무에서는 Java/Go 클라이언트 권장</span>
+<span class="com"># 아래는 ThreadPoolExecutor로 동기 클라이언트를 async화하는 패턴</span>
+<span class="kw">from</span> concurrent.futures <span class="kw">import</span> ThreadPoolExecutor
+<span class="kw">import</span> asyncio
+
+executor = <span class="fn">ThreadPoolExecutor</span>(max_workers=<span class="dec">50</span>)
+
+<span class="kw">async def</span> <span class="fn">async_get</span>(client, key):
+    loop = asyncio.<span class="fn">get_event_loop</span>()
+    <span class="kw">return</span> <span class="kw">await</span> loop.<span class="fn">run_in_executor</span>(
+        executor, client.get, key
+    )
+
+<span class="kw">async def</span> <span class="fn">fetch_many_users</span>(client, user_ids):
+    keys = [(<span class="str">"user-profiles"</span>, <span class="str">"web"</span>, uid) <span class="kw">for</span> uid <span class="kw">in</span> user_ids]
+    tasks = [<span class="fn">async_get</span>(client, k) <span class="kw">for</span> k <span class="kw">in</span> keys]
+    results = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(*tasks, return_exceptions=<span class="kw">True</span>)
+    <span class="kw">return</span> [r <span class="kw">for</span> r <span class="kw">in</span> results <span class="kw">if not</span> <span class="fn">isinstance</span>(r, Exception)]</pre>
+    <div class="note"><strong>비동기 처리량.</strong> Java 네이티브 async 클라이언트에서 단일 프로세스 1M RPS를 달성한다. Python은 GIL 때문에 ThreadPoolExecutor로 우회한다. 처리량이 중요한 파이프라인은 Java/Go 클라이언트를 사용한다.</div>
+  </div>
+
+</section>
+
+<footer>
+  <span>karellen-kim · 학습 노트</span>
+  <a href="https://aerospike.com/docs/" target="_blank" rel="noopener">원문 · aerospike.com/docs</a>
+</footer>
+
+<script>
+const menuBtn = document.getElementById("menuBtn");
+const tocPanel = document.getElementById("tocPanel");
+const tocBackdrop = document.getElementById("tocBackdrop");
+function openMenu() { menuBtn.classList.add("open"); tocPanel.classList.add("open"); tocBackdrop.classList.add("open"); document.body.classList.add("menu-open"); menuBtn.setAttribute("aria-expanded","true"); tocPanel.setAttribute("aria-hidden","false"); }
+function closeMenu() { menuBtn.classList.remove("open"); tocPanel.classList.remove("open"); tocBackdrop.classList.remove("open"); document.body.classList.remove("menu-open"); menuBtn.setAttribute("aria-expanded","false"); tocPanel.setAttribute("aria-hidden","true"); }
+menuBtn.addEventListener("click", () => menuBtn.classList.contains("open") ? closeMenu() : openMenu());
+tocBackdrop.addEventListener("click", closeMenu);
+document.addEventListener("keydown", e => e.key === "Escape" && closeMenu());
+tocPanel.querySelectorAll("a[data-close]").forEach(a => a.addEventListener("click", closeMenu));
+document.querySelectorAll(".code-head").forEach(head => {
+  const card = head.closest(".code-card");
+  const indicator = document.createElement("span");
+  indicator.className = "expand-indicator";
+  indicator.textContent = "▸";
+  head.querySelector(".head-right").appendChild(indicator);
+  head.addEventListener("click", () => card.classList.toggle("expanded"));
+  const copyBtn = document.createElement("button");
+  copyBtn.className = "copy-btn";
+  copyBtn.textContent = "copy";
+  copyBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    const code = card.querySelector("pre").textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      copyBtn.textContent = "copied"; copyBtn.classList.add("copied");
+      setTimeout(() => { copyBtn.textContent = "copy"; copyBtn.classList.remove("copied"); }, 1500);
+    });
+  });
+  head.querySelector(".head-right").insertBefore(copyBtn, indicator);
+});
+</script>
+</body>
+</html>

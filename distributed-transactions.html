@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>분산 트랜잭션 기법 — 학습 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+  .hero { max-width: 1200px; margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); position: relative; }
+  .hero::before { content: ""; position: absolute; top: 2rem; left: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); height: 1px; background: var(--ink); }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.5rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.95; font-weight: 600; margin-top: clamp(2rem, 5vw, 3rem); letter-spacing: -0.035em; }
+  .hero-title em { font-style: normal; font-weight: 300; color: var(--accent-deep); }
+  .hero-sub { margin-top: 1.4rem; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: var(--ink-soft); max-width: 42rem; line-height: 1.5; font-weight: 300; }
+  .hero-grid { margin-top: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .hero-grid > div { background: var(--paper); padding: 1.25rem 1.5rem; }
+  .hero-grid .k { display: block; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 0.4rem; }
+  .hero-grid .v { font-size: 1.2rem; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .hero-grid .v small { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; font-weight: 400; }
+
+  .section { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem); }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head { display: grid; grid-template-columns: auto 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: baseline; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .section-num { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.85; color: var(--accent); font-weight: 200; letter-spacing: -0.04em; }
+  .section-titles { border-left: 1px solid var(--ink); padding-left: clamp(1rem, 3vw, 2rem); padding-top: 0.5rem; }
+  .section-kicker { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .section-title { font-size: clamp(1.65rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.028em; }
+
+  .tldr-grid { display: grid; grid-template-columns: 1fr; }
+  @media (min-width: 720px) { .tldr-grid { grid-template-columns: repeat(12, 1fr); } }
+  .tldr-lead { grid-column: 1/-1; font-size: clamp(1.2rem, 2.1vw, 1.6rem); line-height: 1.45; color: var(--ink); padding-bottom: 2rem; border-bottom: 1px solid var(--rule); margin-bottom: 2.5rem; font-weight: 300; letter-spacing: -0.012em; }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead::first-letter { font-size: 3.4em; float: left; line-height: 0.9; padding-right: 0.12em; padding-top: 0.08em; color: var(--accent-deep); font-weight: 200; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  @media (min-width: 720px) { .tldr-lead { grid-column: 2/12; } }
+  .points { display: contents; }
+  .point { grid-column: 1/-1; display: grid; grid-template-columns: 4ch 1fr; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 720px) { .point { grid-column: 2/12; grid-template-columns: 5ch 1fr; gap: 2rem; } }
+  .point .n { font-size: 1.25rem; color: var(--accent); line-height: 1; font-weight: 300; letter-spacing: 0.05em; }
+  .point h3 { font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.3; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.015em; }
+  .point p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
+  .point p strong { color: var(--ink); font-weight: 600; }
+  .point p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+
+  .diagram-block { margin-bottom: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .db-text h4 { font-size: clamp(1.3rem, 2.3vw, 1.75rem); line-height: 1.25; margin-bottom: 0.8rem; font-weight: 600; letter-spacing: -0.022em; }
+  .db-text h4 .num { display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em; color: var(--accent-deep); vertical-align: middle; background: var(--accent-wash); padding: 0.28rem 0.55rem; border-radius: 999px; margin-right: 0.65rem; font-weight: 600; position: relative; top: -0.15em; }
+  .db-text p { color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.65; font-size: 0.95rem; }
+  .db-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .db-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .db-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas { background: var(--paper-deep); border: 1px solid var(--rule); padding: clamp(1.25rem, 3vw, 2rem); position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .canvas::before { content: attr(data-label); position: absolute; top: 0.7rem; left: 0.9rem; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; }
+
+  .ls-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .ls-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .ls-block { margin-bottom: clamp(3rem, 5vw, 4.5rem); padding-bottom: clamp(3rem, 5vw, 4.5rem); border-bottom: 1px solid var(--rule); }
+  .ls-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .ls-kicker { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.35rem; }
+  .ls-title { font-size: clamp(1.15rem, 1.9vw, 1.45rem); font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.2rem; color: var(--ink); }
+  .ls-body { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .ls-body { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .ls-text p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.65; margin-bottom: 0.9rem; }
+  .ls-text p:last-child { margin-bottom: 0; }
+  .ls-text p strong { color: var(--ink); font-weight: 600; }
+  .ls-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .ls-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .ls-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .ls-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+  .company-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+  .company-row .cl { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; }
+  .badge { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; padding: 0.18rem 0.5rem; border: 1px solid var(--accent); color: var(--accent-deep); background: var(--accent-wash); }
+
+  .config-ref { margin-top: 1.5rem; border-top: 2px solid var(--ink); }
+  .config-ref-head { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1.6fr); gap: 0.8rem; padding: 0.5rem 0; border-bottom: 1px solid var(--ink-faint); }
+  .config-ref-head span { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; }
+  .config-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1.6fr); gap: 0.8rem; padding: 0.65rem 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .config-row:last-child { border-bottom: none; }
+  .config-row .ck { font-family: var(--mono); font-size: 0.68rem; color: var(--accent-deep); word-break: break-all; line-height: 1.4; }
+  .config-row .cv { font-family: var(--mono); font-size: 0.75rem; color: var(--ink); font-weight: 600; }
+  .config-row .cd { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.4; }
+
+  .code-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card { margin-bottom: 2.5rem; border: 1px solid var(--rule); overflow: hidden; }
+  .code-head { display: flex; align-items: baseline; justify-content: space-between; padding: 1rem 1.4rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; gap: 0.5rem; cursor: pointer; user-select: none; }
+  .code-head:hover { background: var(--paper); }
+  .code-head h4 { font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .code-head .tag { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--accent); color: var(--paper); border-radius: 2px; }
+  .code-head .head-right { display: flex; align-items: center; gap: 0.5rem; }
+  .copy-btn { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; font-weight: 600; }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .code-card pre { margin: 0; padding: 1.35rem 1.5rem; overflow-x: auto; background: oklch(0.18 0.02 260); color: oklch(0.92 0.015 75); font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; display: none; }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note { padding: 1rem 1.4rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper-deep); line-height: 1.6; display: none; }
+  .code-card .note strong { color: var(--accent-deep); }
+  .code-card.expanded pre, .code-card.expanded .note { display: block; }
+  .expand-indicator { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-faint); transition: transform 0.2s; display: inline-block; }
+  .code-card.expanded .expand-indicator { transform: rotate(90deg); color: var(--accent-deep); }
+
+  .margin-note { max-width: 1200px; margin: 0 auto; color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; padding: 1.1rem clamp(1.5rem, 5vw, 4rem); background: var(--paper-deep); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); font-weight: 300; }
+  .margin-note::before { content: "노트"; font-weight: 600; color: var(--accent-deep); font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-right: 0.8rem; display: inline-block; padding-right: 0.7rem; border-right: 1px solid var(--rule); }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  footer { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: var(--ink-faint); }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  .home-link { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 60; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0 0.95rem; height: 48px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.04em; transition: background 0.2s, color 0.2s; }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow { font-family: var(--mono); font-size: 0.95rem; transition: transform 0.25s cubic-bezier(0.22,1,0.36,1); }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  .menu-btn { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span { display: block; width: 20px; height: 1.5px; background: var(--ink); transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.2s, background 0.2s; transform-origin: center; }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  .toc-backdrop { position: fixed; inset: 0; background: oklch(0.18 0.015 260 / 0.35); backdrop-filter: blur(2px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+  .toc-panel { position: fixed; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--ink); z-index: 55; transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.22,1,0.36,1); overflow-y: auto; padding: 6rem 2.5rem 3rem; }
+  .toc-panel.open { transform: translateX(0); }
+  .toc-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .toc-title { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 2.2rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule); }
+  .toc-list { list-style: none; counter-reset: toc; }
+  .toc-list > li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a { display: grid; grid-template-columns: 2.5rem 1fr; align-items: baseline; text-decoration: none; color: var(--ink); font-weight: 500; font-size: 1.05rem; transition: color 0.2s; }
+  .toc-list > li > a::before { counter-increment: toc; content: counter(toc, decimal-leading-zero); color: var(--accent); font-weight: 300; font-size: 0.85rem; }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+  .toc-sub { list-style: none; margin-top: 0.6rem; margin-left: 2.5rem; padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a { color: var(--ink-soft); text-decoration: none; font-size: 0.88rem; transition: color 0.2s; display: flex; align-items: baseline; gap: 0.6rem; }
+  .toc-sub a span { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; min-width: 1.6rem; }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); }
+  body.menu-open { overflow: hidden; }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html"><span class="arrow">←</span><span>notebook</span></a>
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false"><span></span><span></span><span></span></button>
+<div class="toc-backdrop" id="tocBackdrop"></div>
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#concepts" data-close>기법 도감</a>
+      <ul class="toc-sub">
+        <li><a href="#d-2pc" data-close><span>01</span>2PC (Two-Phase Commit)</a></li>
+        <li><a href="#d-saga-c" data-close><span>02</span>Saga — Choreography</a></li>
+        <li><a href="#d-saga-o" data-close><span>03</span>Saga — Orchestration</a></li>
+        <li><a href="#d-tcc" data-close><span>04</span>TCC (Try-Confirm-Cancel)</a></li>
+        <li><a href="#d-outbox" data-close><span>05</span>Outbox Pattern</a></li>
+        <li><a href="#d-compare" data-close><span>06</span>기법 비교표</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#tradeoffs" data-close>실무 트레이드오프</a>
+      <ul class="toc-sub">
+        <li><a href="#lt-2pc" data-close><span>01</span>2PC의 한계</a></li>
+        <li><a href="#lt-saga" data-close><span>02</span>Saga 설계 원칙</a></li>
+        <li><a href="#lt-outbox" data-close><span>03</span>Outbox + CDC</a></li>
+        <li><a href="#lt-select" data-close><span>04</span>기법 선택 가이드</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+  <div class="toc-foot">분산 트랜잭션 기법<br>학습 노트 · 2026.05.29</div>
+</aside>
+
+<header class="hero" id="top">
+  <div class="meta-row"><span>karellen-kim · notebook</span><span>분산 시스템 / 트랜잭션</span></div>
+  <h1 class="hero-title">분산 <em>트랜잭션</em></h1>
+  <p class="hero-sub">2PC · Saga · TCC · Outbox — 여러 서비스·DB에 걸친 원자성을 보장하는 기법들과 각 트레이드오프</p>
+  <div class="hero-grid">
+    <div><span class="k">핵심 문제</span><span class="v">원자성<small>분산 환경</small></span></div>
+    <div><span class="k">CAP 트레이드오프</span><span class="v">CP vs AP<small>기법마다 다름</small></span></div>
+    <div><span class="k">실무 주류</span><span class="v">Saga<small>Outbox 병행</small></span></div>
+    <div><span class="k">워크플로우 엔진</span><span class="v">Temporal<small>Conductor</small></span></div>
+    <div><span class="k">작성</span><span class="v">2026<small>.05.29</small></span></div>
+  </div>
+</header>
+
+<!-- §01 -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <div class="section-kicker">TL;DR</div>
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      분산 트랜잭션의 핵심 문제는 <em>여러 독립 저장소에 걸친 변경을 원자적으로 완료하거나 되돌리는 것</em>이다. 단일 DB라면 ACID가 해결하지만, <span class="hl">서비스가 분리되면 하나의 커밋을 공유할 수 없다</span>. 각 기법은 일관성·가용성·복잡도 사이에서 서로 다른 점을 선택한다.
+    </p>
+    <div class="points">
+      <div class="point">
+        <span class="n">01</span>
+        <div>
+          <h3>2PC — 강한 일관성, 블로킹 프로토콜</h3>
+          <p>Coordinator가 참여자 전원에게 <strong>Prepare</strong>(준비 가능?), 전원 Yes면 <strong>Commit</strong>을 보낸다. 데이터베이스 수준의 XA 표준으로 구현된다. 문제: Coordinator 장애 시 참여자들이 <strong>무한 대기(blocking)</strong>에 빠진다. 락이 길게 유지되어 처리량이 낮다. 마이크로서비스 간에는 거의 사용하지 않는다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">02</span>
+        <div>
+          <h3>Saga — 보상 트랜잭션으로 결과적 일관성</h3>
+          <p>긴 트랜잭션을 <strong>로컬 트랜잭션 시퀀스</strong>로 분해한다. 중간에 실패하면 이미 완료된 단계를 되돌리는 <strong>보상 트랜잭션(Compensating Transaction)</strong>을 역순으로 실행한다. 락을 오래 잡지 않아 가용성이 높고 마이크로서비스 아키텍처에 자연스럽게 맞는다. 최종 일관성(Eventual Consistency)을 수용해야 한다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">03</span>
+        <div>
+          <h3>TCC — 비즈니스 레벨 잠금으로 준실시간 확정</h3>
+          <p><strong>Try</strong>: 자원을 예약(잠금 없이 비즈니스 레벨로 보류). <strong>Confirm</strong>: 예약을 확정. <strong>Cancel</strong>: 예약을 해제. 2PC와 달리 DB 락이 아닌 <strong>애플리케이션 레벨 상태 관리</strong>로 원자성을 구현한다. 모든 참여 서비스에 Try/Confirm/Cancel API를 구현해야 하는 부담이 있다. Alibaba의 Seata 프레임워크가 대표적이다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">04</span>
+        <div>
+          <h3>Outbox Pattern — 메시지 발행 보장</h3>
+          <p>비즈니스 데이터와 <strong>이벤트를 같은 DB 트랜잭션으로 함께 기록</strong>한다(outbox 테이블). 별도 프로세스(CDC 또는 polling)가 outbox를 읽어 메시지 큐(Kafka 등)에 발행한다. 발행 실패 시 재시도하므로 <strong>at-least-once 발행</strong>이 보장된다. 분산 트랜잭션 없이 이벤트 발행 정합성을 달성하는 가장 실용적인 패턴이다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">05</span>
+        <div>
+          <h3>Temporal / Conductor — Saga 오케스트레이션 엔진</h3>
+          <p>Saga Orchestration을 직접 구현하면 상태 관리, 재시도, 타임아웃, 보상 로직이 복잡해진다. <strong>Temporal</strong>(Uber의 Cadence 후속)은 워크플로우를 <strong>코드로 정의</strong>하고 실행 히스토리를 내구성 있게 보관한다. Stripe, Netflix, Airbnb가 Temporal을 사용한다. Netflix의 <strong>Conductor</strong>는 JSON으로 워크플로우를 정의하는 대안이다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">06</span>
+        <div>
+          <h3>CRDT — 충돌 없는 수학적 병합</h3>
+          <p>CRDT(Conflict-free Replicated Data Type)는 동시 업데이트가 결정론적으로 병합되도록 수학적으로 설계된 데이터 구조다. 락이나 코디네이터 없이도 최종 일관성을 보장한다. <strong>G-Counter</strong>(단조 증가), <strong>PN-Counter</strong>(증감), <strong>LWW-Register</strong>(최신 타임스탬프 우선), <strong>OR-Set</strong>(추가·삭제 모두 가능한 집합). Riak, Cassandra 카운터, Redis RedisJSON이 활용한다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §02 -->
+<section class="section" id="concepts">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Patterns</div>
+      <h2 class="section-title">기법 도감</h2>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-2pc">
+    <div class="db-text">
+      <h4><span class="num">01</span>2PC — Two-Phase Commit</h4>
+      <p>Phase 1 (Prepare): Coordinator가 모든 참여자에게 Prepare 메시지를 보낸다. 각 참여자는 트랜잭션을 실행하고 커밋 가능 여부를 응답한다. 이 시점에서 DB 락이 걸린다.</p>
+      <p>Phase 2 (Commit/Abort): 전원 Yes면 Commit, 하나라도 No면 Abort를 보낸다. <strong>블로킹 문제</strong>: Phase 2 전송 중 Coordinator가 장애나면 참여자는 락을 건 채로 응답을 기다린다. 3PC는 이 문제를 완화하지만 네트워크 파티션 시 여전히 불완전하다.</p>
+      <div class="use-when">
+        <strong>사용처</strong>
+        <p>동일 DB 클러스터 내 샤드 간 트랜잭션(MySQL Cluster, PostgreSQL XA). 마이크로서비스 간에는 사용하지 않는다. 락 유지 시간이 길어 처리량이 낮고 Coordinator SPOF가 허용 불가하기 때문이다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Two-Phase Commit">
+      <div style="display:flex;flex-direction:column;gap:0.4rem;width:100%;font-family:var(--mono);font-size:0.58rem;">
+        <div style="display:flex;gap:0.3rem;align-items:center;">
+          <div style="flex:1;padding:0.4rem;border:2px solid var(--ink);background:var(--ink);color:var(--paper);text-align:center;">Coordinator</div>
+          <div style="color:var(--ink-faint);">→ Prepare →</div>
+          <div style="flex:2;display:flex;gap:0.2rem;">
+            <div style="flex:1;padding:0.35rem;border:1.5px solid var(--accent);background:var(--accent-wash);text-align:center;color:var(--accent-deep);">Participant A<br><span style="font-size:0.5rem;">DB 락 유지</span></div>
+            <div style="flex:1;padding:0.35rem;border:1.5px solid var(--accent);background:var(--accent-wash);text-align:center;color:var(--accent-deep);">Participant B<br><span style="font-size:0.5rem;">DB 락 유지</span></div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;font-size:0.52rem;color:var(--ink-faint);padding-right:1rem;">← Yes/Yes ←</div>
+        <div style="padding:0.3rem 0.6rem;border:1.5px solid oklch(0.55 0.14 150);background:oklch(0.95 0.04 150);font-size:0.58rem;color:oklch(0.30 0.10 150);text-align:center;">Phase 2: Coordinator → Commit 전송</div>
+        <div style="padding:0.3rem 0.6rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.58rem;color:var(--accent-deep);text-align:center;">Coordinator 장애 시 → 참여자 무한 대기 (blocking)</div>
+        <div style="font-size:0.52rem;color:var(--ink-faint);margin-top:0.2rem;">3PC는 Pre-Commit 단계 추가로 완화하지만 복잡도 3배 증가</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-saga-c">
+    <div class="db-text">
+      <h4><span class="num">02</span>Saga — Choreography (안무형)</h4>
+      <p>중앙 조정자 없이 <strong>이벤트 기반</strong>으로 각 서비스가 이전 서비스의 이벤트를 구독하고 자신의 로컬 트랜잭션을 수행한 후 다음 이벤트를 발행한다. 결합도가 낮고 서비스가 독립적이다.</p>
+      <p>단점: 이벤트 흐름을 한눈에 파악하기 어렵다. 보상 트랜잭션 구현 시 순환 이벤트 발생 위험이 있다. 서비스가 4개를 초과하면 복잡도가 급격히 상승해 디버깅이 어렵다. 분산 추적(Jaeger, Zipkin)이 필수다.</p>
+      <div class="use-when">
+        <strong>적합한 경우</strong>
+        <p>서비스 수가 3개 이하이고, 팀이 각 서비스를 독립적으로 배포해야 하며, 중앙 조정 서비스가 SPOF가 되는 것을 피하고 싶을 때. 흐름이 단순하고 선형일 때 유리하다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Saga Choreography">
+      <div style="display:flex;flex-direction:column;gap:0.3rem;width:100%;font-family:var(--mono);font-size:0.58rem;">
+        <div style="padding:0.35rem 0.5rem;border:2px solid var(--ink);background:var(--ink);color:var(--paper);text-align:center;">주문 서비스 → OrderCreated 이벤트 발행</div>
+        <div style="font-size:0.52rem;color:var(--ink-faint);text-align:center;">↓ 구독</div>
+        <div style="padding:0.35rem 0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);text-align:center;color:var(--accent-deep);">결제 서비스 → 결제 처리 → PaymentProcessed 이벤트</div>
+        <div style="font-size:0.52rem;color:var(--ink-faint);text-align:center;">↓ 구독</div>
+        <div style="padding:0.35rem 0.5rem;border:1px solid var(--rule);background:var(--paper-deep);text-align:center;">재고 서비스 → 재고 차감 → InventoryReserved 이벤트</div>
+        <div style="font-size:0.52rem;color:var(--ink-faint);text-align:center;">↓ 실패 시 역방향</div>
+        <div style="padding:0.3rem 0.5rem;border:1.5px solid oklch(0.55 0.14 25);background:oklch(0.96 0.04 25);font-size:0.55rem;color:oklch(0.35 0.12 25);text-align:center;">보상: InventoryReleased → PaymentRefunded → OrderCancelled</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-saga-o">
+    <div class="db-text">
+      <h4><span class="num">03</span>Saga — Orchestration (오케스트레이션형)</h4>
+      <p><strong>Saga Orchestrator</strong>가 각 단계를 직접 호출하고 결과를 수신한다. 전체 흐름이 Orchestrator 코드에 집중되어 있어 가시성이 높다. 실패 시 보상 트랜잭션 호출도 Orchestrator가 결정한다. Temporal, Netflix Conductor 같은 워크플로우 엔진이 Orchestrator 역할을 한다.</p>
+      <p>단점: Orchestrator 자체가 SPOF가 될 수 있다(워크플로우 엔진은 이를 DB 기반 상태 저장으로 해결). 각 서비스와 Orchestrator 간 통신 인터페이스를 유지해야 한다.</p>
+      <div class="use-when">
+        <strong>적합한 경우</strong>
+        <p>복잡한 비즈니스 흐름(조건 분기, 병렬 단계, 재시도 정책이 다양할 때), 5개 이상의 서비스가 관여하는 경우, 중앙에서 모니터링과 운영이 필요한 경우. Uber의 결제·배달 흐름, Stripe의 결제 흐름이 이 방식을 사용한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Saga Orchestration">
+      <div style="display:flex;flex-direction:column;gap:0.35rem;width:100%;font-family:var(--mono);font-size:0.58rem;align-items:center;">
+        <div style="padding:0.45rem 1.5rem;border:2px solid var(--ink);background:var(--ink);color:var(--paper);text-align:center;width:70%;">Saga Orchestrator<br><span style="font-size:0.5rem;color:oklch(0.75 0.01 260);">(Temporal Workflow)</span></div>
+        <div style="display:flex;gap:0.5rem;width:100%;justify-content:center;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.2rem;">
+            <div style="font-size:0.52rem;color:var(--ink-faint);">1.호출</div>
+            <div style="padding:0.3rem 0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);text-align:center;color:var(--accent-deep);font-size:0.55rem;">주문<br>서비스</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.2rem;">
+            <div style="font-size:0.52rem;color:var(--ink-faint);">2.호출</div>
+            <div style="padding:0.3rem 0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);text-align:center;color:var(--accent-deep);font-size:0.55rem;">결제<br>서비스</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.2rem;">
+            <div style="font-size:0.52rem;color:var(--ink-faint);">3.호출</div>
+            <div style="padding:0.3rem 0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);text-align:center;color:var(--accent-deep);font-size:0.55rem;">재고<br>서비스</div>
+          </div>
+        </div>
+        <div style="font-size:0.52rem;color:var(--ink-faint);">실패 시 Orchestrator가 역순으로 보상 트랜잭션 직접 호출</div>
+        <div style="padding:0.3rem 0.8rem;border:1px solid var(--rule);background:var(--paper-deep);font-size:0.55rem;text-align:center;">상태 저장: Orchestrator DB (Temporal 내부 PostgreSQL)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-tcc">
+    <div class="db-text">
+      <h4><span class="num">04</span>TCC — Try-Confirm-Cancel</h4>
+      <p><strong>Try</strong>: 자원을 비즈니스 레벨로 예약한다(실제 차감 없이 "보류" 상태로 표시). DB 락 없이 애플리케이션 상태 칼럼으로 관리한다. <strong>Confirm</strong>: 모든 Try가 성공하면 보류 → 확정으로 전환. <strong>Cancel</strong>: 하나라도 Try 실패 시 나머지 서비스의 Try를 취소(보류 해제).</p>
+      <p>2PC와의 차이: DB 수준 락 없이 애플리케이션 레벨 상태 전이로 구현하므로 처리량이 높다. 단, 모든 참여 서비스가 Try/Confirm/Cancel 3개 API를 구현해야 한다. <strong>멱등성</strong>이 필수 — Confirm/Cancel이 중복 호출되어도 결과가 같아야 한다.</p>
+      <div class="use-when">
+        <strong>Alibaba Seata</strong>
+        <p>Alibaba의 오픈소스 TCC 프레임워크. AT 모드(자동 보상), TCC 모드(수동 구현)를 지원한다. 중국 전자상거래의 대규모 결제 트랜잭션을 처리하는 데 사용된다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="TCC Flow">
+      <div style="display:flex;flex-direction:column;gap:0.35rem;width:100%;font-family:var(--mono);font-size:0.58rem;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;text-align:center;font-size:0.52rem;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.08em;">
+          <span>Try</span><span>Confirm</span><span>Cancel</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;">
+          <div style="padding:0.35rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);text-align:center;">잔액 보류<br>status=PENDING</div>
+          <div style="padding:0.35rem;border:1.5px solid oklch(0.55 0.14 150);background:oklch(0.95 0.04 150);text-align:center;font-size:0.55rem;color:oklch(0.30 0.10 150);">보류→확정<br>status=DONE</div>
+          <div style="padding:0.35rem;border:1.5px solid oklch(0.55 0.14 25);background:oklch(0.96 0.04 25);text-align:center;font-size:0.55rem;color:oklch(0.35 0.12 25);">보류 해제<br>status=CANCELLED</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;">
+          <div style="padding:0.35rem;border:1.5px solid var(--accent);background:var(--accent-wash);text-align:center;color:var(--accent-deep);">재고 예약<br>reserved_qty++</div>
+          <div style="padding:0.35rem;border:1.5px solid oklch(0.55 0.14 150);background:oklch(0.95 0.04 150);text-align:center;font-size:0.55rem;color:oklch(0.30 0.10 150);">예약→차감<br>stock_qty--</div>
+          <div style="padding:0.35rem;border:1.5px solid oklch(0.55 0.14 25);background:oklch(0.96 0.04 25);text-align:center;font-size:0.55rem;color:oklch(0.35 0.12 25);">예약 취소<br>reserved_qty--</div>
+        </div>
+        <div style="font-size:0.52rem;color:var(--ink-faint);margin-top:0.2rem;">DB 락 없음 · 멱등성 필수 · Confirm/Cancel 중복 호출 허용해야 함</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-outbox">
+    <div class="db-text">
+      <h4><span class="num">05</span>Outbox Pattern</h4>
+      <p>비즈니스 데이터와 이벤트를 <strong>하나의 DB 트랜잭션으로 함께 기록</strong>한다. 주문 저장과 동시에 <code>outbox</code> 테이블에 이벤트를 삽입한다. 트랜잭션이 커밋되면 두 레코드가 원자적으로 존재한다.</p>
+      <p><strong>CDC(Change Data Capture)</strong>: Debezium 같은 CDC 도구가 DB의 WAL(Write-Ahead Log)을 읽어 outbox 테이블의 새 레코드를 감지하고 Kafka 같은 메시지 큐로 발행한다. <strong>Polling 방식</strong>: 별도 프로세스가 주기적으로 outbox 테이블을 SELECT해 미발행 이벤트를 가져온다. CDC보다 간단하지만 DB에 추가 부하가 생긴다. 발행 성공 후 <code>published_at</code>을 업데이트한다.</p>
+      <div class="use-when">
+        <strong>멱등 소비자</strong>
+        <p>at-least-once 발행이므로 소비자(Kafka Consumer)는 중복 메시지를 처리할 수 있어야 한다. <code>event_id</code>를 기록해 중복을 감지하거나, 처리 자체가 멱등한 연산이어야 한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Outbox Pattern">
+      <div style="display:flex;flex-direction:column;gap:0.35rem;width:100%;font-family:var(--mono);font-size:0.58rem;">
+        <div style="display:flex;gap:0.3rem;align-items:stretch;">
+          <div style="flex:1;padding:0.45rem;border:2px solid var(--ink);background:var(--ink);color:var(--paper);text-align:center;">App 서버<br><span style="font-size:0.5rem;color:oklch(0.75 0.01 260);">BEGIN TX</span></div>
+          <div style="display:flex;flex-direction:column;justify-content:center;font-size:0.52rem;color:var(--ink-faint);">→ 원자 기록 →</div>
+          <div style="flex:2;display:flex;flex-direction:column;gap:0.2rem;">
+            <div style="padding:0.3rem;border:1.5px solid var(--accent);background:var(--accent-wash);text-align:center;color:var(--accent-deep);font-size:0.55rem;">orders 테이블 INSERT</div>
+            <div style="padding:0.3rem;border:1.5px solid var(--accent);background:var(--accent-wash);text-align:center;color:var(--accent-deep);font-size:0.55rem;">outbox 테이블 INSERT<br>(event_id, type, payload)</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:0.3rem;align-items:center;margin-top:0.2rem;">
+          <div style="flex:1;padding:0.35rem;border:1px solid var(--rule);background:var(--paper-deep);text-align:center;font-size:0.55rem;">Debezium (CDC)<br>WAL 감지</div>
+          <div style="font-size:0.55rem;color:var(--ink-faint);">→ 발행 →</div>
+          <div style="flex:1;padding:0.35rem;border:1px solid var(--rule);background:var(--paper-deep);text-align:center;font-size:0.55rem;">Kafka Topic<br>at-least-once</div>
+          <div style="font-size:0.55rem;color:var(--ink-faint);">→ 소비 →</div>
+          <div style="flex:1;padding:0.35rem;border:1px solid var(--rule);background:var(--paper-deep);text-align:center;font-size:0.55rem;">Consumer<br>(멱등 처리)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-compare">
+    <div class="db-text">
+      <h4><span class="num">06</span>기법 비교표</h4>
+      <p>각 기법은 <strong>일관성 수준, 복잡도, 처리량, 사용 맥락</strong>이 다르다. 단일 기법만 사용하는 것보다 Saga + Outbox를 조합하는 것이 마이크로서비스의 실무 표준이다.</p>
+      <div class="use-when">
+        <strong>조합 패턴</strong>
+        <p>Saga Orchestration(Temporal) + Outbox Pattern이 2024년 마이크로서비스 실무 표준에 가장 가깝다. Saga가 서비스 간 흐름을 조정하고, Outbox가 이벤트 발행 정합성을 보장한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Pattern Comparison">
+      <div style="display:flex;flex-direction:column;gap:0;width:100%;border:1.5px solid var(--ink);font-family:var(--mono);font-size:0.55rem;">
+        <div style="display:grid;grid-template-columns:0.9fr 0.8fr 0.8fr 1.2fr;background:var(--ink);color:var(--paper);">
+          <span style="padding:0.3rem 0.4rem;">기법</span><span style="padding:0.3rem 0.4rem;">일관성</span><span style="padding:0.3rem 0.4rem;">처리량</span><span style="padding:0.3rem 0.4rem;">주요 단점</span>
+        </div>
+        <div style="display:grid;grid-template-columns:0.9fr 0.8fr 0.8fr 1.2fr;border-top:1px solid var(--rule);">
+          <span style="padding:0.3rem 0.4rem;color:var(--accent-deep);font-weight:600;">2PC</span><span style="padding:0.3rem 0.4rem;color:oklch(0.40 0.12 150);">강한 일관성</span><span style="padding:0.3rem 0.4rem;color:var(--accent-deep);">낮음</span><span style="padding:0.3rem 0.4rem;">Coordinator SPOF, 블로킹</span>
+        </div>
+        <div style="display:grid;grid-template-columns:0.9fr 0.8fr 0.8fr 1.2fr;border-top:1px solid var(--rule);background:var(--paper-deep);">
+          <span style="padding:0.3rem 0.4rem;color:var(--accent-deep);font-weight:600;">Saga (안무)</span><span style="padding:0.3rem 0.4rem;">최종 일관성</span><span style="padding:0.3rem 0.4rem;color:oklch(0.40 0.12 150);">높음</span><span style="padding:0.3rem 0.4rem;">디버깅 어려움</span>
+        </div>
+        <div style="display:grid;grid-template-columns:0.9fr 0.8fr 0.8fr 1.2fr;border-top:1px solid var(--rule);">
+          <span style="padding:0.3rem 0.4rem;color:var(--accent-deep);font-weight:600;">Saga (오케)</span><span style="padding:0.3rem 0.4rem;">최종 일관성</span><span style="padding:0.3rem 0.4rem;color:oklch(0.40 0.12 150);">높음</span><span style="padding:0.3rem 0.4rem;">Orchestrator 유지 비용</span>
+        </div>
+        <div style="display:grid;grid-template-columns:0.9fr 0.8fr 0.8fr 1.2fr;border-top:1px solid var(--rule);background:var(--paper-deep);">
+          <span style="padding:0.3rem 0.4rem;color:var(--accent-deep);font-weight:600;">TCC</span><span style="padding:0.3rem 0.4rem;">준실시간</span><span style="padding:0.3rem 0.4rem;color:oklch(0.40 0.12 150);">높음</span><span style="padding:0.3rem 0.4rem;">3개 API 구현 부담</span>
+        </div>
+        <div style="display:grid;grid-template-columns:0.9fr 0.8fr 0.8fr 1.2fr;border-top:1px solid var(--rule);">
+          <span style="padding:0.3rem 0.4rem;color:var(--accent-deep);font-weight:600;">Outbox</span><span style="padding:0.3rem 0.4rem;">at-least-once</span><span style="padding:0.3rem 0.4rem;color:oklch(0.40 0.12 150);">높음</span><span style="padding:0.3rem 0.4rem;">소비자 멱등성 필요</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- §03 실무 트레이드오프 -->
+<section class="section" id="tradeoffs">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Trade-offs</div>
+      <h2 class="section-title">실무 트레이드오프</h2>
+    </div>
+  </div>
+
+  <p class="ls-intro"><em>Uber</em>는 Temporal(Cadence 후속)로 결제·배달 완료 Saga를, <em>Stripe</em>는 Temporal로 결제 흐름을 오케스트레이션한다. <em>Airbnb</em>는 Saga + Outbox 조합으로 숙소 예약·결제·포인트 지급을 원자적으로 처리한다.</p>
+
+  <div class="ls-block" id="lt-2pc">
+    <div class="ls-kicker">01 · 2PC</div>
+    <div class="ls-title">2PC의 한계와 대안</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">문제</span><span class="badge">Blocking</span><span class="badge">SPOF</span></div>
+        <p><strong>Coordinator 단일 장애점</strong>: Phase 2 전송 직전에 Coordinator가 죽으면 참여자들은 Commit/Abort 메시지를 받지 못한 채 락을 유지한다. 새 Coordinator가 복구되어도 어디까지 진행됐는지 알 수 없다. XA 프로토콜의 <code>heuristic decision</code>으로 강제 완료할 수 있지만 데이터 불일치 위험이 있다.</p>
+        <p><strong>처리량 병목</strong>: Prepare 단계에서 모든 참여자가 락을 잡고 Coordinator의 Commit을 기다린다. 네트워크 레이턴시가 100ms라면 모든 레코드의 락이 최소 200ms 이상 유지된다. TPS가 높을수록 락 경합이 심해진다.</p>
+        <p><strong>대안 선택</strong>: DB 샤드 간 트랜잭션이 필요하면 애플리케이션 레벨에서 "먼저 기록하고 나머지는 비동기 보정" 전략을 사용한다. 불가피하게 2PC가 필요하면 코디네이터 HA를 ZooKeeper/etcd로 구성한다.</p>
+      </div>
+      <div class="canvas" data-label="2PC Failure Scenario" style="min-height:180px;">
+        <div style="display:flex;flex-direction:column;gap:0.35rem;width:100%;font-family:var(--mono);font-size:0.58rem;">
+          <div style="padding:0.3rem 0.5rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);">Coordinator: Phase 1 완료, Commit 전송 중...</div>
+          <div style="padding:0.3rem 0.5rem;border:1.5px solid oklch(0.55 0.14 25);background:oklch(0.96 0.04 25);color:oklch(0.35 0.12 25);">Coordinator 장애!</div>
+          <div style="padding:0.3rem 0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);color:var(--accent-deep);">Participant A: Yes 응답 후 Commit 대기 중... (DB 락 유지)</div>
+          <div style="padding:0.3rem 0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);color:var(--accent-deep);">Participant B: Yes 응답 후 Commit 대기 중... (DB 락 유지)</div>
+          <div style="padding:0.3rem 0.5rem;border:1px solid var(--rule);background:var(--paper-deep);font-size:0.55rem;">새 Coordinator 복구 → heuristic decision으로 강제 처리 → 불일치 위험</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="lt-saga">
+    <div class="ls-kicker">02 · Saga</div>
+    <div class="ls-title">Saga 설계 원칙 — 보상 트랜잭션</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">사례</span><span class="badge">Uber</span><span class="badge">Stripe</span></div>
+        <p><strong>보상 트랜잭션 설계</strong>: 보상은 <strong>의미적 역전</strong>이지 물리적 롤백이 아니다. "결제 취소"는 "결제 거부"와 다르다 — 결제가 이미 성공한 사실을 기록하고 그 위에 환불 레코드를 추가한다. 이미 외부로 전송된 이메일, 쿠폰, 포인트는 취소할 수 없는 경우가 있다(재전송 방지 조치 필요).</p>
+        <p><strong>격리성 이슈</strong>: Saga는 중간 상태가 외부에 노출된다. 결제는 완료됐지만 재고 차감이 실패한 상태에서 다른 요청이 결제 완료 상태를 읽을 수 있다(dirty read). <strong>Semantic Lock</strong>: 중간 단계에서 "processing" 상태를 명시해 다른 요청이 잘못 읽지 않도록 한다. <strong>Countermeasures</strong>: 재시도 가능 트랜잭션과 피벗 트랜잭션(되돌릴 수 없는 지점)을 구분해 설계한다.</p>
+        <p><strong>멱등성</strong>: Orchestrator가 같은 단계를 중복 호출할 수 있다(재시도). 각 서비스의 API는 동일한 요청 ID로 여러 번 호출되어도 동일한 결과를 반환해야 한다. idempotency key를 DB에 저장하고 중복 요청을 검출한다.</p>
+      </div>
+      <div class="canvas" data-label="Compensating Transactions" style="min-height:180px;">
+        <div style="display:flex;flex-direction:column;gap:0.3rem;width:100%;font-family:var(--mono);font-size:0.58rem;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;font-size:0.52rem;color:var(--ink-faint);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;"><span>정방향 트랜잭션</span><span>보상 트랜잭션</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;">
+            <div style="padding:0.3rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);">주문 생성</div>
+            <div style="padding:0.3rem;border:1px dashed var(--rule);color:var(--ink-faint);">주문 취소</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;">
+            <div style="padding:0.3rem;border:1.5px solid var(--accent);background:var(--accent-wash);color:var(--accent-deep);">결제 처리</div>
+            <div style="padding:0.3rem;border:1px dashed var(--accent);color:var(--accent-deep);">결제 환불</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;">
+            <div style="padding:0.3rem;border:1px solid var(--rule);background:var(--paper-deep);">재고 차감</div>
+            <div style="padding:0.3rem;border:1px dashed var(--rule);color:var(--ink-soft);">재고 복원</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem;">
+            <div style="padding:0.3rem;border:1.5px solid oklch(0.55 0.14 25);background:oklch(0.96 0.04 25);color:oklch(0.35 0.12 25);">배송 요청 실패</div>
+            <div style="font-size:0.52rem;color:var(--accent-deep);display:flex;align-items:center;">← 역방향으로 보상 실행</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="lt-outbox">
+    <div class="ls-kicker">03 · Outbox</div>
+    <div class="ls-title">Outbox + CDC — 실무 구현</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">도구</span><span class="badge">Debezium</span><span class="badge">Kafka</span></div>
+        <p><strong>Debezium PostgreSQL Connector</strong>: PostgreSQL WAL(논리 복제 슬롯)을 읽어 outbox 테이블의 INSERT를 감지하고 Kafka 토픽에 발행한다. DB 변경 사항이 Kafka에 정확히 한 번(effectively) 반영된다. 장애 복구 후 WAL의 마지막 LSN부터 재개하므로 메시지 손실이 없다.</p>
+        <p><strong>Outbox 테이블 설계</strong>: <code>id(UUID PK), aggregate_type, aggregate_id, event_type, payload(JSONB), created_at, published_at(nullable)</code>. CDC 방식은 <code>published_at</code>이 필요 없고, Polling 방식은 필수다. 발행된 메시지는 주기적으로(7일 후) 삭제해 테이블 비대화를 막는다.</p>
+        <p><strong>트랜잭션 로그 테일링 vs Polling</strong>: CDC는 WAL 슬롯 관리가 필요하고 DB에 복제 권한이 있어야 한다. Polling은 구현이 단순하지만 주기(1~5초) 동안 발행 지연이 발생한다. 처리량이 낮으면 Polling, 높으면 CDC를 사용한다.</p>
+      </div>
+      <div class="canvas" data-label="Outbox Table" style="min-height:160px;">
+        <div style="display:flex;flex-direction:column;gap:0.3rem;width:100%;font-family:var(--mono);font-size:0.55rem;">
+          <div style="font-size:0.52rem;color:var(--ink-faint);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;">outbox 테이블 스키마</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.2rem;">
+            <div style="padding:0.25rem 0.4rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);">id UUID PK</div>
+            <div style="padding:0.25rem 0.4rem;border:1px solid var(--rule);background:var(--paper-deep);">aggregate_type</div>
+            <div style="padding:0.25rem 0.4rem;border:1px solid var(--rule);background:var(--paper-deep);">aggregate_id</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.2rem;">
+            <div style="padding:0.25rem 0.4rem;border:1.5px solid var(--accent);background:var(--accent-wash);color:var(--accent-deep);">event_type</div>
+            <div style="padding:0.25rem 0.4rem;border:1.5px solid var(--accent);background:var(--accent-wash);color:var(--accent-deep);">payload JSONB</div>
+            <div style="padding:0.25rem 0.4rem;border:1px solid var(--rule);background:var(--paper-deep);">created_at</div>
+          </div>
+          <div style="font-size:0.5rem;color:var(--ink-faint);margin-top:0.3rem;">Debezium: published_at 불필요 (WAL 오프셋으로 추적)<br>Polling: published_at IS NULL WHERE 조건으로 미발행 조회</div>
+          <div style="font-size:0.5rem;color:var(--ink-faint);">INDEX(published_at) 또는 partitioned by created_at 필수 — 대량 누적 방지</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="lt-select">
+    <div class="ls-kicker">04 · Decision</div>
+    <div class="ls-title">기법 선택 가이드</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <p><strong>이벤트 발행 보장만 필요</strong>하면 Outbox Pattern으로 충분하다. 서비스 간 정합성이 아니라 "데이터 변경 시 메시지를 반드시 발행"하는 요건이면 Saga가 필요 없다.</p>
+        <p><strong>3개 이하 서비스, 단순 흐름</strong>: Saga Choreography + Outbox. <strong>4개 이상 서비스, 복잡한 분기·재시도</strong>: Saga Orchestration(Temporal) + Outbox. <strong>DB 수준 강한 일관성이 필수이고 수평 확장이 낮아도 됨</strong>: 2PC(동일 DB 클러스터 내). <strong>비즈니스 레벨 잠금, 높은 처리량</strong>: TCC.</p>
+        <p><strong>가장 흔한 실수</strong>: 분산 트랜잭션 없이 HTTP 호출로 여러 서비스를 순서대로 호출하는 것. 중간에 실패하면 일부만 완료된 상태가 되고 자동 복구 수단이 없다. 최소한 Outbox Pattern은 항상 적용한다.</p>
+      </div>
+      <div class="canvas" data-label="Decision Tree" style="min-height:160px;">
+        <div style="display:flex;flex-direction:column;gap:0.35rem;width:100%;font-family:var(--mono);font-size:0.58rem;">
+          <div style="padding:0.3rem 0.5rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);">이벤트 발행만 보장하면 되는가?</div>
+          <div style="display:flex;gap:0.5rem;">
+            <div style="flex:1;">
+              <div style="font-size:0.52rem;color:var(--ink-faint);">Yes →</div>
+              <div style="padding:0.3rem;border:1.5px solid oklch(0.55 0.14 150);background:oklch(0.95 0.04 150);color:oklch(0.30 0.10 150);">Outbox Pattern</div>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:0.52rem;color:var(--ink-faint);">No → 서비스 수?</div>
+              <div style="display:flex;flex-direction:column;gap:0.2rem;">
+                <div style="padding:0.25rem;border:1.5px solid var(--accent);background:var(--accent-wash);color:var(--accent-deep);font-size:0.55rem;">≤3개: Choreography</div>
+                <div style="padding:0.25rem;border:1px solid var(--rule);background:var(--paper-deep);font-size:0.55rem;">4개+: Orchestration (Temporal)</div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:0.3rem;font-size:0.52rem;">
+            <div style="flex:1;padding:0.25rem;border:1px dashed var(--rule);text-align:center;color:var(--ink-soft);">DB 수준 ACID → 2PC (동일 클러스터)</div>
+            <div style="flex:1;padding:0.25rem;border:1px dashed var(--rule);text-align:center;color:var(--ink-soft);">고처리량+비즈니스 예약 → TCC</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<div class="margin-note"><strong>분산 트랜잭션의 근본 한계:</strong> 네트워크는 신뢰할 수 없다. 어떤 기법도 네트워크 파티션 동안 강한 일관성과 가용성을 동시에 보장할 수 없다(CAP 정리). 실무에서는 "충분히 좋은 일관성"을 목표로 한다. Stripe는 "99.999% 일관성 + 수동 보정 프로세스"를 표준으로 가져가며, 완벽한 자동화보다 운영 가능한 시스템을 우선시한다.</div>
+
+<!-- §04 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Code</div>
+      <h2 class="section-title">실전 코드</h2>
+    </div>
+  </div>
+  <p class="code-intro">Python으로 구현한 <em>Outbox Pattern</em>과 <em>Saga Orchestration</em> 패턴. Temporal Python SDK와 SQLAlchemy를 사용한다.</p>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>Outbox Pattern — SQLAlchemy</h4>
+      <div class="head-right"><span class="tag">outbox</span></div>
+    </div>
+    <pre><span class="kw">from</span> sqlalchemy <span class="kw">import</span> Column, String, DateTime, JSON, func
+<span class="kw">from</span> sqlalchemy.dialects.postgresql <span class="kw">import</span> UUID
+<span class="kw">import</span> uuid, datetime
+
+<span class="com"># Outbox 테이블 모델</span>
+<span class="kw">class</span> <span class="fn">OutboxEvent</span>(Base):
+    __tablename__ = <span class="str">"outbox"</span>
+    id = <span class="fn">Column</span>(<span class="fn">UUID</span>(as_uuid=<span class="kw">True</span>), primary_key=<span class="kw">True</span>, default=uuid.uuid4)
+    aggregate_type = <span class="fn">Column</span>(<span class="fn">String</span>(<span class="dec">100</span>), nullable=<span class="kw">False</span>)
+    aggregate_id = <span class="fn">Column</span>(<span class="fn">String</span>(<span class="dec">255</span>), nullable=<span class="kw">False</span>)
+    event_type = <span class="fn">Column</span>(<span class="fn">String</span>(<span class="dec">100</span>), nullable=<span class="kw">False</span>)
+    payload = <span class="fn">Column</span>(<span class="fn">JSON</span>, nullable=<span class="kw">False</span>)
+    created_at = <span class="fn">Column</span>(<span class="fn">DateTime</span>, server_default=func.<span class="fn">now</span>())
+
+<span class="com"># 주문 생성과 이벤트를 하나의 트랜잭션으로</span>
+<span class="kw">def</span> <span class="fn">create_order</span>(session, user_id: str, items: list) -> Order:
+    <span class="kw">with</span> session.<span class="fn">begin</span>():
+        order = <span class="fn">Order</span>(user_id=user_id, items=items, status=<span class="str">"pending"</span>)
+        session.<span class="fn">add</span>(order)
+        session.<span class="fn">flush</span>()  <span class="com"># order.id 생성</span>
+
+        <span class="com"># 동일 트랜잭션에 이벤트 삽입 — 원자적 보장</span>
+        event = <span class="fn">OutboxEvent</span>(
+            aggregate_type=<span class="str">"Order"</span>,
+            aggregate_id=<span class="fn">str</span>(order.id),
+            event_type=<span class="str">"OrderCreated"</span>,
+            payload={<span class="str">"user_id"</span>: user_id, <span class="str">"total"</span>: order.total},
+        )
+        session.<span class="fn">add</span>(event)
+    <span class="kw">return</span> order  <span class="com"># 커밋 완료 — 두 레코드 모두 영구 저장</span>
+
+<span class="com"># Polling 발행자 (별도 프로세스)</span>
+<span class="kw">def</span> <span class="fn">poll_and_publish</span>(session, producer):
+    <span class="kw">while</span> <span class="kw">True</span>:
+        events = session.<span class="fn">query</span>(OutboxEvent).<span class="fn">order_by</span>(
+            OutboxEvent.created_at
+        ).<span class="fn">limit</span>(<span class="dec">100</span>).<span class="fn">all</span>()
+        <span class="kw">for</span> event <span class="kw">in</span> events:
+            producer.<span class="fn">send</span>(event.event_type, event.payload)
+            session.<span class="fn">delete</span>(event)
+        session.<span class="fn">commit</span>()
+        time.<span class="fn">sleep</span>(<span class="dec">1</span>)</pre>
+    <div class="note"><strong>원자성 보장.</strong> OutboxEvent를 Order와 같은 트랜잭션에 삽입한다. 트랜잭션 실패 시 둘 다 롤백되므로 "주문은 됐지만 이벤트 없음" 상황이 발생하지 않는다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>Saga Orchestration — Temporal Python SDK</h4>
+      <div class="head-right"><span class="tag">temporal</span></div>
+    </div>
+    <pre><span class="kw">from</span> temporalio <span class="kw">import</span> workflow, activity
+<span class="kw">from</span> temporalio.client <span class="kw">import</span> Client
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+
+<span class="dec">@dataclass</span>
+<span class="kw">class</span> <span class="fn">OrderInput</span>:
+    order_id: str
+    user_id: str
+    amount: float
+
+<span class="dec">@activity.defn</span>
+<span class="kw">async def</span> <span class="fn">process_payment</span>(order_id: str, amount: float) -> bool:
+    <span class="com"># 결제 서비스 호출 — 실패 시 Temporal이 재시도</span>
+    <span class="kw">return await</span> payment_client.<span class="fn">charge</span>(order_id, amount)
+
+<span class="dec">@activity.defn</span>
+<span class="kw">async def</span> <span class="fn">reserve_inventory</span>(order_id: str) -> bool:
+    <span class="kw">return await</span> inventory_client.<span class="fn">reserve</span>(order_id)
+
+<span class="dec">@activity.defn</span>
+<span class="kw">async def</span> <span class="fn">refund_payment</span>(order_id: str):
+    <span class="com"># 보상 트랜잭션 — 결제 환불</span>
+    <span class="kw">await</span> payment_client.<span class="fn">refund</span>(order_id)
+
+<span class="dec">@workflow.defn</span>
+<span class="kw">class</span> <span class="fn">OrderSagaWorkflow</span>:
+    <span class="dec">@workflow.run</span>
+    <span class="kw">async def</span> <span class="fn">run</span>(self, inp: OrderInput) -> str:
+        payment_done = <span class="kw">False</span>
+        <span class="kw">try</span>:
+            <span class="com"># Step 1: 결제</span>
+            payment_done = <span class="kw">await</span> workflow.<span class="fn">execute_activity</span>(
+                process_payment, inp.order_id, inp.amount,
+                start_to_close_timeout=timedelta(seconds=<span class="dec">10</span>),
+            )
+            <span class="com"># Step 2: 재고 차감</span>
+            <span class="kw">await</span> workflow.<span class="fn">execute_activity</span>(
+                reserve_inventory, inp.order_id,
+                start_to_close_timeout=timedelta(seconds=<span class="dec">10</span>),
+            )
+            <span class="kw">return</span> <span class="str">"completed"</span>
+        <span class="kw">except</span> Exception:
+            <span class="com"># 보상: 결제가 완료됐으면 환불</span>
+            <span class="kw">if</span> payment_done:
+                <span class="kw">await</span> workflow.<span class="fn">execute_activity</span>(refund_payment, inp.order_id)
+            <span class="kw">raise</span></pre>
+    <div class="note"><strong>Temporal 내구성.</strong> 워크플로우 실행 히스토리가 DB에 저장되므로 Worker가 죽어도 재시작 후 정확히 중단 시점부터 재개된다. Activity는 자동 재시도된다.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>TCC — Try/Confirm/Cancel API 패턴</h4>
+      <div class="head-right"><span class="tag">tcc</span></div>
+    </div>
+    <pre"><span class="kw">from</span> enum <span class="kw">import</span> Enum
+<span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI, HTTPException
+
+<span class="kw">class</span> <span class="fn">ReservationStatus</span>(Enum):
+    PENDING = <span class="str">"pending"</span>
+    CONFIRMED = <span class="str">"confirmed"</span>
+    CANCELLED = <span class="str">"cancelled"</span>
+
+app = <span class="fn">FastAPI</span>()
+
+<span class="dec">@app.post</span>(<span class="str">"/inventory/try"</span>)
+<span class="kw">async def</span> <span class="fn">try_inventory</span>(order_id: str, qty: int):
+    <span class="com"># 재고를 실제 차감하지 않고 "예약" 상태로 표시</span>
+    reservation = <span class="kw">await</span> db.<span class="fn">create_reservation</span>(
+        order_id=order_id, qty=qty, status=ReservationStatus.PENDING
+    )
+    <span class="com"># 실제 재고 available_qty는 변경하지 않음</span>
+    <span class="kw">if</span> <span class="kw">not</span> reservation:
+        <span class="kw">raise</span> <span class="fn">HTTPException</span>(<span class="dec">409</span>, <span class="str">"재고 부족"</span>)
+    <span class="kw">return</span> {<span class="str">"reservation_id"</span>: reservation.id}
+
+<span class="dec">@app.post</span>(<span class="str">"/inventory/confirm"</span>)
+<span class="kw">async def</span> <span class="fn">confirm_inventory</span>(reservation_id: str):
+    <span class="com"># 멱등성: 이미 CONFIRMED면 그냥 성공 반환</span>
+    reservation = <span class="kw">await</span> db.<span class="fn">get_reservation</span>(reservation_id)
+    <span class="kw">if</span> reservation.status == ReservationStatus.CONFIRMED:
+        <span class="kw">return</span> {<span class="str">"status"</span>: <span class="str">"already confirmed"</span>}
+    <span class="kw">await</span> db.<span class="fn">confirm_reservation</span>(reservation_id)  <span class="com"># 실제 재고 차감</span>
+    <span class="kw">return</span> {<span class="str">"status"</span>: <span class="str">"confirmed"</span>}
+
+<span class="dec">@app.post</span>(<span class="str">"/inventory/cancel"</span>)
+<span class="kw">async def</span> <span class="fn">cancel_inventory</span>(reservation_id: str):
+    <span class="com"># 멱등성: 이미 CANCELLED면 성공 반환</span>
+    reservation = <span class="kw">await</span> db.<span class="fn">get_reservation</span>(reservation_id)
+    <span class="kw">if</span> reservation.status <span class="kw">in</span> (
+        ReservationStatus.CANCELLED, <span class="kw">None</span>
+    ):
+        <span class="kw">return</span> {<span class="str">"status"</span>: <span class="str">"ok"</span>}
+    <span class="kw">await</span> db.<span class="fn">cancel_reservation</span>(reservation_id)  <span class="com"># 예약만 해제</span>
+    <span class="kw">return</span> {<span class="str">"status"</span>: <span class="str">"cancelled"</span>}</pre>
+    <div class="note"><strong>멱등성 필수.</strong> Confirm/Cancel은 여러 번 호출되어도 동일한 결과를 반환해야 한다. 상태 확인 후 이미 처리됐으면 성공으로 응답하는 패턴을 반드시 구현한다.</div>
+  </div>
+
+</section>
+
+<footer>
+  <span>karellen-kim · 학습 노트</span>
+  <a href="https://microservices.io/patterns/data/saga.html" target="_blank" rel="noopener">원문 · microservices.io</a>
+</footer>
+
+<script>
+const menuBtn = document.getElementById("menuBtn");
+const tocPanel = document.getElementById("tocPanel");
+const tocBackdrop = document.getElementById("tocBackdrop");
+function openMenu() { menuBtn.classList.add("open"); tocPanel.classList.add("open"); tocBackdrop.classList.add("open"); document.body.classList.add("menu-open"); menuBtn.setAttribute("aria-expanded","true"); tocPanel.setAttribute("aria-hidden","false"); }
+function closeMenu() { menuBtn.classList.remove("open"); tocPanel.classList.remove("open"); tocBackdrop.classList.remove("open"); document.body.classList.remove("menu-open"); menuBtn.setAttribute("aria-expanded","false"); tocPanel.setAttribute("aria-hidden","true"); }
+menuBtn.addEventListener("click", () => menuBtn.classList.contains("open") ? closeMenu() : openMenu());
+tocBackdrop.addEventListener("click", closeMenu);
+document.addEventListener("keydown", e => e.key === "Escape" && closeMenu());
+tocPanel.querySelectorAll("a[data-close]").forEach(a => a.addEventListener("click", closeMenu));
+document.querySelectorAll(".code-head").forEach(head => {
+  const card = head.closest(".code-card");
+  const indicator = document.createElement("span");
+  indicator.className = "expand-indicator";
+  indicator.textContent = "▸";
+  head.querySelector(".head-right").appendChild(indicator);
+  head.addEventListener("click", () => card.classList.toggle("expanded"));
+  const copyBtn = document.createElement("button");
+  copyBtn.className = "copy-btn";
+  copyBtn.textContent = "copy";
+  copyBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    const code = card.querySelector("pre").textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      copyBtn.textContent = "copied"; copyBtn.classList.add("copied");
+      setTimeout(() => { copyBtn.textContent = "copy"; copyBtn.classList.remove("copied"); }, 1500);
+    });
+  });
+  head.querySelector(".head-right").insertBefore(copyBtn, indicator);
+});
+</script>
+</body>
+</html>

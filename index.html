@@ -253,6 +253,30 @@
   }
   .note:hover .arrow { transform: translateX(6px); color: var(--accent-deep); }
 
+  /* Trend variant — external live tracker */
+  .note.trend .body .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.9rem;
+  }
+  .note.trend .chip {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    padding: 0.22rem 0.6rem;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+    background: var(--paper);
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+  }
+  .note.trend:hover .chip {
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    background: var(--accent-wash);
+  }
+  .note.trend .n { font-family: var(--mono); color: var(--accent-deep); }
+
   /* Coming soon variant */
   .note.upcoming {
     opacity: 0.55;
@@ -504,6 +528,42 @@
         <span class="tag">Anthropic · 2024</span>
         <span>읽는 시간 12분</span>
         <span class="arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+
+<!-- §2 TRENDS -->
+<section class="section" id="trends">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Live Tracker</div>
+      <h2 class="section-title">개발 트렌드</h2>
+    </div>
+  </div>
+
+  <div class="notes">
+
+    <a class="note trend" href="https://karellen-kim.github.io/trending-tech" target="_blank" rel="noopener">
+      <div class="n">→</div>
+      <div class="body">
+        <h3>Trending <em>Tech</em></h3>
+        <p>매일 갱신되는 개발자 트렌드 트래커 — 주요 테크 블로그, 화제의 개발자, 신규 논문, GitHub 트렌딩 리포지토리, 개발자 SNS까지 한 페이지에서 보는 신호 모음. 무엇을 따라잡아야 하는지를 매일 자동으로 정리.</p>
+        <div class="chips">
+          <span class="chip">테크 블로그</span>
+          <span class="chip">개발자</span>
+          <span class="chip">논문</span>
+          <span class="chip">GitHub 트렌딩</span>
+          <span class="chip">SNS</span>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="tag">External · Live</span>
+        <span>매일 갱신</span>
+        <span class="arrow">↗</span>
       </div>
     </a>
 

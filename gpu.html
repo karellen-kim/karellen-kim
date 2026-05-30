@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPU 종류부터 운영 최적화까지 — 학습 노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+  .hero { max-width: 1200px; margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); position: relative; }
+  .hero::before { content: ""; position: absolute; top: 2rem; left: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); height: 1px; background: var(--ink); }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.5rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.95; font-weight: 600; margin-top: clamp(2rem, 5vw, 3rem); letter-spacing: -0.035em; }
+  .hero-title em { font-style: normal; font-weight: 300; color: var(--accent-deep); }
+  .hero-sub { margin-top: 1.4rem; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: var(--ink-soft); max-width: 42rem; line-height: 1.5; font-weight: 300; }
+  .hero-grid { margin-top: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .hero-grid > div { background: var(--paper); padding: 1.25rem 1.5rem; }
+  .hero-grid .k { display: block; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 0.4rem; }
+  .hero-grid .v { font-size: 1.2rem; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .hero-grid .v small { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; font-weight: 400; }
+
+  .section { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem); }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head { display: grid; grid-template-columns: auto 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: baseline; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .section-num { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.85; color: var(--accent); font-weight: 200; letter-spacing: -0.04em; }
+  .section-titles { border-left: 1px solid var(--ink); padding-left: clamp(1rem, 3vw, 2rem); padding-top: 0.5rem; }
+  .section-kicker { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .section-title { font-size: clamp(1.65rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.028em; }
+
+  .tldr-grid { display: grid; grid-template-columns: 1fr; }
+  @media (min-width: 720px) { .tldr-grid { grid-template-columns: repeat(12, 1fr); } }
+  .tldr-lead { grid-column: 1/-1; font-size: clamp(1.2rem, 2.1vw, 1.6rem); line-height: 1.45; color: var(--ink); padding-bottom: 2rem; border-bottom: 1px solid var(--rule); margin-bottom: 2.5rem; font-weight: 300; letter-spacing: -0.012em; }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead::first-letter { font-size: 3.4em; float: left; line-height: 0.9; padding-right: 0.12em; padding-top: 0.08em; color: var(--accent-deep); font-weight: 200; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  @media (min-width: 720px) { .tldr-lead { grid-column: 2/12; } }
+  .points { display: contents; }
+  .point { grid-column: 1/-1; display: grid; grid-template-columns: 4ch 1fr; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 720px) { .point { grid-column: 2/12; grid-template-columns: 5ch 1fr; gap: 2rem; } }
+  .point .n { font-size: 1.25rem; color: var(--accent); line-height: 1; font-weight: 300; letter-spacing: 0.05em; }
+  .point h3 { font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.3; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.015em; }
+  .point p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
+  .point p strong { color: var(--ink); font-weight: 600; }
+  .point p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+
+  .diagram-block { margin-bottom: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .db-text h4 { font-size: clamp(1.3rem, 2.3vw, 1.75rem); line-height: 1.25; margin-bottom: 0.8rem; font-weight: 600; letter-spacing: -0.022em; }
+  .db-text h4 .num { display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em; color: var(--accent-deep); vertical-align: middle; background: var(--accent-wash); padding: 0.28rem 0.55rem; border-radius: 999px; margin-right: 0.65rem; font-weight: 600; position: relative; top: -0.15em; }
+  .db-text p { color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.65; font-size: 0.95rem; }
+  .db-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .db-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .db-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas { background: var(--paper-deep); border: 1px solid var(--rule); padding: clamp(1.25rem, 3vw, 2rem); position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .canvas::before { content: attr(data-label); position: absolute; top: 0.7rem; left: 0.9rem; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; }
+
+  .mem-pyramid { display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; margin-top: 1.5rem; font-family: var(--mono); font-size: 0.75rem; }
+  .mem-row { display: grid; grid-template-columns: 7rem 1fr 6rem; align-items: center; gap: 0.7rem; padding: 0.6rem 0.8rem; background: var(--paper); border: 1px solid var(--rule); }
+  .mem-row .label { font-weight: 600; color: var(--ink); letter-spacing: 0.04em; }
+  .mem-row .bar { height: 14px; background: var(--accent-wash); border-left: 3px solid var(--accent); }
+  .mem-row .latency { color: var(--ink-faint); font-size: 0.7rem; text-align: right; }
+
+  .gpu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; width: 100%; font-family: var(--mono); font-size: 0.72rem; }
+  .gpu-card { background: var(--paper); border: 1px solid var(--rule); padding: 0.7rem 0.85rem; }
+  .gpu-card .name { font-weight: 600; color: var(--accent-deep); font-size: 0.82rem; margin-bottom: 0.3rem; letter-spacing: 0.02em; }
+  .gpu-card .row { display: flex; justify-content: space-between; padding: 0.15rem 0; color: var(--ink-soft); }
+  .gpu-card .row .v { color: var(--ink); font-weight: 600; }
+
+  .topo-grid { display: grid; grid-template-columns: 1fr; gap: 0.8rem; width: 100%; font-family: var(--mono); font-size: 0.72rem; }
+  .topo-row { display: grid; grid-template-columns: 5rem 1fr; gap: 0.8rem; align-items: center; padding: 0.5rem 0.7rem; background: var(--paper); border-left: 3px solid var(--accent); }
+  .topo-row .tag { font-weight: 600; color: var(--accent-deep); }
+  .topo-row .desc { color: var(--ink-soft); font-family: var(--sans); font-size: 0.78rem; }
+  .topo-row .desc b { color: var(--ink); }
+
+  .precision-table { width: 100%; font-family: var(--mono); font-size: 0.7rem; border-collapse: collapse; }
+  .precision-table th, .precision-table td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--rule); text-align: left; }
+  .precision-table th { background: var(--paper); color: var(--accent-deep); font-weight: 600; letter-spacing: 0.04em; }
+  .precision-table td { color: var(--ink-soft); background: var(--paper); }
+  .precision-table tr:hover td { background: var(--accent-wash); }
+  .precision-table td.bit { font-weight: 600; color: var(--ink); }
+
+  .compute-vs { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; width: 100%; font-family: var(--mono); font-size: 0.72rem; }
+  .compute-vs > div { background: var(--paper); border: 1px solid var(--rule); padding: 0.8rem 0.9rem; }
+  .compute-vs h5 { font-size: 0.85rem; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.5rem; letter-spacing: 0.05em; }
+  .compute-vs ul { list-style: none; }
+  .compute-vs li { padding: 0.2rem 0; color: var(--ink-soft); font-size: 0.7rem; line-height: 1.5; }
+  .compute-vs li::before { content: "▸ "; color: var(--accent); }
+
+  .parallel-flow { display: grid; grid-template-columns: 1fr; gap: 0.7rem; width: 100%; font-family: var(--mono); font-size: 0.72rem; }
+  .parallel-row { display: grid; grid-template-columns: 6rem 1fr; gap: 0.7rem; align-items: center; background: var(--paper); border: 1px solid var(--rule); padding: 0.55rem 0.75rem; }
+  .parallel-row .name { font-weight: 600; color: var(--accent-deep); letter-spacing: 0.03em; }
+  .parallel-row .gpus { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+  .parallel-row .gpus span { display: inline-flex; align-items: center; justify-content: center; min-width: 1.8rem; height: 1.6rem; padding: 0 0.4rem; background: var(--accent-wash); border: 1px solid var(--accent); color: var(--accent-deep); font-size: 0.65rem; font-weight: 600; }
+  .parallel-row .gpus span.s { background: var(--paper-deep); border-color: var(--rule); color: var(--ink-soft); }
+
+  .inf-flow { display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; font-family: var(--mono); font-size: 0.72rem; }
+  .inf-row { display: grid; grid-template-columns: 6rem 1fr 4rem; gap: 0.6rem; align-items: center; padding: 0.5rem 0.7rem; background: var(--paper); border: 1px solid var(--rule); }
+  .inf-row .lbl { font-weight: 600; color: var(--accent-deep); }
+  .inf-row .blocks { display: flex; gap: 2px; height: 14px; }
+  .inf-row .blocks span { flex: 1; background: var(--accent-wash); border-top: 2px solid var(--accent); }
+  .inf-row .blocks span.empty { background: var(--paper-deep); border-top-color: var(--rule); }
+  .inf-row .met { text-align: right; color: var(--ink); font-weight: 600; font-size: 0.7rem; }
+
+  .ls-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .ls-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .ls-block { margin-bottom: clamp(3rem, 5vw, 4.5rem); padding-bottom: clamp(3rem, 5vw, 4.5rem); border-bottom: 1px solid var(--rule); }
+  .ls-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .ls-kicker { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.35rem; }
+  .ls-title { font-size: clamp(1.15rem, 1.9vw, 1.45rem); font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.2rem; color: var(--ink); }
+  .ls-body { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .ls-body { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .ls-text p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.65; margin-bottom: 0.9rem; }
+  .ls-text p:last-child { margin-bottom: 0; }
+  .ls-text p strong { color: var(--ink); font-weight: 600; }
+  .ls-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .ls-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .ls-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .ls-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+  .company-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+  .company-row .cl { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; }
+  .badge { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; padding: 0.18rem 0.5rem; border: 1px solid var(--accent); color: var(--accent-deep); background: var(--accent-wash); }
+
+  .config-table { width: 100%; font-family: var(--mono); font-size: 0.78rem; border-collapse: collapse; margin-top: 1.5rem; }
+  .config-table th, .config-table td { padding: 0.6rem 0.7rem; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+  .config-table th { background: var(--paper-deep); color: var(--accent-deep); font-weight: 600; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  .config-table td.k { color: var(--ink); font-weight: 600; }
+  .config-table td.v { color: var(--accent-deep); }
+  .config-table td.note { color: var(--ink-soft); font-family: var(--sans); font-size: 0.85rem; }
+
+  .code-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card { margin-bottom: 2.5rem; border: 1px solid var(--rule); overflow: hidden; }
+  .code-head { display: flex; align-items: baseline; justify-content: space-between; padding: 1rem 1.4rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; gap: 0.5rem; cursor: pointer; user-select: none; }
+  .code-head:hover { background: var(--paper); }
+  .code-head h4 { font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .code-head .tag { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--accent); color: var(--paper); border-radius: 2px; }
+  .code-head .head-right { display: flex; align-items: center; gap: 0.5rem; }
+  .copy-btn { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; font-weight: 600; }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .code-card pre { margin: 0; padding: 1.35rem 1.5rem; overflow-x: auto; background: oklch(0.18 0.02 260); color: oklch(0.92 0.015 75); font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; display: none; }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note { padding: 1rem 1.4rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper-deep); line-height: 1.6; display: none; }
+  .code-card .note strong { color: var(--accent-deep); }
+  .code-card.expanded pre, .code-card.expanded .note { display: block; }
+  .expand-indicator { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-faint); transition: transform 0.2s; display: inline-block; }
+  .code-card.expanded .expand-indicator { transform: rotate(90deg); color: var(--accent-deep); }
+
+  .margin-note { max-width: 1200px; margin: 0 auto; color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; padding: 1.1rem clamp(1.5rem, 5vw, 4rem); background: var(--paper-deep); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); font-weight: 300; }
+  .margin-note::before { content: "노트"; font-weight: 600; color: var(--accent-deep); font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-right: 0.8rem; display: inline-block; padding-right: 0.7rem; border-right: 1px solid var(--rule); }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  footer { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: var(--ink-faint); }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  .home-link { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 60; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0 0.95rem; height: 48px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.04em; transition: background 0.2s, color 0.2s; }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow { font-family: var(--mono); font-size: 0.95rem; transition: transform 0.25s cubic-bezier(0.22,1,0.36,1); }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  .menu-btn { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span { display: block; width: 20px; height: 1.5px; background: var(--ink); transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.2s, background 0.2s; transform-origin: center; }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  .toc-backdrop { position: fixed; inset: 0; background: oklch(0.18 0.015 260 / 0.35); backdrop-filter: blur(2px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+  .toc-panel { position: fixed; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--ink); z-index: 55; transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.22,1,0.36,1); overflow-y: auto; padding: 6rem 2.5rem 3rem; }
+  .toc-panel.open { transform: translateX(0); }
+  .toc-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .toc-title { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 2.2rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule); }
+  .toc-list { list-style: none; counter-reset: toc; }
+  .toc-list > li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a { display: grid; grid-template-columns: 2.5rem 1fr; align-items: baseline; text-decoration: none; color: var(--ink); font-weight: 500; font-size: 1.05rem; transition: color 0.2s; }
+  .toc-list > li > a::before { counter-increment: toc; content: counter(toc, decimal-leading-zero); color: var(--accent); font-weight: 300; font-size: 0.85rem; }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+  .toc-sub { list-style: none; margin-top: 0.6rem; margin-left: 2.5rem; padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a { color: var(--ink-soft); text-decoration: none; font-size: 0.88rem; transition: color 0.2s; display: flex; align-items: baseline; gap: 0.6rem; }
+  .toc-sub a span { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; min-width: 1.6rem; }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); }
+  body.menu-open { overflow: hidden; }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html"><span class="arrow">←</span><span>notebook</span></a>
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false"><span></span><span></span><span></span></button>
+<div class="toc-backdrop" id="tocBackdrop"></div>
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#arch" data-close>GPU 종류와 아키텍처</a>
+      <ul class="toc-sub">
+        <li><a href="#d-mem" data-close><span>01</span>메모리 계층</a></li>
+        <li><a href="#d-sm" data-close><span>02</span>SM & Tensor Core</a></li>
+        <li><a href="#d-models" data-close><span>03</span>모델 비교 (H100·B200·MI300)</a></li>
+        <li><a href="#d-topo" data-close><span>04</span>NVLink·NVSwitch·PCIe</a></li>
+        <li><a href="#d-precision" data-close><span>05</span>FP32→FP8 정밀도</a></li>
+        <li><a href="#d-vscpu" data-close><span>06</span>GPU vs CPU</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#training" data-close>분산 학습 패러다임</a>
+      <ul class="toc-sub">
+        <li><a href="#t-dp" data-close><span>01</span>Data Parallel</a></li>
+        <li><a href="#t-tp" data-close><span>02</span>Tensor Parallel</a></li>
+        <li><a href="#t-pp" data-close><span>03</span>Pipeline Parallel</a></li>
+        <li><a href="#t-fsdp" data-close><span>04</span>FSDP / ZeRO</a></li>
+        <li><a href="#t-3d" data-close><span>05</span>3D Parallelism</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#inference" data-close>추론 최적화</a>
+      <ul class="toc-sub">
+        <li><a href="#i-kv" data-close><span>01</span>KV Cache & PagedAttention</a></li>
+        <li><a href="#i-batch" data-close><span>02</span>Continuous Batching</a></li>
+        <li><a href="#i-spec" data-close><span>03</span>Speculative Decoding</a></li>
+        <li><a href="#i-quant" data-close><span>04</span>양자화 (INT8 / FP8)</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#scale" data-close>대규모 운영 — 빅테크 사례</a>
+      <ul class="toc-sub">
+        <li><a href="#s-meta" data-close><span>01</span>Meta — Grand Teton · RoCE</a></li>
+        <li><a href="#s-oai" data-close><span>02</span>OpenAI / MSFT — H100 클러스터</a></li>
+        <li><a href="#s-google" data-css><span>03</span>Google — TPU Pod</a></li>
+        <li><a href="#s-k8s" data-close><span>04</span>K8s GPU 운영 & MIG</a></li>
+        <li><a href="#s-config" data-close><span>05</span>운영 파라미터 참조표</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+  <div class="toc-foot">GPU 종류부터 운영 최적화까지<br>학습 노트</div>
+</aside>
+
+<header class="hero" id="top">
+  <div class="meta-row"><span>karellen-kim · notebook</span><span>인프라 / GPU</span></div>
+  <h1 class="hero-title"><em>GPU</em> 운영</h1>
+  <p class="hero-sub">아키텍처(SM·Tensor Core·HBM) · 분산 학습(FSDP·3D) · 추론 최적화(vLLM·PagedAttention) · 빅테크 운영 사례까지 — 추상화 너머의 트레이드오프</p>
+  <div class="hero-grid">
+    <div><span class="k">대표 모델</span><span class="v">H100 · B200<small>NVIDIA Hopper / Blackwell</small></span></div>
+    <div><span class="k">메모리</span><span class="v">HBM3e<small>141GB · 4.8TB/s</small></span></div>
+    <div><span class="k">정밀도</span><span class="v">FP8<small>학습/추론 표준화</small></span></div>
+    <div><span class="k">스케일</span><span class="v">수만 장<small>RoCE/InfiniBand</small></span></div>
+  </div>
+</header>
+
+<!-- §01 -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <div class="section-kicker">TL;DR</div>
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      GPU 운영의 본질은 <em>메모리 대역폭과 통신 대역폭이 컴퓨트보다 먼저 한계에 도달한다</em>는 사실에서 출발한다. <span class="hl">현대 LLM은 FLOPS가 아니라 HBM·NVLink·InfiniBand 대역폭으로 율속(rate-limited)된다</span>. 따라서 모든 최적화는 두 가지로 수렴한다 — <strong>데이터 이동을 줄이거나, 이동을 컴퓨트와 겹치거나</strong>. 분산 학습의 모든 병렬화 전략, 추론의 KV cache 최적화, 양자화는 결국 같은 목표를 다른 계층에서 푸는 것이다.
+    </p>
+    <div class="points">
+      <div class="point">
+        <span class="n">01</span>
+        <div>
+          <h3>SIMT 모델 — 수만 스레드의 동시 실행</h3>
+          <p>GPU는 <strong>SIMT</strong>(Single Instruction, Multiple Threads) 모델로 동작한다. NVIDIA H100은 <code>132개 SM</code> × <code>128 CUDA core</code> = 16,896개의 코어를 갖고, 각 SM이 <code>2048개의 동시 스레드</code>를 스케줄링한다. 같은 명령어가 <strong>32 스레드(warp) 단위</strong>로 동기적으로 실행된다. 따라서 <code>if/else</code> 분기가 warp 내에서 갈리면 두 경로를 직렬로 실행해 효율이 절반으로 떨어진다 — <strong>warp divergence</strong>가 GPU 코드 최적화의 1순위 문제다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">02</span>
+        <div>
+          <h3>메모리 계층 — HBM이 병목, SRAM이 무기</h3>
+          <p>H100 기준: <strong>HBM3 80GB · 3.35TB/s</strong> (off-chip), <strong>L2 50MB · ~12TB/s</strong>, <strong>SRAM(shared memory) 228KB/SM · ~33TB/s</strong> (on-chip). <em>주의:</em> 일반 행렬 곱 <code>A @ B</code>는 HBM에서 데이터를 두 번 읽어와 컴퓨트가 끝나기 전에 다시 쓰기 때문에 HBM 대역폭이 율속이다. <strong>FlashAttention</strong>이 빠른 이유는 정확히 이것 — Attention의 중간 결과를 HBM에 쓰지 않고 SRAM 안에서 끝낸다. 같은 SM·같은 GPU에서 <code>2~4x</code> 빨라진다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">03</span>
+        <div>
+          <h3>분산 학습 — DP·TP·PP의 3D 조합</h3>
+          <p>대규모 모델은 단일 GPU의 80GB로 못 담는다. <strong>Data Parallel</strong>(가중치 복제, 데이터 분할), <strong>Tensor Parallel</strong>(레이어 내부 행렬 분할, <code>Megatron-LM</code>), <strong>Pipeline Parallel</strong>(레이어 단위 분할, <code>GPipe·1F1B</code>), <strong>Sequence Parallel</strong>(LayerNorm 등의 시퀀스 축 분할)을 조합한다. GPT-4 추정 학습 구성: <code>TP=8 × PP=64 × DP=64</code> = <strong>32,768 GPU</strong>. TP는 노드 내(NVLink 900GB/s), PP는 노드 간(InfiniBand 400Gb/s)에 배치하는 것이 정석이다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">04</span>
+        <div>
+          <h3>FSDP / ZeRO — 메모리를 N분할</h3>
+          <p>DeepSpeed의 <strong>ZeRO</strong>는 옵티마이저 상태(Stage 1) → 그래디언트(Stage 2) → 파라미터(Stage 3)까지 N개 GPU로 분할한다. PyTorch <strong>FSDP</strong>가 동일 개념의 표준 구현. 70B 모델 학습 시 BF16 파라미터 140GB + Adam 옵티마이저 상태 560GB = <strong>총 ~1.5TB</strong>가 필요한데, 64개 GPU로 나누면 GPU당 23GB로 fit한다. 대신 <code>all-gather</code>(forward) + <code>reduce-scatter</code>(backward) 통신이 매 step 발생 — InfiniBand 대역폭이 부족하면 컴퓨트가 놀게 된다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">05</span>
+        <div>
+          <h3>추론 최적화 — KV Cache가 모든 것</h3>
+          <p>LLM 추론의 <strong>decode 단계</strong>는 토큰을 하나씩 생성하며 <strong>KV cache</strong>(과거 토큰의 Key/Value)를 누적한다. Llama-3 70B · 8K 컨텍스트 1요청당 KV cache는 <code>~2.5GB</code>. 80GB GPU에 모델 140GB(BF16 → 절반은 다른 GPU)·KV cache를 어떻게 쪼개느냐가 처리량을 결정한다. <strong>vLLM의 PagedAttention</strong>은 OS 페이지 테이블처럼 KV를 16-token 블록으로 관리해 <strong>처리량을 23배</strong> 늘렸다. <strong>Continuous batching</strong>(완료된 요청을 즉시 빼고 새 요청을 끼움)도 핵심.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">06</span>
+        <div>
+          <h3>양자화 — FP8이 새로운 표준</h3>
+          <p>H100/B200의 <strong>Transformer Engine</strong>은 FP8(<code>E4M3</code>/<code>E5M2</code>)을 하드웨어 레벨에서 지원한다. FP8은 BF16 대비 <strong>2x 처리량 · 2x 메모리 절감</strong>이지만 정밀도 손실이 있어 <strong>per-tensor scaling</strong>을 동적으로 적용한다. 추론에서는 <strong>INT8</strong>(SmoothQuant·AWQ·GPTQ), <strong>INT4</strong>(K-quants)까지 내려가며, 70B 모델을 단일 80GB GPU에 fit시킬 수 있다. GPT-4·Claude·Llama-3 모두 FP8 학습으로 전환했다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="margin-note">
+  GPU의 진정한 비용은 칩 자체가 아니라 <strong>주변 인프라 — 전력, 냉각, 네트워크</strong>다. H100 1장이 700W를 소비하고, 8장 들어간 DGX H100 노드는 10.2kW. 메타의 RSC(16K H100)는 <strong>~11MW</strong>를 상시 소비한다 — 일반 가정 9,000세대의 전력. 그래서 H100 시장 가격(~$30K)보다 <strong>전기·랙·냉각비가 5년 TCO의 60%</strong>를 차지한다. 클라우드 GPU 가격($2~4/H100/h)이 비싸 보여도 자가 운영 손익분기점은 평균 가동률 80% 이상에서만 유리하다.
+</div>
+
+<!-- §02 -->
+<section class="section" id="arch">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Architecture Map</div>
+      <h2 class="section-title">GPU 종류와 아키텍처</h2>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-mem">
+    <div class="db-text">
+      <h4><span class="num">01</span>메모리 계층 — HBM이 율속</h4>
+      <p>GPU 메모리는 <strong>HBM</strong>(off-chip, 큰 용량·느림) → <strong>L2 cache</strong>(on-chip 공용) → <strong>SRAM/Shared Memory</strong>(SM별 전용·매우 빠름) → <strong>레지스터</strong>(스레드별)로 내려간다. HBM과 SRAM의 대역폭 격차는 <code>~10x</code>, 레이턴시 격차는 <code>~100x</code>.</p>
+      <p>커널 작성의 핵심은 <strong>"HBM에서 가져온 데이터를 SRAM에서 최대한 재사용"</strong>이다. matmul에서 <strong>tiling</strong>(작은 블록으로 쪼개 SRAM에 올림)이 필수인 이유. <code>cuBLAS·CUTLASS·Triton</code>이 모두 이 패턴.</p>
+      <div class="use-when">
+        <strong>실전 함의</strong>
+        <p>모델이 <em>memory-bound</em>면 GPU upgrade(H100→B200)보다 알고리즘 개선(FlashAttention·Fused kernels)이 효과가 크다. <code>nsys profile</code>로 HBM 대역폭 사용률 확인.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="memory hierarchy · H100">
+      <div class="mem-pyramid">
+        <div class="mem-row"><span class="label">Register</span><span class="bar" style="width: 14%"></span><span class="latency">~1 cycle</span></div>
+        <div class="mem-row"><span class="label">SRAM/SMEM</span><span class="bar" style="width: 25%"></span><span class="latency">~5 cy · 33TB/s</span></div>
+        <div class="mem-row"><span class="label">L2 Cache</span><span class="bar" style="width: 45%"></span><span class="latency">~200 cy · 12TB/s</span></div>
+        <div class="mem-row"><span class="label">HBM3</span><span class="bar" style="width: 100%"></span><span class="latency">~500 cy · 3.35TB/s</span></div>
+        <div class="mem-row"><span class="label">CPU DRAM</span><span class="bar" style="width: 70%; opacity: 0.4"></span><span class="latency">PCIe5 · 64GB/s</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-sm">
+    <div class="db-text">
+      <h4><span class="num">02</span>SM & Tensor Core — 컴퓨트 단위</h4>
+      <p>NVIDIA GPU의 기본 컴퓨트 단위는 <strong>Streaming Multiprocessor(SM)</strong>. H100은 SM당 <code>128 FP32 CUDA core + 64 INT32 + 4 Tensor Core(4세대)</code>를 갖는다. <strong>Tensor Core</strong>는 행렬 곱 전용 ALU — <code>D = A·B + C</code> 형태의 작은 matmul(16×16×16)을 1 cycle에 처리.</p>
+      <p>Hopper(H100)는 FP16/BF16에서 <strong>989 TFLOPS</strong>, FP8에서 <strong>1979 TFLOPS</strong>. Blackwell(B200)은 FP4까지 지원해 <strong>20 PFLOPS</strong>(FP4). 일반 CUDA core 대비 Tensor Core는 <code>~10x</code> 빠르므로 행렬 곱 연산은 반드시 Tensor Core를 통해야 한다.</p>
+      <div class="use-when">
+        <strong>실전 함의</strong>
+        <p>모델 차원이 <code>8의 배수</code>가 아니면 Tensor Core를 못 쓴다 — vocab size 50,257 → 50,304로 패딩하는 이유. PyTorch <code>torch.compile</code>의 자동 패딩 옵션 확인.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="streaming multiprocessor">
+      <div style="display: grid; grid-template-columns: 1fr; gap: 0.6rem; width: 100%; font-family: var(--mono); font-size: 0.7rem;">
+        <div style="background: var(--paper); border: 2px solid var(--ink); padding: 0.7rem 0.85rem;">
+          <div style="font-weight: 600; color: var(--ink); margin-bottom: 0.5rem; letter-spacing: 0.05em;">SM × 132 (per H100)</div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.3rem;">
+            <div style="background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.3rem 0.4rem; text-align: center; color: var(--accent-deep); font-weight: 600;">Tensor<br>Core ×4</div>
+            <div style="background: var(--paper-deep); border: 1px solid var(--rule); padding: 0.3rem 0.4rem; text-align: center;">FP32<br>×128</div>
+            <div style="background: var(--paper-deep); border: 1px solid var(--rule); padding: 0.3rem 0.4rem; text-align: center;">INT32<br>×64</div>
+            <div style="background: var(--paper-deep); border: 1px solid var(--rule); padding: 0.3rem 0.4rem; text-align: center;">SFU<br>×4</div>
+          </div>
+          <div style="margin-top: 0.5rem; padding: 0.4rem 0.5rem; background: var(--accent-wash); border-left: 3px solid var(--accent); font-size: 0.68rem; color: var(--ink);">Warp Scheduler ×4 · 32 thread/warp · 2048 active</div>
+          <div style="margin-top: 0.3rem; padding: 0.4rem 0.5rem; background: var(--paper-deep); border-left: 3px solid var(--ink-faint); font-size: 0.68rem; color: var(--ink-soft);">SMEM 228KB · L1 256KB · 65,536 reg</div>
+        </div>
+        <div style="text-align: center; color: var(--ink-faint); font-size: 0.7rem;">↓ 132 SM × 4 TC = 528 Tensor Core / GPU</div>
+        <div style="background: var(--ink); color: var(--paper); padding: 0.6rem; text-align: center; font-weight: 600;">H100 — 1979 TFLOPS @ FP8 · 989 @ BF16</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-models">
+    <div class="db-text">
+      <h4><span class="num">03</span>모델 비교 — H100 · B200 · MI300 · TPU v5</h4>
+      <p>현 시점(2026)의 데이터센터 GPU 시장은 <strong>NVIDIA가 90%+</strong>를 차지하지만 AMD MI300X(192GB HBM3)와 Google TPU v5p가 추격 중. 차이는 칩 자체보다 <strong>스택의 성숙도</strong> — CUDA/cuDNN/NCCL/Triton 같은 소프트웨어 생태계.</p>
+      <p>핵심 비교 축은 <strong>(1) HBM 용량</strong>(메모리 한계로 fit 가능한 모델 크기) <strong>(2) HBM 대역폭</strong>(decode 속도) <strong>(3) FP8/FP16 컴퓨트</strong>(prefill·학습 속도) <strong>(4) 인터커넥트 대역폭</strong>(분산 학습 확장성).</p>
+      <div class="use-when">
+        <strong>실전 함의</strong>
+        <p>추론 서빙은 <em>메모리 대역폭</em>이 결정 — MI300X(5.3TB/s) > H100(3.35TB/s). 학습은 <em>SW 생태계</em>가 결정 — 여전히 H100·B200이 사실상 표준.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="data center GPU · 2025">
+      <div class="gpu-grid">
+        <div class="gpu-card">
+          <div class="name">NVIDIA H100 SXM5</div>
+          <div class="row"><span>HBM</span><span class="v">80GB · 3.35TB/s</span></div>
+          <div class="row"><span>FP8 / BF16</span><span class="v">1979 / 989 TF</span></div>
+          <div class="row"><span>TDP</span><span class="v">700W</span></div>
+          <div class="row"><span>NVLink</span><span class="v">900 GB/s</span></div>
+        </div>
+        <div class="gpu-card">
+          <div class="name">NVIDIA H200</div>
+          <div class="row"><span>HBM</span><span class="v">141GB · 4.8TB/s</span></div>
+          <div class="row"><span>FP8 / BF16</span><span class="v">1979 / 989 TF</span></div>
+          <div class="row"><span>TDP</span><span class="v">700W</span></div>
+          <div class="row"><span>NVLink</span><span class="v">900 GB/s</span></div>
+        </div>
+        <div class="gpu-card">
+          <div class="name">NVIDIA B200</div>
+          <div class="row"><span>HBM3e</span><span class="v">192GB · 8TB/s</span></div>
+          <div class="row"><span>FP8 / FP4</span><span class="v">4500 / 9000 TF</span></div>
+          <div class="row"><span>TDP</span><span class="v">1000W</span></div>
+          <div class="row"><span>NVLink</span><span class="v">1.8 TB/s</span></div>
+        </div>
+        <div class="gpu-card">
+          <div class="name">AMD MI300X</div>
+          <div class="row"><span>HBM3</span><span class="v">192GB · 5.3TB/s</span></div>
+          <div class="row"><span>FP8 / BF16</span><span class="v">2614 / 1307 TF</span></div>
+          <div class="row"><span>TDP</span><span class="v">750W</span></div>
+          <div class="row"><span>Infinity</span><span class="v">896 GB/s</span></div>
+        </div>
+        <div class="gpu-card">
+          <div class="name">Google TPU v5p</div>
+          <div class="row"><span>HBM</span><span class="v">95GB · 2.76TB/s</span></div>
+          <div class="row"><span>BF16</span><span class="v">459 TF</span></div>
+          <div class="row"><span>Pod 규모</span><span class="v">8960 chips</span></div>
+          <div class="row"><span>ICI</span><span class="v">4.8 TB/s</span></div>
+        </div>
+        <div class="gpu-card">
+          <div class="name">A100 SXM</div>
+          <div class="row"><span>HBM</span><span class="v">80GB · 2.0TB/s</span></div>
+          <div class="row"><span>BF16</span><span class="v">312 TF</span></div>
+          <div class="row"><span>TDP</span><span class="v">400W</span></div>
+          <div class="row"><span>NVLink</span><span class="v">600 GB/s</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-topo">
+    <div class="db-text">
+      <h4><span class="num">04</span>인터커넥트 — NVLink / NVSwitch / IB</h4>
+      <p>분산 학습의 통신은 <strong>3단 위계</strong>로 구성된다 — (1) 노드 내 GPU 간 <strong>NVLink</strong>(900GB/s) (2) 노드 내 GPU 전체 풀-메시 <strong>NVSwitch</strong> (3) 노드 간 <strong>InfiniBand/RoCE</strong>(400~800Gb/s).</p>
+      <p>중요한 트레이드오프: NVLink는 노드 내 8GPU까지만, 그 이상은 IB로 떨어진다 — <strong>대역폭이 ~10배 감소</strong>. 따라서 통신이 빈번한 <code>TP</code>는 NVLink에, 통신이 적은 <code>PP</code>는 IB에 매핑해야 한다.</p>
+      <div class="use-when">
+        <strong>실전 함의</strong>
+        <p>GPT-3 1.5T 학습 시 <em>통신 시간 비중 30~40%</em>. NVL72(72개 B200을 NVLink로 연결)는 이 문제를 정면 해결 — 노드 경계 자체를 8 → 72로 늘렸다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="interconnect tiers">
+      <div class="topo-grid">
+        <div class="topo-row"><span class="tag">NVLink5</span><span class="desc"><b>1.8 TB/s</b> · GPU↔GPU 직결 (B200) · 18 lanes</span></div>
+        <div class="topo-row"><span class="tag">NVLink4</span><span class="desc"><b>900 GB/s</b> · H100 SXM · 18 lanes × 50GB/s</span></div>
+        <div class="topo-row"><span class="tag">NVSwitch</span><span class="desc"><b>전 GPU 풀-메시</b> · 노드 내 8GPU 동시 통신 · NVL72는 72GPU 확장</span></div>
+        <div class="topo-row"><span class="tag">PCIe5</span><span class="desc"><b>128 GB/s</b> · CPU↔GPU · 호스트 IO 율속</span></div>
+        <div class="topo-row"><span class="tag">IB NDR</span><span class="desc"><b>400 Gb/s = 50 GB/s</b> · 노드 간 · InfiniBand 또는 RoCE v2</span></div>
+        <div class="topo-row"><span class="tag">IB XDR</span><span class="desc"><b>800 Gb/s = 100 GB/s</b> · 2025+ 차세대 · NVL72 외부 연결</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-precision">
+    <div class="db-text">
+      <h4><span class="num">05</span>정밀도 — FP32 → FP8 → FP4</h4>
+      <p>딥러닝 학습은 FP32(32bit) → FP16/BF16(16bit) → FP8(8bit)로 내려왔다. 비트가 절반이면 <strong>(1) 메모리 절반 (2) 대역폭 절반 (3) Tensor Core 처리량 2배</strong>의 삼중 효과.</p>
+      <p>핵심 차이는 <strong>exponent 비트</strong>. BF16은 exponent 8bit로 FP32 동일 dynamic range, FP16은 5bit로 underflow 위험. FP8은 두 가지 변종 — <code>E4M3</code>(exponent 4, mantissa 3, 정밀도 우선)와 <code>E5M2</code>(exponent 5, mantissa 2, range 우선). 보통 forward·activation은 <code>E4M3</code>, backward·gradient는 <code>E5M2</code>를 사용한다.</p>
+      <div class="use-when">
+        <strong>실전 함의</strong>
+        <p>FP8 학습의 안정성은 <em>per-tensor scaling factor</em>에 달려있다 — Transformer Engine이 자동 관리. 수동 FP8은 NaN 발생 빈도 높음.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="numerical format">
+      <table class="precision-table">
+        <thead><tr><th>포맷</th><th>bit</th><th>EX</th><th>M</th><th>Range</th><th>용도</th></tr></thead>
+        <tbody>
+          <tr><td class="bit">FP32</td><td>32</td><td>8</td><td>23</td><td>10⁻³⁸ ~ 10³⁸</td><td>마스터 weight</td></tr>
+          <tr><td class="bit">TF32</td><td>19</td><td>8</td><td>10</td><td>same</td><td>A100 default</td></tr>
+          <tr><td class="bit">BF16</td><td>16</td><td>8</td><td>7</td><td>same range</td><td>표준 학습</td></tr>
+          <tr><td class="bit">FP16</td><td>16</td><td>5</td><td>10</td><td>±65504</td><td>구버전 학습</td></tr>
+          <tr><td class="bit">FP8 E4M3</td><td>8</td><td>4</td><td>3</td><td>±448</td><td>fwd / act</td></tr>
+          <tr><td class="bit">FP8 E5M2</td><td>8</td><td>5</td><td>2</td><td>±57344</td><td>bwd / grad</td></tr>
+          <tr><td class="bit">INT8</td><td>8</td><td>-</td><td>-</td><td>±127</td><td>추론 양자화</td></tr>
+          <tr><td class="bit">FP4</td><td>4</td><td>2</td><td>1</td><td>±6</td><td>B200 추론</td></tr>
+          <tr><td class="bit">INT4</td><td>4</td><td>-</td><td>-</td><td>±7</td><td>K-quants</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="diagram-block" id="d-vscpu">
+    <div class="db-text">
+      <h4><span class="num">06</span>GPU vs CPU — 다른 종족</h4>
+      <p>CPU는 <strong>적은 코어 · 큰 캐시 · 복잡한 제어</strong>(분기 예측·OoO·prefetch)로 <strong>latency 최적화</strong>. GPU는 <strong>수만 코어 · 작은 캐시 · 단순한 제어</strong>로 <strong>throughput 최적화</strong>.</p>
+      <p>CPU 1코어는 GPU 1코어보다 <code>~100x</code> 빠르지만, GPU는 코어가 <code>~10000x</code> 많다. 그래서 <strong>충분히 병렬화 가능한 작업</strong>(matmul·conv·embedding)만 GPU가 이긴다. <strong>분기 많은 트리 탐색·DB 쿼리·웹 서버</strong>는 GPU가 오히려 느리다.</p>
+      <div class="use-when">
+        <strong>실전 함의</strong>
+        <p>"GPU에 올리면 빨라진다"는 미신. <em>arithmetic intensity</em>(연산/바이트)가 GPU의 ridge point(~10 FLOP/byte) 이상이어야 효과 — <code>nvprof</code>로 확인.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="philosophy contrast">
+      <div class="compute-vs">
+        <div>
+          <h5>CPU — Latency</h5>
+          <ul>
+            <li>~64 core (Sapphire Rapids)</li>
+            <li>L1 32KB · L2 1MB · L3 60MB</li>
+            <li>분기 예측 · OoO · SMT</li>
+            <li>큰 ILP · 단일 스레드 빠름</li>
+            <li>적합: DB · web · branch 많은 코드</li>
+          </ul>
+        </div>
+        <div>
+          <h5>GPU — Throughput</h5>
+          <ul>
+            <li>16,896 CUDA core (H100)</li>
+            <li>SMEM 228KB · L2 50MB</li>
+            <li>SIMT warp(32) · 분기 약함</li>
+            <li>대규모 데이터 병렬성 필요</li>
+            <li>적합: matmul · conv · embedding</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §03 -->
+<section class="section" id="training">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Distributed Training</div>
+      <h2 class="section-title">분산 학습 패러다임</h2>
+    </div>
+  </div>
+  <p class="ls-intro">단일 GPU 80GB로 70B 이상의 모델은 <em>학습할 수 없다</em>. 분산 학습은 <strong>모델·데이터·옵티마이저 상태를 어느 축으로 자르느냐</strong>의 조합. 4개의 직교축이 있고, 실전에서는 모두 동시에 적용한다.</p>
+
+  <div class="ls-block" id="t-dp">
+    <div class="ls-kicker">Axis 01 · Data Parallel</div>
+    <h3 class="ls-title">데이터 병렬 — 모든 GPU에 모델 복제</h3>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">기준 구현</span><span class="badge">DDP</span><span class="badge">PyTorch</span><span class="badge">NCCL</span></div>
+        <p>가장 단순하고 가장 흔히 쓰이는 패러다임. <strong>각 GPU에 모델 전체를 복제</strong>하고, 배치를 GPU 수만큼 쪼개 동시에 forward·backward. 마지막에 <strong>all-reduce</strong>로 그래디언트를 평균화하고 동기 update.</p>
+        <p>장점: 구현 단순, 통신은 매 step <strong>1번</strong>. 단점: 모델 자체를 한 GPU에 fit시켜야 함 — 80GB로는 BF16 기준 <strong>~20B 파라미터</strong>가 한계 (옵티마이저 상태까지 합쳐서).</p>
+        <p><strong>NCCL all-reduce</strong>의 알고리즘은 <code>Ring</code>(노드 내 NVLink), <code>Tree</code>(노드 간 IB). <code>NCCL_DEBUG=INFO</code>로 어느 알고리즘을 골랐는지 확인.</p>
+        <div class="use-when"><strong>언제 쓰나</strong><p>모델이 GPU에 fit하는 모든 경우의 baseline. 7B 이하 모델 학습·파인튜닝의 99%가 DDP.</p></div>
+      </div>
+      <div class="canvas" data-label="data parallel · 4 GPU">
+        <div class="parallel-flow">
+          <div class="parallel-row"><span class="name">GPU 0</span><span class="gpus"><span>L1</span><span>L2</span><span>L3</span><span>L4</span></span></div>
+          <div class="parallel-row"><span class="name">GPU 1</span><span class="gpus"><span>L1</span><span>L2</span><span>L3</span><span>L4</span></span></div>
+          <div class="parallel-row"><span class="name">GPU 2</span><span class="gpus"><span>L1</span><span>L2</span><span>L3</span><span>L4</span></span></div>
+          <div class="parallel-row"><span class="name">GPU 3</span><span class="gpus"><span>L1</span><span>L2</span><span>L3</span><span>L4</span></span></div>
+          <div style="margin-top: 0.7rem; padding: 0.5rem 0.7rem; background: var(--accent-wash); border-left: 3px solid var(--accent); font-size: 0.7rem; font-family: var(--mono); color: var(--ink);">all-reduce(grad) · ring algorithm</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="t-tp">
+    <div class="ls-kicker">Axis 02 · Tensor Parallel</div>
+    <h3 class="ls-title">텐서 병렬 — 레이어 내부 행렬을 쪼갬</h3>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">기준 구현</span><span class="badge">Megatron-LM</span><span class="badge">NVIDIA</span></div>
+        <p>큰 weight 행렬을 <strong>열 또는 행 방향으로 N분할</strong>. 예: Attention의 <code>W_qkv ∈ R^(d × 3d)</code>를 8개 GPU에 열 분할 → 각 GPU는 <code>d × 3d/8</code>만 보유. forward 시 각자 부분 결과를 계산하고 <strong>all-reduce</strong>로 합친다.</p>
+        <p>통신이 <strong>매 레이어마다</strong> 발생 — DP보다 통신이 <code>~100x</code> 빈번. 따라서 <strong>NVLink가 있는 노드 내부에서만</strong> 효과적. TP=8을 넘으면 통신 비용이 컴퓨트를 잡아먹는다.</p>
+        <p>Megatron의 영리한 점: column parallel + row parallel을 짝지어 <strong>중간 결과를 splat된 채로 다음 레이어로 전달</strong> — all-reduce 횟수를 절반으로.</p>
+        <div class="use-when"><strong>언제 쓰나</strong><p>모델이 단일 GPU에 안 들어갈 때 첫 번째 선택. 노드 내(NVLink 8 GPU)에 한정.</p></div>
+      </div>
+      <div class="canvas" data-label="tensor parallel · TP=4">
+        <div class="parallel-flow">
+          <div class="parallel-row"><span class="name">GPU 0</span><span class="gpus"><span>W₀</span><span class="s">·</span><span class="s">·</span><span class="s">·</span></span></div>
+          <div class="parallel-row"><span class="name">GPU 1</span><span class="gpus"><span class="s">·</span><span>W₁</span><span class="s">·</span><span class="s">·</span></span></div>
+          <div class="parallel-row"><span class="name">GPU 2</span><span class="gpus"><span class="s">·</span><span class="s">·</span><span>W₂</span><span class="s">·</span></span></div>
+          <div class="parallel-row"><span class="name">GPU 3</span><span class="gpus"><span class="s">·</span><span class="s">·</span><span class="s">·</span><span>W₃</span></span></div>
+          <div style="margin-top: 0.7rem; padding: 0.5rem 0.7rem; background: var(--accent-wash); border-left: 3px solid var(--accent); font-size: 0.7rem; font-family: var(--mono); color: var(--ink);">all-reduce(out) · per layer · NVLink only</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="t-pp">
+    <div class="ls-kicker">Axis 03 · Pipeline Parallel</div>
+    <h3 class="ls-title">파이프라인 병렬 — 레이어 단위 분할</h3>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">기준 구현</span><span class="badge">GPipe</span><span class="badge">1F1B</span><span class="badge">Interleaved</span></div>
+        <p>모델의 레이어를 <strong>스테이지로 묶어 GPU별로 분할</strong>. 예: 80레이어 모델을 8개 GPU에 10레이어씩. Forward는 <code>GPU 0 → 1 → ... → 7</code>, backward는 역순.</p>
+        <p>문제는 <strong>pipeline bubble</strong> — 첫 GPU가 forward 시작했을 때 마지막 GPU는 놀고 있다. <strong>GPipe</strong>는 micro-batch로 쪼개 파이프라인 채움, <strong>1F1B</strong>(One Forward One Backward)는 메모리도 절약. <strong>Interleaved 1F1B</strong>는 레이어를 작은 chunk로 더 쪼개 bubble을 <code>~5%</code>로 축소.</p>
+        <p>통신은 stage 경계에서 <strong>p2p send/recv</strong>(작은 활성값만) — TP보다 훨씬 가벼움. IB로도 충분.</p>
+        <div class="use-when"><strong>언제 쓰나</strong><p>모델이 한 노드(8 GPU)도 못 담을 때. TP=8과 짝지어 PP=N의 형태로 노드 수를 늘림.</p></div>
+      </div>
+      <div class="canvas" data-label="pipeline · 1F1B · 4 stage">
+        <div class="inf-flow">
+          <div class="inf-row"><span class="lbl">Stage 0</span><span class="blocks"><span></span><span></span><span></span><span></span><span class="empty"></span><span class="empty"></span><span class="empty"></span><span class="empty"></span></span><span class="met">F·B</span></div>
+          <div class="inf-row"><span class="lbl">Stage 1</span><span class="blocks"><span class="empty"></span><span></span><span></span><span></span><span></span><span class="empty"></span><span class="empty"></span><span class="empty"></span></span><span class="met">F·B</span></div>
+          <div class="inf-row"><span class="lbl">Stage 2</span><span class="blocks"><span class="empty"></span><span class="empty"></span><span></span><span></span><span></span><span></span><span class="empty"></span><span class="empty"></span></span><span class="met">F·B</span></div>
+          <div class="inf-row"><span class="lbl">Stage 3</span><span class="blocks"><span class="empty"></span><span class="empty"></span><span class="empty"></span><span></span><span></span><span></span><span></span><span></span></span><span class="met">F·B</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="t-fsdp">
+    <div class="ls-kicker">Axis 04 · FSDP / ZeRO</div>
+    <h3 class="ls-title">FSDP — 파라미터·옵티마이저 상태를 N분할</h3>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">기준 구현</span><span class="badge">DeepSpeed ZeRO</span><span class="badge">PyTorch FSDP</span></div>
+        <p>DDP의 진화형. DDP가 <em>모델 전체를 복제</em>한다면 FSDP는 <strong>파라미터를 N개 GPU에 분할 보관</strong>하고 forward·backward 직전에만 <strong>all-gather</strong>로 모은다. ZeRO의 3단계:</p>
+        <p><strong>Stage 1</strong>: 옵티마이저 상태(Adam의 m·v, FP32 master weight)만 분할 — <code>~4x</code> 메모리 절감. <strong>Stage 2</strong>: 추가로 그래디언트 분할 — <code>~8x</code>. <strong>Stage 3</strong>: 파라미터까지 분할 — <code>~N x</code>(N=GPU수).</p>
+        <p>비용: 통신 횟수 2~3배 증가(all-gather + reduce-scatter). 그래서 <strong>communication-computation overlap</strong>이 중요 — <code>NCCL_NCHANNELS_PER_PEER=16</code> 같은 튜닝 필요.</p>
+        <div class="use-when"><strong>언제 쓰나</strong><p>30B~200B 학습의 표준. 노드 수가 많아 TP/PP 구성이 복잡할 때 FSDP만으로도 충분.</p></div>
+      </div>
+      <div class="canvas" data-label="ZeRO stage progression">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; font-family: var(--mono); font-size: 0.72rem;">
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep); margin-bottom: 0.3rem;">Baseline · DDP (모델 복제)</div>
+            <div style="display: flex; gap: 3px;"><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P+G+O</span><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P+G+O</span><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P+G+O</span><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P+G+O</span></div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep); margin-bottom: 0.3rem;">Stage 1 · Optimizer 분할 (4x ↓)</div>
+            <div style="display: flex; gap: 3px;"><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P+G+O₀</span><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P+G+O₁</span><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P+G+O₂</span><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P+G+O₃</span></div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep); margin-bottom: 0.3rem;">Stage 2 · + Gradient 분할 (8x ↓)</div>
+            <div style="display: flex; gap: 3px;"><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P+G₀+O₀</span><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P+G₁+O₁</span><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P+G₂+O₂</span><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P+G₃+O₃</span></div>
+          </div>
+          <div style="background: var(--paper); border: 2px solid var(--ink); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep); margin-bottom: 0.3rem;">Stage 3 · + Parameter 분할 (N x ↓)</div>
+            <div style="display: flex; gap: 3px;"><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P₀+G₀+O₀</span><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P₁+G₁+O₁</span><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P₂+G₂+O₂</span><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.2rem; text-align: center;">P₃+G₃+O₃</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="t-3d">
+    <div class="ls-kicker">Axis 05 · 3D Parallelism</div>
+    <h3 class="ls-title">3D 병렬 — TP × PP × DP의 격자</h3>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">사례</span><span class="badge">GPT-3</span><span class="badge">PaLM</span><span class="badge">Llama-3 405B</span></div>
+        <p>실전 대규모 학습은 세 축을 모두 사용한다. Llama-3 405B 학습 구성(공개): <code>TP=8 × PP=16 × DP=128</code> = <strong>16,384 GPU</strong>. 이 격자에서:</p>
+        <p><strong>TP=8</strong>: 노드 내 NVLink 8 GPU에 매핑 — Attention·MLP의 큰 matmul 분할. <strong>PP=16</strong>: 노드 16개에 레이어 그룹 분할 — IB 통신 충분. <strong>DP=128</strong>: 128개 replica가 데이터 분할 학습 — FSDP/ZeRO-1 함께 적용.</p>
+        <p>이 외에 <strong>Sequence Parallel</strong>(LayerNorm을 시퀀스 축으로 분할), <strong>Context Parallel</strong>(긴 컨텍스트의 attention을 시퀀스 축으로 분할), <strong>Expert Parallel</strong>(MoE의 expert를 GPU에 분할)도 추가.</p>
+        <div class="use-when"><strong>언제 쓰나</strong><p>100B+ 모델 학습. 4D·5D 병렬도 등장 — Mixture-of-Experts 모델은 EP까지 필수.</p></div>
+      </div>
+      <div class="canvas" data-label="Llama-3 405B · 16384 GPU">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 0.6rem; width: 100%; font-family: var(--mono); font-size: 0.72rem;">
+          <div style="background: var(--ink); color: var(--paper); padding: 0.7rem 0.85rem; text-align: center;">
+            <div style="font-weight: 600; letter-spacing: 0.05em;">TP=8 × PP=16 × DP=128 = 16,384 GPU</div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep); margin-bottom: 0.3rem;">TP (가로)</div>
+            <div style="color: var(--ink-soft); font-family: var(--sans); font-size: 0.78rem;">노드 내 8 GPU · NVLink 900GB/s · matmul 분할 · all-reduce per layer</div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep); margin-bottom: 0.3rem;">PP (세로)</div>
+            <div style="color: var(--ink-soft); font-family: var(--sans); font-size: 0.78rem;">노드 간 16개 stage · IB 400Gb/s · 1F1B 스케줄링 · activation p2p</div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep); margin-bottom: 0.3rem;">DP (replica)</div>
+            <div style="color: var(--ink-soft); font-family: var(--sans); font-size: 0.78rem;">128 replica · 데이터 분할 · FSDP ZeRO-1 · all-reduce per step</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §04 -->
+<section class="section" id="inference">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Inference Optimization</div>
+      <h2 class="section-title">추론 최적화</h2>
+    </div>
+  </div>
+  <p class="ls-intro">학습은 <em>FLOPS-bound</em>(compute가 율속)지만 추론의 decode 단계는 <em>memory-bandwidth-bound</em>다. <strong>토큰 1개 생성에 weight 전체를 HBM에서 한 번 읽어야 한다</strong> — 70B BF16 = 140GB / 3.35TB/s = 42ms가 이론 하한. 모든 추론 최적화는 이 율속을 어떻게 회피할지의 게임.</p>
+
+  <div class="ls-block" id="i-kv">
+    <div class="ls-kicker">Pattern 01 · KV Cache</div>
+    <h3 class="ls-title">KV Cache — 메모리가 처리량을 결정</h3>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">사례</span><span class="badge">vLLM</span><span class="badge">PagedAttention</span><span class="badge">UC Berkeley</span></div>
+        <p>Transformer의 self-attention은 <strong>과거 토큰의 Key·Value</strong>를 재사용한다. 매번 다시 계산하지 않고 <strong>KV cache에 저장</strong>해 decode마다 누적. Llama-3 70B · 8K context 1요청 KV cache: <code>num_layers × num_heads × head_dim × 2(K,V) × ctx × dtype_size = 80 × 8 × 128 × 2 × 8192 × 2 = 2.5GB</code>.</p>
+        <p>고전적 구현은 <strong>요청별 연속 메모리 할당</strong> — 최대 길이 기준으로 미리 잡아 <strong>~60% 낭비</strong>. <strong>PagedAttention</strong>은 OS 가상메모리처럼 KV를 <code>16-token 블록</code>으로 쪼개 비연속 할당. <strong>메모리 낭비를 4% 미만</strong>으로 줄여 동시 처리 가능 요청을 <code>~5x</code> 증가.</p>
+        <p>추가 기법: <strong>Prefix Caching</strong>(시스템 프롬프트의 KV를 한 번 계산 후 재사용 — RAG에서 <code>~30%</code> 절감), <strong>KV Cache Quantization</strong>(INT8/FP8로 저장).</p>
+        <div class="use-when"><strong>언제 쓰나</strong><p>LLM 서빙의 기본. vLLM·TGI·TensorRT-LLM 모두 PagedAttention 채택.</p></div>
+      </div>
+      <div class="canvas" data-label="paged vs contiguous">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 0.7rem; width: 100%; font-family: var(--mono); font-size: 0.7rem;">
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep); margin-bottom: 0.4rem;">Contiguous (HuggingFace default)</div>
+            <div style="display: flex; gap: 2px; height: 16px;"><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent);"></span><span style="flex: 1; background: var(--accent-wash); border: 1px solid var(--accent);"></span><span style="flex: 1; background: var(--paper-deep); border: 1px solid var(--rule);"></span><span style="flex: 1; background: var(--paper-deep); border: 1px solid var(--rule);"></span><span style="flex: 1; background: var(--paper-deep); border: 1px solid var(--rule);"></span><span style="flex: 1; background: var(--paper-deep); border: 1px solid var(--rule);"></span></div>
+            <div style="margin-top: 0.3rem; color: var(--ink-faint); font-size: 0.65rem;">max=8K 예약 · 현재 2K 사용 · 75% 낭비</div>
+          </div>
+          <div style="background: var(--paper); border: 2px solid var(--ink); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep); margin-bottom: 0.4rem;">PagedAttention (vLLM)</div>
+            <div style="display: flex; gap: 2px; height: 16px;"><span style="width: 12%; background: var(--accent-wash); border: 1px solid var(--accent);"></span><span style="width: 12%; background: var(--accent-wash); border: 1px solid var(--accent);"></span><span style="width: 12%; background: var(--accent-wash); border: 1px solid var(--accent);"></span><span style="width: 12%; background: var(--accent-wash); border: 1px solid var(--accent);"></span></div>
+            <div style="margin-top: 0.3rem; color: var(--ink-faint); font-size: 0.65rem;">16-token 블록 단위 · 필요할 때만 할당 · 4% 낭비</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="i-batch">
+    <div class="ls-kicker">Pattern 02 · Continuous Batching</div>
+    <h3 class="ls-title">연속 배칭 — 요청 단위로 일찍 빼기</h3>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">사례</span><span class="badge">Orca</span><span class="badge">vLLM</span><span class="badge">TGI</span></div>
+        <p>고전적 <strong>static batching</strong>은 배치 안의 가장 긴 요청이 끝날 때까지 짧은 요청도 기다린다. 첫 번째 요청이 50토큰에서 끝났는데 마지막이 1000토큰 가는 중이면 GPU의 95%가 padding 처리에 낭비.</p>
+        <p><strong>Continuous batching</strong>(또는 <em>iteration-level scheduling</em>)은 <strong>매 토큰 step마다 배치를 재구성</strong> — 끝난 요청은 즉시 빼고 대기 중인 새 요청을 끼워넣는다. 처리량 <code>2~3x</code> 증가.</p>
+        <p>구현 트릭: <strong>prefill</strong>(긴 prompt 처리, compute-bound)과 <strong>decode</strong>(짧은 토큰 생성, memory-bound)는 특성이 달라 <strong>chunked prefill</strong>로 섞어 GPU를 균등 사용. vLLM의 <code>--max-num-batched-tokens</code>가 이 비율 조정.</p>
+        <div class="use-when"><strong>언제 쓰나</strong><p>다중 요청 동시 처리하는 모든 LLM 서빙. 단일 사용자 챗은 단순 batching으로 충분.</p></div>
+      </div>
+      <div class="canvas" data-label="static vs continuous">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 0.6rem; width: 100%; font-family: var(--mono); font-size: 0.7rem;">
+          <div>
+            <div style="font-weight: 600; color: var(--accent-deep); margin-bottom: 0.3rem;">Static · GPU 활용률 30%</div>
+            <div class="inf-flow" style="gap: 0.3rem;">
+              <div class="inf-row" style="grid-template-columns: 3rem 1fr;"><span class="lbl">R1</span><span class="blocks"><span></span><span></span><span class="empty"></span><span class="empty"></span><span class="empty"></span><span class="empty"></span></span></div>
+              <div class="inf-row" style="grid-template-columns: 3rem 1fr;"><span class="lbl">R2</span><span class="blocks"><span></span><span></span><span></span><span></span><span></span><span></span></span></div>
+              <div class="inf-row" style="grid-template-columns: 3rem 1fr;"><span class="lbl">R3</span><span class="blocks"><span></span><span class="empty"></span><span class="empty"></span><span class="empty"></span><span class="empty"></span><span class="empty"></span></span></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-weight: 600; color: var(--accent-deep); margin-bottom: 0.3rem;">Continuous · GPU 활용률 85%</div>
+            <div class="inf-flow" style="gap: 0.3rem;">
+              <div class="inf-row" style="grid-template-columns: 3rem 1fr;"><span class="lbl">R1</span><span class="blocks"><span></span><span></span><span style="background: var(--hl); border-top: 2px solid var(--accent-deep);"></span><span style="background: var(--hl); border-top: 2px solid var(--accent-deep);"></span><span style="background: var(--hl); border-top: 2px solid var(--accent-deep);"></span><span style="background: var(--hl); border-top: 2px solid var(--accent-deep);"></span></span></div>
+              <div class="inf-row" style="grid-template-columns: 3rem 1fr;"><span class="lbl">R2</span><span class="blocks"><span></span><span></span><span></span><span></span><span></span><span></span></span></div>
+              <div class="inf-row" style="grid-template-columns: 3rem 1fr;"><span class="lbl">R3</span><span class="blocks"><span></span><span style="background: var(--hl); border-top: 2px solid var(--accent-deep);"></span><span style="background: var(--hl); border-top: 2px solid var(--accent-deep);"></span><span style="background: var(--hl); border-top: 2px solid var(--accent-deep);"></span><span style="background: var(--hl); border-top: 2px solid var(--accent-deep);"></span><span style="background: var(--hl); border-top: 2px solid var(--accent-deep);"></span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="i-spec">
+    <div class="ls-kicker">Pattern 03 · Speculative Decoding</div>
+    <h3 class="ls-title">투기적 디코딩 — 작은 모델로 미리, 큰 모델로 검증</h3>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">사례</span><span class="badge">Google</span><span class="badge">Medusa</span><span class="badge">EAGLE</span></div>
+        <p>관찰: LLM의 다음 토큰 중 <strong>~70%</strong>는 작은 모델로도 정확히 예측 가능. 이걸 이용해 <strong>draft model</strong>(예: Llama-3 1B)이 <code>K개 토큰</code>을 빠르게 생성하고, <strong>target model</strong>(Llama-3 70B)이 한 번의 forward로 <strong>모두 검증</strong>.</p>
+        <p>핵심: 70B의 forward 1회로 K개 토큰의 logit을 모두 계산할 수 있다 — <strong>memory-bandwidth가 율속</strong>이므로 K=4여도 시간이 거의 동일. draft가 맞은 만큼은 <code>K x</code>로 가속, 틀린 토큰부터 다시 시작.</p>
+        <p>변형들: <strong>Medusa</strong>(여러 head로 한 모델 내에서 미래 토큰 예측), <strong>EAGLE</strong>(target 모델의 feature를 활용한 draft — 채택률 80%+), <strong>Lookahead Decoding</strong>(draft 없이 n-gram 캐시 활용).</p>
+        <div class="use-when"><strong>언제 쓰나</strong><p>대형 모델 latency 단축. Batch size가 작을수록(=memory-bound 강할수록) 효과 큼. 큰 batch에선 prefill에 묻혀 효과 감소.</p></div>
+      </div>
+      <div class="canvas" data-label="spec decode · K=4">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 0.6rem; width: 100%; font-family: var(--mono); font-size: 0.72rem;">
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep); margin-bottom: 0.3rem;">Draft (1B) · 빠름</div>
+            <div style="display: flex; gap: 0.3rem;"><span style="padding: 0.3rem 0.5rem; background: var(--accent-wash); border: 1px solid var(--accent);">T1'</span><span style="padding: 0.3rem 0.5rem; background: var(--accent-wash); border: 1px solid var(--accent);">T2'</span><span style="padding: 0.3rem 0.5rem; background: var(--accent-wash); border: 1px solid var(--accent);">T3'</span><span style="padding: 0.3rem 0.5rem; background: var(--accent-wash); border: 1px solid var(--accent);">T4'</span></div>
+          </div>
+          <div style="background: var(--paper); border: 2px solid var(--ink); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep); margin-bottom: 0.3rem;">Target (70B) · 검증 (1 forward)</div>
+            <div style="display: flex; gap: 0.3rem;"><span style="padding: 0.3rem 0.5rem; background: var(--hl); border: 1px solid var(--accent-deep);">T1 ✓</span><span style="padding: 0.3rem 0.5rem; background: var(--hl); border: 1px solid var(--accent-deep);">T2 ✓</span><span style="padding: 0.3rem 0.5rem; background: var(--hl); border: 1px solid var(--accent-deep);">T3 ✓</span><span style="padding: 0.3rem 0.5rem; background: var(--paper-deep); border: 1px solid var(--rule); color: var(--ink-faint);">T4 ✗</span></div>
+          </div>
+          <div style="text-align: center; color: var(--ink-soft); font-size: 0.7rem; padding: 0.4rem; background: var(--accent-wash);">3 token accepted in 1 step → ~3x speedup</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="i-quant">
+    <div class="ls-kicker">Pattern 04 · Quantization</div>
+    <h3 class="ls-title">양자화 — INT8 / FP8 / INT4로 압축</h3>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">기법</span><span class="badge">SmoothQuant</span><span class="badge">AWQ</span><span class="badge">GPTQ</span><span class="badge">K-quants</span></div>
+        <p>학습된 BF16 weight를 더 작은 비트로 압축 → <strong>메모리·대역폭 절감</strong>. 70B BF16=140GB → INT8=70GB → INT4=35GB. <strong>단일 80GB GPU에 70B fit</strong>의 핵심.</p>
+        <p><strong>주요 알고리즘</strong>: <code>SmoothQuant</code>(activation outlier를 weight로 마이그레이션), <code>AWQ</code>(activation 분포를 보고 중요 channel 보존), <code>GPTQ</code>(layer-wise 최적화로 손실 최소화), <code>K-quants</code>(llama.cpp의 INT4·5·6, mixed bitwidth).</p>
+        <p><strong>품질 손실</strong>: INT8은 거의 손실 없음(MMLU -0.5%p), INT4도 잘 만든 알고리즘은 -1~2%p 수준. 단 <strong>긴 컨텍스트·복잡한 추론</strong>(코딩·수학)에서 손실이 더 크게 나타남 — 신중한 평가 필요.</p>
+        <p>하드웨어 가속: H100/B200의 <strong>Transformer Engine</strong>이 FP8 native, A100은 INT8까지. CPU(llama.cpp)도 AVX-512로 INT4 가속.</p>
+        <div class="use-when"><strong>언제 쓰나</strong><p>비용·메모리 압박 클 때 항상 첫 옵션. 비즈니스 평가 통과 시 production 채택.</p></div>
+      </div>
+      <div class="canvas" data-label="quantization tradeoff">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; font-family: var(--mono); font-size: 0.7rem;">
+          <table class="precision-table">
+            <thead><tr><th>Format</th><th>70B 크기</th><th>MMLU</th><th>적용</th></tr></thead>
+            <tbody>
+              <tr><td class="bit">BF16</td><td>140GB</td><td>0</td><td>학습 baseline</td></tr>
+              <tr><td class="bit">FP8</td><td>70GB</td><td>-0.2</td><td>H100 native</td></tr>
+              <tr><td class="bit">INT8</td><td>70GB</td><td>-0.5</td><td>SmoothQuant</td></tr>
+              <tr><td class="bit">INT4 AWQ</td><td>35GB</td><td>-1.5</td><td>단일 80G GPU</td></tr>
+              <tr><td class="bit">INT4 GPTQ</td><td>35GB</td><td>-1.8</td><td>오래된 baseline</td></tr>
+              <tr><td class="bit">Q4_K_M</td><td>40GB</td><td>-1.0</td><td>llama.cpp</td></tr>
+              <tr><td class="bit">FP4 (B200)</td><td>35GB</td><td>-1.0</td><td>2025+</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §05 -->
+<section class="section" id="scale">
+  <div class="section-head">
+    <div class="section-num">05</div>
+    <div class="section-titles">
+      <div class="section-kicker">Production at Scale</div>
+      <h2 class="section-title">대규모 운영 — 빅테크 사례</h2>
+    </div>
+  </div>
+  <p class="ls-intro">수만 장 GPU 클러스터의 진짜 문제는 <em>칩 자체가 아니다</em>. <strong>네트워크 토폴로지, 장애 복구, 자원 스케줄링, 전력·냉각</strong>이 시스템의 운명을 결정한다. 사람들이 자주 잊는 사실: <strong>대규모 학습에서 30~40% 시간은 통신과 장애 처리에 쓰인다</strong>.</p>
+
+  <div class="ls-block" id="s-meta">
+    <div class="ls-kicker">Case 01 · Meta</div>
+    <h3 class="ls-title">Grand Teton + RoCE — Llama-3 학습 인프라</h3>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">기업</span><span class="badge">Meta · RSC</span><span class="badge">2024</span></div>
+        <p>Llama-3 70B/405B는 <strong>24,000개 H100</strong> 클러스터에서 학습됐다. Meta는 두 가지 토폴로지 — (1) <strong>InfiniBand 기반 16K H100</strong> (2) <strong>RoCE 기반 24K H100</strong>를 운영. 결론적으로 <strong>RoCE도 충분히 작동</strong>한다는 것을 증명한 게 산업적으로 큰 영향.</p>
+        <p><strong>Grand Teton</strong>: Meta의 자체 설계 8-GPU 노드(H100 SXM5 + NVSwitch). DGX-H100과 유사하지만 OCP 표준으로 더 저렴. 노드 간은 <strong>400Gbps RoCE</strong>(Arista 7800R3) — InfiniBand가 아닌 이더넷 기반.</p>
+        <p>핵심 운영 데이터(공개): <strong>학습 시간의 9%가 unplanned interrupt</strong>로 손실 (16K 클러스터). H100 fail rate ~1%/year로 16K = 매주 3개 카드 교체. <strong>checkpoint·복구 자동화</strong>가 필수.</p>
+        <div class="use-when"><strong>교훈</strong><p>"InfiniBand 없으면 안 된다"는 미신이 깨졌다. RoCE + 제대로 된 congestion control(DCQCN)이면 동등한 결과.</p></div>
+      </div>
+      <div class="canvas" data-label="Meta RSC · 24K H100">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; font-family: var(--mono); font-size: 0.72rem;">
+          <div style="background: var(--ink); color: var(--paper); padding: 0.7rem 0.85rem;">
+            <div style="font-weight: 600; letter-spacing: 0.05em;">24,576 H100 · 11MW · RoCE 400G</div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.5rem 0.7rem;">
+            <div style="color: var(--accent-deep); font-weight: 600;">Grand Teton 노드 × 3072</div>
+            <div style="color: var(--ink-soft); font-family: var(--sans); font-size: 0.78rem;">8 × H100 SXM5 · NVSwitch · 400G NIC × 8</div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.5rem 0.7rem;">
+            <div style="color: var(--accent-deep); font-weight: 600;">3-tier Clos · RoCE v2</div>
+            <div style="color: var(--ink-soft); font-family: var(--sans); font-size: 0.78rem;">ToR → Aggregation → Spine · DCQCN · ECN</div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.5rem 0.7rem;">
+            <div style="color: var(--accent-deep); font-weight: 600;">Storage · Tectonic</div>
+            <div style="color: var(--ink-soft); font-family: var(--sans); font-size: 0.78rem;">7-9TB/s 처리량 · checkpoint 30분마다</div>
+          </div>
+          <div style="background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.5rem 0.7rem;">
+            <div style="color: var(--accent-deep); font-weight: 600;">실제 운영</div>
+            <div style="color: var(--ink); font-family: var(--sans); font-size: 0.78rem;">9% 시간 손실 · 주 3개 카드 fail · checkpoint 복구 자동화</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="s-oai">
+    <div class="ls-kicker">Case 02 · OpenAI / Microsoft</div>
+    <h3 class="ls-title">Azure ND H100 v5 — GPT-4 학습 인프라</h3>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">기업</span><span class="badge">Azure</span><span class="badge">OpenAI</span></div>
+        <p>GPT-4는 추정 <strong>25,000 A100 · 100일</strong>로 학습. GPT-4 Turbo·GPT-4o는 H100 기반. Microsoft가 OpenAI 전용으로 구축한 <strong>Eagle 슈퍼컴퓨터</strong>는 14,400 H100으로 TOP500 3위.</p>
+        <p><strong>ND H100 v5 노드</strong>: 8 × H100 SXM5 · NVSwitch · <strong>InfiniBand NDR 400Gb/s × 8</strong>(GPU 1개당 1포트 — non-blocking). DGX 표준이지만 Azure 데이터센터 전용 변형.</p>
+        <p>차별점: <strong>Singularity</strong>라는 워크로드 스케줄러 — preemption·migration·elasticity를 GPU 워크로드에 적용. job이 도중에 다른 노드로 이동 가능(MPI 워크로드에선 어려운 일).</p>
+        <p>관찰: OpenAI 추론 인프라는 <strong>Triton Inference Server + 자체 라우팅</strong> 추정. ChatGPT 일일 ~3B 토큰 처리량을 ~10K H100으로 서빙(2024 추정).</p>
+        <div class="use-when"><strong>교훈</strong><p>학습 인프라와 추론 인프라는 분리 운영 — 학습은 dense 클러스터, 추론은 region 분산 클러스터.</p></div>
+      </div>
+      <div class="canvas" data-label="Azure ND H100 v5">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; font-family: var(--mono); font-size: 0.72rem;">
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep);">ND H100 v5 (per VM)</div>
+            <div style="color: var(--ink-soft); font-family: var(--sans); font-size: 0.78rem;">8 × H100 SXM5 80GB · NVSwitch · 8 × 400G IB NDR · 96 vCPU · 1.9TB RAM</div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep);">Eagle 슈퍼컴 (TOP500 #3)</div>
+            <div style="color: var(--ink-soft); font-family: var(--sans); font-size: 0.78rem;">14,400 H100 · 561 PFLOPS Linpack · OpenAI 전용</div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep);">Singularity 스케줄러</div>
+            <div style="color: var(--ink-soft); font-family: var(--sans); font-size: 0.78rem;">preemption · live migration · elastic scale</div>
+          </div>
+          <div style="background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep);">GPT-4 추정 학습 비용</div>
+            <div style="color: var(--ink); font-family: var(--sans); font-size: 0.78rem;">~$100M · 25K A100 · 100일 · MoE 1.8T 추정</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="s-google">
+    <div class="ls-kicker">Case 03 · Google</div>
+    <h3 class="ls-title">TPU Pod — 4D Torus의 다른 길</h3>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">기업</span><span class="badge">Google</span><span class="badge">TPU v5p</span></div>
+        <p>Google은 GPU 대신 자체 <strong>TPU</strong>를 14년째 운영. v5p는 <strong>8960 chip / pod</strong>를 <strong>3D torus 네트워크</strong>로 연결 — 노드 경계 없이 한 덩어리로 동작.</p>
+        <p>NVIDIA와의 차이: (1) <strong>훨씬 적은 메모리</strong>(v5p HBM 95GB) (2) <strong>매우 빠른 chip 간 ICI</strong>(4.8TB/s, NVLink5와 동급) (3) <strong>긴 노드 경계 없음</strong>(8960 chip이 한 덩어리). 그래서 같은 워크로드라도 병렬화 전략이 다르다.</p>
+        <p><strong>Pathways</strong>(Google의 분산 ML 런타임)는 TPU에 최적화된 컴파일러. JAX로 코드 작성 → XLA로 컴파일 → 8000 chip에 자동 분산. Gemini 학습이 이 스택 위에서 진행됨.</p>
+        <p>Google이 외부에 TPU를 잘 안 빌려주는 이유: <strong>스택 종속성</strong>. JAX/TensorFlow가 아니면 활용 어려움. PyTorch + XLA로 일부 가능하지만 NVIDIA만큼 매끄럽지 않음.</p>
+        <div class="use-when"><strong>교훈</strong><p>NVIDIA의 진짜 해자는 칩이 아니라 <strong>CUDA + cuDNN + NCCL + Triton</strong>의 깊이. TPU는 칩 성능은 비등하지만 SW 생태계 격차로 점유율 못 늘림.</p></div>
+      </div>
+      <div class="canvas" data-label="TPU v5p Pod · 3D Torus">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; font-family: var(--mono); font-size: 0.72rem;">
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep);">v5p Pod</div>
+            <div style="color: var(--ink-soft); font-family: var(--sans); font-size: 0.78rem;">8960 chip · 459 EFLOPS BF16 · 3D torus 16×16×16</div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep);">per chip</div>
+            <div style="color: var(--ink-soft); font-family: var(--sans); font-size: 0.78rem;">95GB HBM · 459 TFLOPS BF16 · ICI 4.8TB/s</div>
+          </div>
+          <div style="background: var(--paper); border: 1px solid var(--rule); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep);">Stack</div>
+            <div style="color: var(--ink-soft); font-family: var(--sans); font-size: 0.78rem;">JAX · XLA · Pathways · 자체 컴파일러</div>
+          </div>
+          <div style="background: var(--accent-wash); border: 1px solid var(--accent); padding: 0.6rem 0.8rem;">
+            <div style="font-weight: 600; color: var(--accent-deep);">대비 H100 클러스터</div>
+            <div style="color: var(--ink); font-family: var(--sans); font-size: 0.78rem;">노드 경계 없음 · all-reduce 단순 · 단점: 한 chip fail = pod 영향 큼</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="s-k8s">
+    <div class="ls-kicker">Case 04 · Kubernetes</div>
+    <h3 class="ls-title">K8s GPU 운영 — Operator · MIG · Sharing</h3>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row"><span class="cl">표준</span><span class="badge">NVIDIA GPU Operator</span><span class="badge">device plugin</span></div>
+        <p>K8s에서 GPU는 <strong>extended resource</strong>(<code>nvidia.com/gpu</code>)로 노출. NVIDIA <strong>GPU Operator</strong>가 driver·container runtime·device plugin·DCGM·MIG manager를 자동 설치.</p>
+        <p><strong>1 pod ≥ 1 GPU</strong>가 기본이지만 작은 모델 추론은 GPU 공유가 필요. 3가지 방식:</p>
+        <p><strong>MIG (Multi-Instance GPU)</strong>: A100/H100을 하드웨어 레벨에서 7개 슬라이스로 분할 — 진짜 격리, 성능 보장. <em>단점</em>: 슬라이스 크기가 고정(1g/2g/3g/4g/7g).</p>
+        <p><strong>Time-slicing</strong>: 같은 GPU에서 여러 pod이 시간 분할 — context switch overhead, 격리 약함.</p>
+        <p><strong>MPS (Multi-Process Service)</strong>: 동일 CUDA context를 여러 프로세스가 공유 — 가장 빠르지만 GPU fault 시 모든 프로세스 동시 다운.</p>
+        <p>스케줄링: 기본 K8s scheduler는 GPU topology 모름. <strong>topology-aware scheduling</strong>(Volcano·Kueue) 필요 — TP 작업은 NVLink로 묶인 GPU 8개에 배치해야 함.</p>
+        <div class="use-when"><strong>운영 팁</strong><p>학습 작업은 K8s보다 Slurm이 여전히 강하다. K8s는 <strong>추론 서빙·MLOps</strong>에 적합 (KServe·Triton + KEDA 오토스케일).</p></div>
+      </div>
+      <div class="canvas" data-label="GPU sharing modes">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 0.5rem; width: 100%; font-family: var(--mono); font-size: 0.7rem;">
+          <table class="precision-table">
+            <thead><tr><th>모드</th><th>격리</th><th>성능</th><th>적용</th></tr></thead>
+            <tbody>
+              <tr><td class="bit">MIG</td><td>HW 레벨</td><td>예측가능</td><td>multi-tenant</td></tr>
+              <tr><td class="bit">Time-slice</td><td>SW · 약함</td><td>변동성 큼</td><td>dev/test</td></tr>
+              <tr><td class="bit">MPS</td><td>없음</td><td>최고</td><td>동일 유저 작업</td></tr>
+              <tr><td class="bit">Full GPU</td><td>완전</td><td>최고</td><td>학습 · 큰 추론</td></tr>
+            </tbody>
+          </table>
+          <div style="background: var(--accent-wash); border-left: 3px solid var(--accent); padding: 0.5rem 0.7rem; font-family: var(--sans); font-size: 0.78rem; color: var(--ink);">
+            추론 효율을 높이려면: H100 80GB → MIG 1g.10gb × 7 → 7개 7B 모델 서빙
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-block" id="s-config">
+    <div class="ls-kicker">Reference</div>
+    <h3 class="ls-title">대규모 운영 — 핵심 파라미터 참조표</h3>
+    <table class="config-table">
+      <thead><tr><th>파라미터</th><th>기본</th><th>권장</th><th>이유</th></tr></thead>
+      <tbody>
+        <tr><td class="k">NCCL_ALGO</td><td class="v">auto</td><td class="v">Ring / Tree</td><td class="note">노드 내 Ring(NVLink), 노드 간 Tree(IB latency 우위). 잘못 선택 시 30% 손실</td></tr>
+        <tr><td class="k">NCCL_NCHANNELS_PER_PEER</td><td class="v">2</td><td class="v">8~16</td><td class="note">병렬 채널 늘려 IB 대역폭 포화 — A2A·all-gather 큰 모델에서 효과</td></tr>
+        <tr><td class="k">NCCL_SOCKET_IFNAME</td><td class="v">자동</td><td class="v">명시 지정</td><td class="note">eth0(관리망) 잘못 잡으면 IB 안 쓰고 1Gbps로 떨어짐 — 흔한 함정</td></tr>
+        <tr><td class="k">CUDA_VISIBLE_DEVICES</td><td class="v">all</td><td class="v">NUMA aware</td><td class="note">2-socket 노드에서 같은 CPU 소켓의 GPU만 쓰도록 — PCIe 단일 hop</td></tr>
+        <tr><td class="k">torch.compile mode</td><td class="v">default</td><td class="v">max-autotune</td><td class="note">최초 컴파일 5분 더 걸리지만 throughput 10~30% 향상</td></tr>
+        <tr><td class="k">FSDP sharding_strategy</td><td class="v">FULL_SHARD</td><td class="v">HYBRID_SHARD</td><td class="note">노드 내 FULL, 노드 간 REPLICATE — IB 통신량 절감</td></tr>
+        <tr><td class="k">activation_checkpointing</td><td class="v">false</td><td class="v">true (선택적)</td><td class="note">memory 33% 절감 · compute 30% 증가 — OOM 시 첫 옵션</td></tr>
+        <tr><td class="k">gradient_accumulation</td><td class="v">1</td><td class="v">2~8</td><td class="note">실효 batch size 늘려 통신 빈도 ↓ · GPU 활용률 ↑</td></tr>
+        <tr><td class="k">vLLM gpu-memory-util</td><td class="v">0.9</td><td class="v">0.85~0.95</td><td class="note">너무 높으면 OOM, 너무 낮으면 KV cache 부족 — 모니터링 후 조정</td></tr>
+        <tr><td class="k">vLLM max-num-batched-tokens</td><td class="v">2048</td><td class="v">4096~8192</td><td class="note">큰 prefill 처리 · chunked prefill 효과 극대화</td></tr>
+        <tr><td class="k">DCGM ECC errors</td><td class="v">감시 안함</td><td class="v">알람 설정</td><td class="note">SBE(single bit) 증가 = HBM 노화. job 시작 전 ECC 0으로 reset</td></tr>
+        <tr><td class="k">checkpoint interval</td><td class="v">1 epoch</td><td class="v">30분~1시간</td><td class="note">16K 클러스터는 매주 노드 fail 발생 — 짧은 체크포인트가 RTO 결정</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="margin-note">
+  <strong>장애가 일상이다.</strong> Meta 공개 데이터: 16K H100 클러스터에서 54일 학습 중 <strong>419회의 unplanned interrupt</strong>. 절반은 GPU 자체 fail(SXM HBM ECC error · NVLink 손상), 나머지는 노드 fail · 네트워크 fail · 스토리지 fail. 그래서 모든 대규모 학습 코드는 <strong>fault-tolerant checkpoint 복구</strong>가 1순위 — Megatron-LM의 <code>--use-checkpoint-args</code>, DeepSpeed의 <code>save_16bit_model</code>이 표준 패턴.
+</div>
+
+<!-- §06 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">06</div>
+    <div class="section-titles">
+      <div class="section-kicker">In Practice</div>
+      <h2 class="section-title">실전 코드</h2>
+    </div>
+  </div>
+  <p class="code-intro"><em>분산 학습 셋업</em>, <em>FSDP로 70B 학습</em>, <em>vLLM 추론 서빙</em>, <em>커스텀 CUDA 커널</em> 4가지 코드. 코드 헤드를 클릭해 펼치고, copy 버튼으로 복사.</p>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>1. torchrun · DDP 분산 학습 부트스트랩</h4>
+      <div class="head-right">
+        <span class="tag">training</span>
+        <span class="expand-indicator">▸</span>
+      </div>
+    </div>
+<pre><span class="com"># launch_ddp.sh — 4 노드 × 8 GPU = 32 GPU DDP</span>
+torchrun \
+  --nproc_per_node=8 \
+  --nnodes=4 \
+  --node_rank=$RANK \
+  --master_addr=$MASTER_IP \
+  --master_port=29500 \
+  train.py --config configs/llama3-8b.yaml
+
+<span class="com"># train.py — 핵심만</span>
+<span class="kw">import</span> os, torch
+<span class="kw">import</span> torch.distributed <span class="kw">as</span> dist
+<span class="kw">from</span> torch.nn.parallel <span class="kw">import</span> DistributedDataParallel <span class="kw">as</span> DDP
+
+<span class="kw">def</span> <span class="fn">setup</span>():
+    <span class="com"># torchrun이 환경변수 RANK / WORLD_SIZE / LOCAL_RANK 자동 주입</span>
+    dist.<span class="fn">init_process_group</span>(backend=<span class="str">"nccl"</span>)
+    local_rank = <span class="fn">int</span>(os.environ[<span class="str">"LOCAL_RANK"</span>])
+    torch.cuda.<span class="fn">set_device</span>(local_rank)
+    <span class="kw">return</span> local_rank
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    local_rank = <span class="fn">setup</span>()
+    device = torch.<span class="fn">device</span>(<span class="kw">f</span><span class="str">"cuda:{local_rank}"</span>)
+
+    model = <span class="fn">build_model</span>().<span class="fn">to</span>(device)
+    model = <span class="fn">DDP</span>(model, device_ids=[local_rank],
+                gradient_as_bucket_view=<span class="kw">True</span>,
+                static_graph=<span class="kw">True</span>)  <span class="com"># 통신 그래프 최적화</span>
+
+    optimizer = torch.optim.<span class="fn">AdamW</span>(model.<span class="fn">parameters</span>(), lr=<span class="str">3e-4</span>)
+    sampler = <span class="fn">DistributedSampler</span>(dataset, shuffle=<span class="kw">True</span>)
+    loader = <span class="fn">DataLoader</span>(dataset, batch_size=<span class="str">8</span>, sampler=sampler)
+
+    <span class="kw">for</span> epoch <span class="kw">in</span> <span class="fn">range</span>(num_epochs):
+        sampler.<span class="fn">set_epoch</span>(epoch)  <span class="com"># shuffle seed 동기화</span>
+        <span class="kw">for</span> batch <span class="kw">in</span> loader:
+            <span class="kw">with</span> torch.<span class="fn">autocast</span>(<span class="str">"cuda"</span>, dtype=torch.bfloat16):
+                loss = <span class="fn">model</span>(batch).loss
+            loss.<span class="fn">backward</span>()
+            optimizer.<span class="fn">step</span>()
+            optimizer.<span class="fn">zero_grad</span>(set_to_none=<span class="kw">True</span>)
+
+        <span class="kw">if</span> dist.<span class="fn">get_rank</span>() == <span class="str">0</span>:
+            torch.<span class="fn">save</span>(model.module.<span class="fn">state_dict</span>(),
+                       <span class="kw">f</span><span class="str">"ckpt_{epoch}.pt"</span>)
+
+    dist.<span class="fn">destroy_process_group</span>()</pre>
+    <div class="note"><strong>포인트.</strong> <em>torchrun</em>이 환경변수를 자동 주입하므로 코드는 단일 노드와 거의 동일. <code>gradient_as_bucket_view=True</code>는 메모리 복사 제거, <code>static_graph=True</code>는 첫 step에 통신 그래프를 캡처해 이후 step에서 재사용 — <strong>throughput 10~15% 향상</strong>. NCCL 환경변수는 별도 export.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>2. PyTorch FSDP · 70B 모델 학습</h4>
+      <div class="head-right">
+        <span class="tag">FSDP / ZeRO-3</span>
+        <span class="expand-indicator">▸</span>
+      </div>
+    </div>
+<pre><span class="com"># 70B 모델을 64 × H100으로 학습 — FSDP HYBRID_SHARD + activation ckpt</span>
+<span class="kw">import</span> torch
+<span class="kw">from</span> torch.distributed.fsdp <span class="kw">import</span> FullyShardedDataParallel <span class="kw">as</span> FSDP
+<span class="kw">from</span> torch.distributed.fsdp <span class="kw">import</span> (
+    ShardingStrategy, MixedPrecision, BackwardPrefetch,
+    StateDictType, FullStateDictConfig
+)
+<span class="kw">from</span> torch.distributed.fsdp.wrap <span class="kw">import</span> transformer_auto_wrap_policy
+<span class="kw">from</span> torch.distributed.algorithms._checkpoint.checkpoint_wrapper <span class="kw">import</span> (
+    apply_activation_checkpointing, CheckpointImpl
+)
+<span class="kw">from</span> transformers.models.llama.modeling_llama <span class="kw">import</span> LlamaDecoderLayer
+
+<span class="com"># 1. BF16 mixed precision · gradient도 BF16</span>
+mp_policy = <span class="fn">MixedPrecision</span>(
+    param_dtype=torch.bfloat16,
+    reduce_dtype=torch.bfloat16,
+    buffer_dtype=torch.bfloat16,
+)
+
+<span class="com"># 2. transformer block 단위로 wrap — 자동 분할</span>
+auto_wrap_policy = functools.<span class="fn">partial</span>(
+    transformer_auto_wrap_policy,
+    transformer_layer_cls={LlamaDecoderLayer},
+)
+
+model = <span class="fn">load_llama_70b</span>()
+
+<span class="com"># 3. FSDP — HYBRID_SHARD: 노드 내 FULL_SHARD, 노드 간 REPLICATE</span>
+model = <span class="fn">FSDP</span>(
+    model,
+    sharding_strategy=ShardingStrategy.HYBRID_SHARD,
+    auto_wrap_policy=auto_wrap_policy,
+    mixed_precision=mp_policy,
+    backward_prefetch=BackwardPrefetch.BACKWARD_PRE,  <span class="com"># 다음 layer all-gather 미리</span>
+    forward_prefetch=<span class="kw">True</span>,
+    device_id=torch.cuda.<span class="fn">current_device</span>(),
+    limit_all_gathers=<span class="kw">True</span>,
+    use_orig_params=<span class="kw">True</span>,
+)
+
+<span class="com"># 4. activation checkpoint — memory 33% 절감, compute 30% 증가</span>
+<span class="fn">apply_activation_checkpointing</span>(
+    model,
+    checkpoint_wrapper_fn=functools.<span class="fn">partial</span>(
+        checkpoint_wrapper,
+        checkpoint_impl=CheckpointImpl.NO_REENTRANT
+    ),
+    check_fn=<span class="kw">lambda</span> m: <span class="fn">isinstance</span>(m, LlamaDecoderLayer),
+)
+
+<span class="com"># 5. 학습 루프 — DDP와 거의 동일</span>
+optimizer = torch.optim.<span class="fn">AdamW</span>(model.<span class="fn">parameters</span>(), lr=<span class="str">2e-5</span>,
+                              fused=<span class="kw">True</span>)  <span class="com"># fused optimizer kernel</span>
+
+<span class="kw">for</span> step, batch <span class="kw">in</span> <span class="fn">enumerate</span>(dataloader):
+    out = <span class="fn">model</span>(**batch)
+    out.loss.<span class="fn">backward</span>()
+    model.<span class="fn">clip_grad_norm_</span>(<span class="str">1.0</span>)
+    optimizer.<span class="fn">step</span>()
+    optimizer.<span class="fn">zero_grad</span>(set_to_none=<span class="kw">True</span>)
+
+    <span class="kw">if</span> step % <span class="str">100</span> == <span class="str">0</span>:
+        <span class="kw">with</span> FSDP.<span class="fn">state_dict_type</span>(model, StateDictType.FULL_STATE_DICT,
+                                    <span class="fn">FullStateDictConfig</span>(offload_to_cpu=<span class="kw">True</span>,
+                                                          rank0_only=<span class="kw">True</span>)):
+            <span class="kw">if</span> dist.<span class="fn">get_rank</span>() == <span class="str">0</span>:
+                torch.<span class="fn">save</span>(model.<span class="fn">state_dict</span>(), <span class="kw">f</span><span class="str">"ckpt_{step}.pt"</span>)</pre>
+    <div class="note"><strong>포인트.</strong> <em>HYBRID_SHARD</em>가 핵심 선택 — 노드 내 8 GPU는 NVLink로 FULL_SHARD(메모리 절감), 노드 간은 IB로 REPLICATE(통신 절감). 노드 수 늘려도 IB all-gather가 안 늘어남. <em>activation_checkpointing</em>은 forward 활성값을 버리고 backward 시 재계산 — <strong>70B 학습 가능하게 만드는 마법</strong>. <code>fused=True</code> optimizer는 AdamW의 element-wise 연산을 단일 커널로 묶어 30%+ 빠름.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>3. vLLM 추론 서빙 · PagedAttention + Continuous Batching</h4>
+      <div class="head-right">
+        <span class="tag">serving</span>
+        <span class="expand-indicator">▸</span>
+      </div>
+    </div>
+<pre><span class="com"># vLLM으로 Llama-3 70B를 4 × H100에 TP=4로 서빙</span>
+
+<span class="com"># 1. 서버 띄우기 — OpenAI 호환 API</span>
+python -m vllm.entrypoints.openai.api_server \
+  --model meta-llama/Meta-Llama-3-70B-Instruct \
+  --tensor-parallel-size 4 \
+  --gpu-memory-utilization 0.92 \
+  --max-num-batched-tokens 8192 \
+  --max-num-seqs 256 \
+  --enable-prefix-caching \
+  --quantization fp8 \
+  --kv-cache-dtype fp8 \
+  --enable-chunked-prefill
+
+<span class="com"># 2. Python API 사용 — 배치 추론</span>
+<span class="kw">from</span> vllm <span class="kw">import</span> LLM, SamplingParams
+
+llm = <span class="fn">LLM</span>(
+    model=<span class="str">"meta-llama/Meta-Llama-3-70B-Instruct"</span>,
+    tensor_parallel_size=<span class="str">4</span>,
+    dtype=<span class="str">"bfloat16"</span>,
+    quantization=<span class="str">"fp8"</span>,           <span class="com"># H100 hardware FP8</span>
+    kv_cache_dtype=<span class="str">"fp8_e5m2"</span>,    <span class="com"># KV cache도 FP8 → 메모리 2x</span>
+    max_model_len=<span class="str">8192</span>,
+    gpu_memory_utilization=<span class="str">0.92</span>,
+    enable_prefix_caching=<span class="kw">True</span>,    <span class="com"># 시스템 프롬프트 재사용</span>
+    enforce_eager=<span class="kw">False</span>,           <span class="com"># CUDA graph 사용 — 작은 batch 빠름</span>
+)
+
+sampling_params = <span class="fn">SamplingParams</span>(
+    temperature=<span class="str">0.7</span>, top_p=<span class="str">0.9</span>,
+    max_tokens=<span class="str">1024</span>,
+    stop=[<span class="str">"&lt;|eot_id|&gt;"</span>],
+)
+
+<span class="com"># 한 번에 1000개 요청 — continuous batching이 자동 처리</span>
+prompts = [<span class="kw">f</span><span class="str">"질문 {i}: ..."</span> <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="str">1000</span>)]
+outputs = llm.<span class="fn">generate</span>(prompts, sampling_params)
+
+<span class="kw">for</span> out <span class="kw">in</span> outputs:
+    <span class="fn">print</span>(out.outputs[<span class="str">0</span>].text)
+
+<span class="com"># 3. async API — 스트리밍 응답 (production 서빙)</span>
+<span class="kw">from</span> vllm <span class="kw">import</span> AsyncLLMEngine, AsyncEngineArgs
+
+engine = AsyncLLMEngine.<span class="fn">from_engine_args</span>(
+    <span class="fn">AsyncEngineArgs</span>(model=<span class="str">"meta-llama/Meta-Llama-3-70B-Instruct"</span>,
+                    tensor_parallel_size=<span class="str">4</span>, quantization=<span class="str">"fp8"</span>)
+)
+
+<span class="kw">async def</span> <span class="fn">stream_generate</span>(prompt, request_id):
+    <span class="kw">async for</span> output <span class="kw">in</span> engine.<span class="fn">generate</span>(prompt, sampling_params, request_id):
+        <span class="kw">yield</span> output.outputs[<span class="str">0</span>].text  <span class="com"># 누적 텍스트 매 토큰 yield</span></pre>
+    <div class="note"><strong>포인트.</strong> <em>vLLM 한 줄 셋업으로 throughput 23x</em>는 단순 과장이 아니다. <code>fp8 + kv_cache_fp8</code>로 메모리 2x 절감 → 동시 처리 요청 수 2x. <code>--enable-prefix-caching</code>은 RAG에서 시스템 프롬프트가 길 때 결정적 — 첫 응답 latency 5x 단축. <code>--enable-chunked-prefill</code>은 긴 prompt를 작은 chunk로 잘라 decode 요청과 섞어 처리 — <strong>tail latency 70% 단축</strong>.</div>
+  </div>
+
+  <div class="code-card">
+    <div class="code-head">
+      <h4>4. Triton · 커스텀 GPU 커널 (FlashAttention 골자)</h4>
+      <div class="head-right">
+        <span class="tag">CUDA / Triton</span>
+        <span class="expand-indicator">▸</span>
+      </div>
+    </div>
+<pre><span class="com"># Triton — OpenAI가 만든 Python DSL · CUDA 직접 작성보다 10배 짧음</span>
+<span class="com"># 행렬 곱을 SRAM tiling으로 작성</span>
+<span class="kw">import</span> triton
+<span class="kw">import</span> triton.language <span class="kw">as</span> tl
+
+<span class="dec">@triton.jit</span>
+<span class="kw">def</span> <span class="fn">matmul_kernel</span>(
+    a_ptr, b_ptr, c_ptr,
+    M, N, K,
+    stride_am, stride_ak,
+    stride_bk, stride_bn,
+    stride_cm, stride_cn,
+    BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_K: tl.constexpr,
+):
+    <span class="com"># 각 program이 BLOCK_M x BLOCK_N 출력 타일 계산</span>
+    pid_m = tl.<span class="fn">program_id</span>(<span class="str">0</span>)
+    pid_n = tl.<span class="fn">program_id</span>(<span class="str">1</span>)
+
+    offs_m = pid_m * BLOCK_M + tl.<span class="fn">arange</span>(<span class="str">0</span>, BLOCK_M)
+    offs_n = pid_n * BLOCK_N + tl.<span class="fn">arange</span>(<span class="str">0</span>, BLOCK_N)
+    offs_k = tl.<span class="fn">arange</span>(<span class="str">0</span>, BLOCK_K)
+
+    a_ptrs = a_ptr + offs_m[:, <span class="kw">None</span>] * stride_am + offs_k[<span class="kw">None</span>, :] * stride_ak
+    b_ptrs = b_ptr + offs_k[:, <span class="kw">None</span>] * stride_bk + offs_n[<span class="kw">None</span>, :] * stride_bn
+
+    <span class="com"># accumulator는 SRAM(레지스터)에 — HBM 안 건드림</span>
+    acc = tl.<span class="fn">zeros</span>((BLOCK_M, BLOCK_N), dtype=tl.float32)
+
+    <span class="kw">for</span> k <span class="kw">in</span> <span class="fn">range</span>(<span class="str">0</span>, K, BLOCK_K):
+        a = tl.<span class="fn">load</span>(a_ptrs)  <span class="com"># HBM → SRAM</span>
+        b = tl.<span class="fn">load</span>(b_ptrs)
+        acc += tl.<span class="fn">dot</span>(a, b)    <span class="com"># Tensor Core 자동 활용</span>
+        a_ptrs += BLOCK_K * stride_ak
+        b_ptrs += BLOCK_K * stride_bk
+
+    <span class="com"># 마지막에만 HBM에 한 번 씀</span>
+    c_ptrs = c_ptr + offs_m[:, <span class="kw">None</span>] * stride_cm + offs_n[<span class="kw">None</span>, :] * stride_cn
+    tl.<span class="fn">store</span>(c_ptrs, acc.<span class="fn">to</span>(tl.float16))
+
+
+<span class="kw">def</span> <span class="fn">matmul</span>(a, b):
+    M, K = a.shape; K, N = b.shape
+    c = torch.<span class="fn">empty</span>((M, N), device=a.device, dtype=torch.float16)
+    grid = <span class="kw">lambda</span> META: (
+        triton.<span class="fn">cdiv</span>(M, META[<span class="str">"BLOCK_M"</span>]),
+        triton.<span class="fn">cdiv</span>(N, META[<span class="str">"BLOCK_N"</span>])
+    )
+    <span class="fn">matmul_kernel</span>[grid](
+        a, b, c, M, N, K,
+        a.<span class="fn">stride</span>(<span class="str">0</span>), a.<span class="fn">stride</span>(<span class="str">1</span>),
+        b.<span class="fn">stride</span>(<span class="str">0</span>), b.<span class="fn">stride</span>(<span class="str">1</span>),
+        c.<span class="fn">stride</span>(<span class="str">0</span>), c.<span class="fn">stride</span>(<span class="str">1</span>),
+        BLOCK_M=<span class="str">128</span>, BLOCK_N=<span class="str">128</span>, BLOCK_K=<span class="str">32</span>,
+    )
+    <span class="kw">return</span> c</pre>
+    <div class="note"><strong>포인트.</strong> Triton 코드의 핵심은 <em>BLOCK</em> 변수 — SRAM에 담을 타일 크기. <code>128×128×32</code> 타일이 H100 SM에 잘 맞음(SMEM 228KB). <code>tl.dot(a, b)</code>는 Triton 컴파일러가 자동으로 Tensor Core를 호출. CUDA에서 직접 짜면 <strong>500줄짜리 코드가 50줄</strong>로 끝남. <strong>FlashAttention·xFormers·vLLM 커널 대부분이 Triton</strong>으로 작성됨.</div>
+  </div>
+</section>
+
+<footer>
+  <div>karellen-kim · 학습 노트</div>
+  <div>참고 · <a href="https://docs.nvidia.com/cuda/cuda-c-programming-guide/" target="_blank" rel="noopener">CUDA Programming Guide</a> · <a href="https://blog.vllm.ai/" target="_blank" rel="noopener">vLLM blog</a> · <a href="https://ai.meta.com/research/publications/the-llama-3-herd-of-models/" target="_blank" rel="noopener">Llama-3 paper</a></div>
+</footer>
+
+<script>
+(function(){
+  const btn = document.getElementById('menuBtn');
+  const panel = document.getElementById('tocPanel');
+  const backdrop = document.getElementById('tocBackdrop');
+  const open = () => {
+    btn.classList.add('open'); panel.classList.add('open'); backdrop.classList.add('open');
+    document.body.classList.add('menu-open');
+    btn.setAttribute('aria-expanded', 'true'); panel.setAttribute('aria-hidden', 'false');
+  };
+  const close = () => {
+    btn.classList.remove('open'); panel.classList.remove('open'); backdrop.classList.remove('open');
+    document.body.classList.remove('menu-open');
+    btn.setAttribute('aria-expanded', 'false'); panel.setAttribute('aria-hidden', 'true');
+  };
+  btn.addEventListener('click', () => btn.classList.contains('open') ? close() : open());
+  backdrop.addEventListener('click', close);
+  panel.querySelectorAll('[data-close]').forEach(a => a.addEventListener('click', close));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+})();
+
+(function(){
+  document.querySelectorAll('.code-card').forEach(card => {
+    const head = card.querySelector('.code-head');
+    const right = card.querySelector('.head-right');
+    const pre = card.querySelector('pre');
+    if (!head || !right || !pre) return;
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = 'copy';
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(pre.textContent);
+        btn.textContent = 'copied'; btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1500);
+      } catch(err) { btn.textContent = 'err'; }
+    });
+    right.insertBefore(btn, right.firstChild);
+    head.addEventListener('click', () => card.classList.toggle('expanded'));
+  });
+})();
+</script>
+
+</body>
+</html>

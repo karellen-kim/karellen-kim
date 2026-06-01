@@ -432,6 +432,15 @@
     </li>
     <li><a href="#scale" data-close>대용량 처리 체크포인트</a></li>
     <li><a href="#arch-svg" data-close>아키텍처 진화</a></li>
+    <li>
+      <a href="#pitfalls" data-close>Gotchas</a>
+      <ul class="toc-sub">
+        <li><a href="#p-monolith" data-close><span>01</span>Spark 모놀리식 한계</a></li>
+        <li><a href="#p-feature" data-close><span>02</span>피처 파이프라인 복잡도</a></li>
+        <li><a href="#p-online" data-close><span>03</span>온라인 서빙 지연</a></li>
+        <li><a href="#p-drift" data-close><span>04</span>모델 드리프트 감지</a></li>
+      </ul>
+    </li>
     <li><a href="#code" data-close>실전 코드</a></li>
   </ol>
 
@@ -1723,10 +1732,71 @@ client = grpcclient.<span class="fn">InferenceServerClient</span>(<span class="s
 </section>
 
 
-<!-- §5 실전 코드 -->
-<section class="section" id="code">
+<!-- §5 Gotchas -->
+<section class="section" id="pitfalls">
   <div class="section-head">
     <div class="section-num">05</div>
+    <div class="section-titles">
+      <div class="section-kicker">Gotchas</div>
+      <h2 class="section-title">Gotchas</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-monolith">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>Spark 모놀리식 플랫폼으로 ML 전체를 담을 수 있다</h5>
+      <span class="gloss-pron">"단일 실행 엔진의 확장성 한계"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>Michelangelo 1세대의 교훈.</strong> Michelangelo는 2015년 Spark 기반 단일 플랫폼으로 시작했다. Feature Engineering·학습·평가 전체가 하나의 Spark 잡으로 실행됐다. 이 구조는 팀이 작고 모델 종류가 적을 때 단순하고 효과적이다. 그러나 모델 수가 수백 개로 늘고, 딥러닝(TensorFlow·PyTorch)이 등장하면서 Spark 모놀리식이 <b>GPU 학습을 기본 지원하지 않는다</b>는 근본 한계가 드러났다. CPU 기반 Spark 위에서 TF를 실행하려면 커스텀 shim 레이어가 필요하고, 이를 유지보수하는 비용이 플랫폼 팀의 주 업무가 됐다.</p>
+      <p><strong>가정이 깨진 신호.</strong> ① 새 프레임워크 추가할 때마다 플랫폼 팀 개입이 필요해진다 ② GPU 활용률이 낮다(Spark executor의 CPU 비중이 높다) ③ 학습 Job 큐가 늘 막혀 있다 ④ 데이터 과학자가 플랫폼 밖에서 임시 Python 스크립트로 실험을 돌린다.</p>
+      <p><strong>처방 — Uber의 답: PyML → MAJC → Ray.</strong> Uber는 이 문제를 단계적으로 해결했다. PyML(2018): Python 우선 라이브러리 레이어 → 프레임워크 독립성 확보. MAJC(2020): Job 스케줄러와 실행 엔진 분리. Ray on K8s(2022+): Ray의 분산 Actor 모델 위에서 학습·서빙·피처 파이프라인을 통합. 핵심은 "플랫폼이 특정 실행 엔진과 결합되지 않도록" 추상화 레이어를 먼저 설계하는 것이다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-feature">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>피처 파이프라인이 곧 모델 파이프라인이 된다</h5>
+      <span class="gloss-pron">"Feature Store 없이 → 피처 재사용 불가 → 중복 계산"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> 초기 ML 플랫폼은 팀별로 피처를 각자 계산한다. 탑승 ETL 팀, 배달 ETL 팀, 광고 ETL 팀이 각각 "사용자 최근 7일 주문 수"를 다른 파이프라인에서 계산한다. 이 중복 계산이 쌓이면 <b>Hive/Spark 클러스터의 40~60%가 동일한 피처를 반복 생산하는 데 낭비</b>된다. 더 심각한 문제는 같은 이름의 피처가 팀마다 다르게 정의된다는 것이다.</p>
+      <p><strong>처방 — 피처 스토어 도입 시점.</strong> 팀이 3개 이상이고 비슷한 피처를 각자 계산한다면 Feature Store 도입 시점이다. Michelangelo의 Feature Store 핵심 설계: ① 피처 정의를 코드로 등록(DSL/YAML) ② 오프라인 값은 HDFS/Hive에 저장, 온라인 값은 Redis/Cassandra에 복제 ③ 학습 시 오프라인 조인, 서빙 시 온라인 조회 — 같은 피처 코드로 두 경로 모두 충당한다. 이 구조를 처음부터 잡으면 나중에 플랫폼 전체를 재설계하는 고통을 피할 수 있다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-online">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>온라인 서빙 지연 — 모델 크기와 피처 조회의 복합 지연</h5>
+      <span class="gloss-pron">"100ms SLA를 지키는 법"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> 오프라인 학습에서 검증한 모델이 온라인 서빙에서 SLA를 못 지키는 이유는 크게 두 가지다. ① <b>피처 조회 지연</b>: 온라인 서빙 시 Feature Store(Redis/Cassandra)에서 수십 개 피처를 조회하면 round-trip이 쌓인다. 피처 10개 × 1ms = 10ms만 해도 전체 지연의 10%를 소비한다. ② <b>모델 추론 지연</b>: 딥러닝 모델이 커지면 CPU 추론으로는 SLA를 맞추기 어렵다. GPU 서빙 인프라가 없으면 모델 크기에 상한이 생긴다.</p>
+      <p><strong>처방 — Uber의 해결 방식.</strong> 피처 일괄 조회(batch fetch)로 round-trip을 1회로 줄인다. 자주 사용하는 피처 조합은 묶어서 캐싱한다. 모델 크기 기준: Uber는 온라인 서빙에 XGBoost·LightGBM 같은 트리 기반 모델을 선호했다 — 추론이 빠르고 예측 가능하기 때문. 딥러닝 모델은 Candidate Generation(배치)에 쓰고, 최종 Ranker는 경량 모델로 유지하는 2단계 구조를 표준으로 채택했다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-drift">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>모델 드리프트 — 학습할 때 좋았는데 배포 후 나빠진다</h5>
+      <span class="gloss-pron">"데이터 분포 변화 → 오프라인/온라인 품질 괴리"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> 모델은 특정 시점의 데이터 분포로 학습된다. 시간이 지나면서 사용자 행동 패턴, 공급 분포, 계절성이 변하면 모델 예측이 현실과 멀어진다. Michelangelo 초기에는 이 드리프트를 수동으로 발견했다 — 특정 지역의 ETA 예측이 갑자기 나빠진다는 민원이 들어온 뒤에야 모델을 재학습했다.</p>
+      <p><strong>처방 — 자동 드리프트 감지.</strong> ① <b>피처 분포 모니터링</b>: 서빙 시점의 피처 분포와 학습 시점의 분포를 KL divergence나 PSI(Population Stability Index)로 주기적으로 비교. PSI &gt; 0.2면 경고, &gt; 0.25면 재학습 트리거. ② <b>예측 분포 모니터링</b>: 모델 출력값의 분포 변화를 추적. ③ <b>Ground Truth Feedback Loop</b>: 예측과 실제 결과(예: 예측 ETA vs 실제 배달 시간)를 비교하는 실시간 파이프라인. Michelangelo는 이 세 레이어를 자동화해 주요 모델의 재학습을 하루 단위에서 시간 단위로 줄였다.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- §6 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">06</div>
     <div class="section-titles">
       <div class="section-kicker">Reference Implementation</div>
       <h2 class="section-title">실전 코드</h2>

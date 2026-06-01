@@ -342,6 +342,17 @@
       to { opacity: 1; transform: translateY(0); }
     }
   }
+
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
 </style>
 </head>
 <body>
@@ -379,6 +390,15 @@
         <li><a href="#ls-throughput" data-close><span>02</span>처리량 튜닝</a></li>
         <li><a href="#ls-consumer" data-close><span>03</span>컨슈머 랙 관리</a></li>
         <li><a href="#ls-config" data-close><span>04</span>핵심 설정 참조</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#pitfalls" data-close>Gotchas</a>
+      <ul class="toc-sub">
+        <li><a href="#p-partition" data-close><span>01</span>파티션 / Consumer Group</a></li>
+        <li><a href="#p-delivery" data-close><span>02</span>전달 보장의 범위</a></li>
+        <li><a href="#p-retention" data-close><span>03</span>보존 설정 충돌</a></li>
+        <li><a href="#p-rebalance" data-close><span>04</span>Rebalance Storm</a></li>
       </ul>
     </li>
     <li><a href="#code" data-close>실전 코드</a></li>
@@ -876,10 +896,73 @@
   <strong>KRaft vs ZooKeeper:</strong> Kafka 3.3에서 KRaft(Kafka Raft)가 GA가 됐다. ZooKeeper 제거로 운영 복잡도가 낮아지고, 클러스터 메타데이터 처리 성능이 개선됐다. 신규 클러스터는 KRaft 모드로 구성하는 것이 권장된다. ZooKeeper에서 KRaft로의 마이그레이션 도구(<code>kafka-storage.sh</code>)도 제공된다.
 </div>
 
-<!-- §04 실전 코드 -->
-<section class="section" id="code">
+<!-- §04 숨은 가정과 운영 함정 -->
+<section class="section" id="pitfalls">
   <div class="section-head">
     <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Gotchas</div>
+      <h2 class="section-title">Gotchas</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-partition">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>파티션 수 = 최대 병렬 컨슈머 수</h5>
+      <span class="gloss-pron">"Consumer Group 모델의 숨은 상한"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> Consumer Group은 <b>파티션 당 최대 1개 컨슈머</b>만 할당된다. 파티션이 6개면 컨슈머를 100개 붙여도 6개만 일하고 나머지 94개는 유휴 대기한다. "서버 더 붙이면 처리량 늘어난다"는 전제가 파티션 수에 의해 막혀 있다.</p>
+      <p><strong>가정이 깨질 때.</strong> 트래픽이 10배 늘었을 때 컨슈머 인스턴스를 10배 늘렸는데 처리량이 그대로인 사고. 파티션 재설계 없이 scaling out이 아무 효과가 없다.</p>
+      <p><strong>처방.</strong> 피크 처리량 기준으로 파티션 수를 설계한다. 처리량 목표(msg/sec) ÷ 컨슈머당 처리량 = 파티션 수. 단, <b>파티션 수를 나중에 늘리면 키-파티션 매핑이 깨진다</b> — 같은 키가 다른 파티션으로 분산되어 순서 보장이 무너진다. 처음 설계 시 여유 있게 잡아야 한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-delivery">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>EOS(Exactly-Once)는 Kafka 안에서만</h5>
+      <span class="gloss-pron">"경계 너머는 개발자 책임"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> Kafka의 EOS는 <b>Kafka → Kafka 트랜잭션 내부</b>만 보장한다. Consumer가 메시지를 읽어 외부 DB에 쓰는 순간 EOS 범위를 벗어난다. "Kafka를 쓰면 중복 처리 걱정 없다"는 가정이 흔히 여기서 무너진다.</p>
+      <p><strong>가정이 깨질 때.</strong> Consumer가 처리 후 offset commit 직전에 크래시 → 재시작 시 같은 메시지 재처리 → 외부 DB에 중복 insert. Kafka EOS 설정과 무관하게 발생한다.</p>
+      <p><strong>처방.</strong> 외부 시스템 쓰기는 <b>idempotency key</b>나 <b>upsert</b>로 멱등성을 보장해야 한다. Zero-Copy도 마찬가지 — SSL 사용 시 sendfile()이 동작하지 않아 Zero-Copy 효과가 사라진다. 성능 측정은 실제 환경(SSL 포함)에서 해야 한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-retention">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>log.retention.bytes vs .hours — 먼저 걸린 쪽이 이긴다</h5>
+      <span class="gloss-pron">"의도치 않은 삭제"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> <code>log.retention.bytes</code>와 <code>log.retention.hours</code>는 <b>OR 조건</b>이다. 둘 중 먼저 도달하는 쪽이 삭제를 트리거한다. 시간이 7일이어도 디스크가 꽉 차면 그 전에 삭제된다. "7일치 데이터는 무조건 살아있다"는 가정이 틀렸다.</p>
+      <p><strong>운영 처방.</strong> 재처리를 보장해야 하는 토픽은 <b>bytes 제한 없이 시간으로만</b> 관리하고 디스크를 충분히 확보한다. 반대로 스토리지 절감이 목표면 bytes를 기준으로 잡는다. 두 설정을 동시에 쓰면 의도치 않은 삭제가 발생한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-rebalance">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>Rebalance Storm — 배포할 때마다 전체가 멈춘다</h5>
+      <span class="gloss-pron">"Eager Rebalance의 대가"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> 기본 Eager Rebalance 프로토콜은 Consumer Group 멤버가 바뀌면 <b>모든 파티션 할당을 해제하고 처음부터 재분배</b>한다. 배포 중 인스턴스 하나가 내려가거나 올라갈 때마다 전체 그룹이 수백 ms~수 초 동안 처리를 멈춘다. 서비스 배포가 곧 처리 지연을 의미한다.</p>
+      <p><strong>처방.</strong> Kafka 2.4+의 <b>Cooperative (Incremental) Rebalance</b>로 전환한다. <code>partition.assignment.strategy=CooperativeStickyAssignor</code> — 빠져나가는 파티션만 재할당하고 나머지는 유지된다. Consumer가 떠날 때 <code>session.timeout.ms</code>와 <code>heartbeat.interval.ms</code>를 적절히 설정해 빠른 감지와 잦은 오탐 사이 균형을 잡는다. Kafka Streams는 기본 Cooperative Rebalance를 사용한다.</p>
+      <p><strong>Consumer Lag 폭발.</strong> 별개 함정이지만 연관이 높다. Rebalance가 잦으면 lag이 급등하고, lag이 retention 기간을 초과하면 <b>데이터 유실</b>이 발생한다. Consumer의 처리 속도 ≥ 생산 속도를 항상 모니터링해야 한다. lag이 늘기 시작하면 파티션 추가보다 먼저 처리 로직 병목을 확인한다.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- §05 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">05</div>
     <div class="section-titles">
       <div class="section-kicker">Hands-On</div>
       <h2 class="section-title">실전 코드</h2>

@@ -162,6 +162,17 @@
   .toc-sub a:hover { color: var(--accent-deep); }
   .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); }
   body.menu-open { overflow: hidden; }
+
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
 </style>
 </head>
 <body>
@@ -193,6 +204,15 @@
         <li><a href="#s-app" data-close><span>02</span>애플리케이션 레벨</a></li>
         <li><a href="#s-dist" data-close><span>03</span>분산 환경 동시성</a></li>
         <li><a href="#s-profile" data-close><span>04</span>진단 & 프로파일링</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#pitfalls" data-close>Gotchas</a>
+      <ul class="toc-sub">
+        <li><a href="#p-mvcc" data-close><span>01</span>MVCC 버전 폭발</a></li>
+        <li><a href="#p-redis" data-close><span>02</span>Redis 락 타임아웃</a></li>
+        <li><a href="#p-deadlock" data-close><span>03</span>Deadlock 순서 의존</a></li>
+        <li><a href="#p-level" data-close><span>04</span>격리 수준 오해</a></li>
       </ul>
     </li>
     <li><a href="#code" data-close>실전 코드</a></li>
@@ -595,10 +615,70 @@
 
 <div class="margin-note"><strong>동시성 버그의 특징:</strong> 재현하기 어렵고, 테스트에서 발견하기 어렵고, 프로덕션에서 가끔씩 발생한다. 설계 단계에서 공유 상태를 최소화하고, 불변 객체(immutable)를 선호하고, 상태를 단일 스레드가 소유하는 Actor 패턴을 사용하는 것이 사후 수정보다 훨씬 효과적이다. Go의 채널, Erlang의 프로세스, Akka의 Actor가 이 철학의 구현체다.</div>
 
-<!-- §04 실전 코드 -->
-<section class="section" id="code">
+<!-- §04 Gotchas -->
+<section class="section" id="pitfalls">
   <div class="section-head">
     <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Gotchas</div>
+      <h2 class="section-title">Gotchas</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-mvcc">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>MVCC는 잠금 없이 공짜다</h5>
+      <span class="gloss-pron">"Dead Tuple 누적 → Autovacuum 필수"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> PostgreSQL의 MVCC(Multi-Version Concurrency Control)는 읽기가 쓰기를 막지 않는 장점이 있다. 그러나 업데이트마다 <b>이전 버전(Dead Tuple)이 디스크에 남는다</b>. 삭제·업데이트가 많은 테이블에서 Autovacuum이 Dead Tuple을 제때 청소하지 못하면 <b>테이블 부풀림(bloat)</b>이 발생 → 인덱스 성능 저하 → 전체 테이블 스캔으로 비용 폭증.</p>
+      <p><strong>처방.</strong> <code>pg_stat_user_tables</code>의 <code>n_dead_tup</code>을 모니터링한다. Dead Tuple이 Live Tuple의 20%를 넘으면 수동 <code>VACUUM ANALYZE</code>를 실행한다. 장시간 실행 트랜잭션은 그 시점 이후 생성된 모든 Dead Tuple을 청소 불가하게 만든다 — <code>pg_stat_activity</code>에서 오래된 트랜잭션을 주기적으로 점검한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-redis">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>Redis 분산 락 — 타임아웃보다 처리가 오래 걸리면</h5>
+      <span class="gloss-pron">"락 만료 후 두 프로세스가 동시에 임계 구역에 진입"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Redis <code>SET key value EX ttl NX</code>로 분산 락을 구현할 때 TTL보다 임계 구역 처리 시간이 길어지면 <b>락이 자동 만료</b>된다. 이 순간 다른 프로세스가 락을 획득하고 같은 임계 구역에 진입 → 두 프로세스가 동시에 공유 자원을 수정. "Redis 락을 썼으니 안전하다"는 가정이 이 순간 깨진다.</p>
+      <p><strong>처방.</strong> 락 해제 시 <b>자신이 건 락인지 확인 후 해제</b>한다: SET 시 고유한 UUID를 값으로 저장하고, DEL 전에 값이 자신의 UUID인지 원자적으로 확인(Lua 스크립트). TTL을 처리 시간의 3배 이상으로 여유 있게 설정하거나, 락 갱신(renewal) 메커니즘을 구현한다. Redlock 알고리즘은 Redis 클러스터 환경에서 더 강한 보장을 제공한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-deadlock">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>Deadlock — 잠금 순서가 다른 두 트랜잭션</h5>
+      <span class="gloss-pron">"서로를 기다리는 교착 상태"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> 트랜잭션 A가 Row 1 → Row 2 순서로 잠그고, 트랜잭션 B가 Row 2 → Row 1 순서로 잠그면 <b>영원히 서로를 기다리는 Deadlock</b>이 발생한다. DB는 이를 감지하고 한쪽을 강제 롤백하지만, 이것이 반복되면 처리량이 급감한다. 멀티스레드 코드에서 여러 자원을 동시에 잠글 때 특히 흔하다.</p>
+      <p><strong>처방.</strong> 모든 코드 경로에서 <b>동일한 순서로 자원을 잠근다</b> — 예: 항상 낮은 ID의 Row부터 잠근다. 트랜잭션을 짧게 유지해 잠금 보유 시간을 최소화한다. Deadlock이 반복된다면 DB의 Deadlock 로그를 분석해 충돌 패턴을 찾는다 (<code>SHOW ENGINE INNODB STATUS</code> in MySQL, <code>pg_locks</code> in PostgreSQL).</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-level">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>READ COMMITTED이면 안전하다</h5>
+      <span class="gloss-pron">"Non-Repeatable Read — 같은 쿼리가 다른 결과를 반환"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> 대부분의 DB 기본 격리 수준인 <b>READ COMMITTED</b>은 Dirty Read를 막지만 <b>Non-Repeatable Read</b>는 허용한다. 같은 트랜잭션 내에서 같은 레코드를 두 번 읽으면 다른 트랜잭션의 커밋으로 값이 바뀔 수 있다. "트랜잭션 안에서 읽은 값은 일관적"이라는 가정이 틀렸다.</p>
+      <p><strong>처방.</strong> 하나의 트랜잭션에서 동일 데이터를 여러 번 읽어 의사결정에 사용한다면 <b>REPEATABLE READ</b>로 격리 수준을 올린다. PostgreSQL은 REPEATABLE READ에서 Snapshot Isolation을 제공해 성능 저하가 적다. 낙관적 잠금(<code>version</code> 컬럼 체크)도 대안이다. 격리 수준을 높이면 Phantom Read를 막기 위한 Gap Lock이 발생해 Deadlock 빈도가 올라갈 수 있음을 고려한다.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- §05 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">05</div>
     <div class="section-titles">
       <div class="section-kicker">Code</div>
       <h2 class="section-title">실전 코드</h2>

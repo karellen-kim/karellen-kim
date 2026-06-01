@@ -271,6 +271,17 @@
     .section, .point, .diagram-block, .code-card { animation: rise 0.6s cubic-bezier(0.22,1,0.36,1) both; }
     @keyframes rise { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
   }
+
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
 </style>
 </head>
 <body>
@@ -304,6 +315,15 @@
         <li><a href="#ls-index" data-close><span>02</span>인덱스 전략</a></li>
         <li><a href="#ls-wiredtiger" data-close><span>03</span>WiredTiger 스토리지</a></li>
         <li><a href="#ls-config" data-close><span>04</span>핵심 설정 참조</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#pitfalls" data-close>Gotchas</a>
+      <ul class="toc-sub">
+        <li><a href="#p-shardkey" data-close><span>01</span>샤드 키 핫스팟</a></li>
+        <li><a href="#p-oplog" data-close><span>02</span>Oplog 부족</a></li>
+        <li><a href="#p-lookup" data-close><span>03</span>$lookup과 샤딩</a></li>
+        <li><a href="#p-cache" data-close><span>04</span>컨테이너 OOM</a></li>
       </ul>
     </li>
     <li><a href="#code" data-close>실전 코드</a></li>
@@ -791,10 +811,71 @@
   <strong>MongoDB vs PostgreSQL JSONB:</strong> JSON 데이터를 다룰 때 MongoDB와 PostgreSQL JSONB 사이에서 선택해야 하는 경우가 있다. JSONB는 강력한 JOIN, 트랜잭션, 기존 관계형 데이터와의 통합이 강점이다. MongoDB는 도큐먼트 임베딩과 수평 샤딩이 강점이다. 애플리케이션이 이미 PostgreSQL을 사용한다면 JSONB로 충분한 경우가 많다.
 </div>
 
-<!-- §04 실전 코드 -->
-<section class="section" id="code">
+<!-- §04 Gotchas -->
+<section class="section" id="pitfalls">
   <div class="section-head">
     <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Gotchas</div>
+      <h2 class="section-title">Gotchas</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-shardkey">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>ObjectId는 좋은 샤드 키다</h5>
+      <span class="gloss-pron">"Monotonically Increasing — 쓰기 핫스팟"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> ObjectId(기본 _id)는 시간 순서로 증가한다. 이를 샤드 키로 쓰면 <b>최신 데이터가 항상 마지막 청크에 집중</b>된다. 새 문서 insert가 특정 샤드 하나에만 몰려 CPU와 디스크 I/O가 편중 — 나머지 샤드는 유휴 상태가 된다.</p>
+      <p><strong>검증 방법.</strong> <code>db.collection.getShardDistribution()</code>으로 샤드별 문서 수와 청크 분포를 확인한다. 특정 샤드가 전체 쓰기의 70%+를 담당하면 핫스팟이다.</p>
+      <p><strong>처방.</strong> 쓰기가 균등하게 분산되는 <b>Hashed Shard Key</b> 사용(<code>{ _id: "hashed" }</code>). 또는 카디널리티가 높고 랜덤에 가까운 복합 샤드 키를 사용한다. 이미 운영 중인 컬렉션의 샤드 키는 변경 불가 — 처음 설계가 중요하다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-oplog">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>Oplog 부족 — Secondary가 뒤처지면 재동기화</h5>
+      <span class="gloss-pron">"Replication Lag의 임계점"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Oplog는 Primary의 모든 쓰기 연산을 기록하는 <b>capped collection</b>이다. Secondary가 네트워크 문제나 과부하로 Primary를 따라잡지 못하는 사이 Oplog 슬롯이 가득 차 오래된 항목이 덮어씌워지면, Secondary는 <b>RECOVERING 상태</b>로 빠지고 전체 재동기화(initial sync)가 필요해진다. 재동기화는 수십~수백 GB 데이터를 복사하는 작업이다.</p>
+      <p><strong>처방.</strong> Oplog 크기를 넉넉하게 설정한다(기본 약 5% of free disk space). 피크 쓰기 속도 × 최대 허용 복제 지연 시간 × 2 이상으로 계산한다. 모니터링: <code>rs.printReplicationInfo()</code>로 Oplog 커버 시간을 확인 — 목표는 최소 24시간 이상.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-lookup">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>$lookup은 항상 쓸 수 있다</h5>
+      <span class="gloss-pron">"샤딩 환경에서 $lookup의 제약"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> <code>$lookup</code>(조인)은 기본적으로 <b>같은 샤드 내 로컬 조인</b>만 지원한다. MongoDB 5.1+에서 sharded collection 간 $lookup을 지원하지만 샤딩 키 설계에 제약이 있고, 전체 데이터가 넘어오는 만큼 네트워크 비용이 크다. "MongoDB에서도 자유롭게 join할 수 있다"는 가정은 대규모 샤드 환경에서 성립하지 않는다.</p>
+      <p><strong>처방.</strong> 관계가 필요한 데이터는 <b>임베딩(embedding)</b>으로 설계한다. MongoDB의 강점은 관련 데이터를 하나의 문서에 담아 single-document read로 끝내는 것이다. 잦은 $lookup이 필요하다면 도큐먼트 모델 재설계 또는 PostgreSQL JSONB 전환을 검토한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-cache">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>컨테이너 환경 OOM — WiredTiger 캐시 계산 오류</h5>
+      <span class="gloss-pron">"호스트 RAM vs 컨테이너 RAM"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> WiredTiger의 기본 캐시 크기는 <code>(totalRAM - 1GB) × 0.5</code>로 계산한다. 컨테이너 환경에서는 <b>호스트 전체 RAM 기준</b>으로 계산되어 컨테이너 메모리 제한을 초과한 캐시를 설정하게 된다 → OOM Killer 발동 → MongoDB 프로세스 강제 종료. Kubernetes에서 특히 흔한 사고다.</p>
+      <p><strong>처방.</strong> 컨테이너 배포 시 <code>wiredTigerCacheSizeGB</code>를 <b>명시적으로 설정</b>한다. 권장: 컨테이너 메모리 제한의 50% — OS page cache와 connection overhead를 위한 여유 필요. 예: 4GB 컨테이너라면 <code>--wiredTigerCacheSizeGB 1.5</code>. MongoDB 4.4+는 cgroup 인식을 지원하지만, 안전을 위해 명시 설정이 낫다.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- §05 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">05</div>
     <div class="section-titles">
       <div class="section-kicker">Hands-On</div>
       <h2 class="section-title">실전 코드</h2>

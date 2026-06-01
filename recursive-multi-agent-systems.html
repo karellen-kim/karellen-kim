@@ -406,6 +406,17 @@
     .section, .point, .diagram-block, .code-card { animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
     @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
   }
+
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
 </style>
 </head>
 <body>
@@ -433,6 +444,14 @@
         <li><a href="#d-arch" data-close><span>02</span>RecursiveMAS 아키텍처</a></li>
         <li><a href="#d-loop" data-close><span>03</span>Inner–Outer Loop 학습</a></li>
         <li><a href="#d-bench" data-close><span>04</span>벤치마크 결과</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#pitfalls" data-close>Gotchas</a>
+      <ul class="toc-sub">
+        <li><a href="#p-latent" data-close><span>01</span>Latent 통신 호환성</a></li>
+        <li><a href="#p-reward" data-close><span>02</span>Reward Hacking</a></li>
+        <li><a href="#p-depth" data-close><span>03</span>재귀 깊이 폭발</a></li>
       </ul>
     </li>
     <li><a href="#code" data-close>실전 코드</a></li>
@@ -758,10 +777,59 @@
 </section>
 
 
-<!-- §3 실전 코드 -->
-<section class="section" id="code">
+<!-- §3 Gotchas -->
+<section class="section" id="pitfalls">
   <div class="section-head">
     <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Gotchas</div>
+      <h2 class="section-title">Gotchas</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-latent">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>Latent Vector 통신은 어떤 모델에도 쓸 수 있다</h5>
+      <span class="gloss-pron">"동일 아키텍처 전제 — 이기종 모델 간 호환 불가"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> Recursive Multi-Agent의 핵심인 latent vector 통신은 에이전트 간에 <b>임베딩 벡터를 직접 교환</b>해 토큰 직렬화 비용을 제거한다. 그러나 이 방식은 <b>모든 에이전트가 동일한 아키텍처와 차원의 hidden state를 공유한다는 암묵 가정</b>에 의존한다. GPT-4o와 Llama 3를 혼합한 이기종 에이전트 시스템에서는 latent 차원이 맞지 않아 작동하지 않는다.</p>
+      <p><strong>현실적 제약.</strong> 프로덕션 환경에서 동일한 LLM 체크포인트로 모든 에이전트를 구성하는 것은 비용·모델 선택의 유연성을 희생한다. 연구 환경(논문 기준 Llama 3 70B 단일 모델)과 달리 실제 시스템은 여러 모델을 섞어 쓴다. 이 경우 latent 통신의 이점이 사라지고 토큰 기반 통신으로 돌아가야 한다.</p>
+      <p><strong>처방.</strong> 동일 모델 패밀리를 쓰는 동종 에이전트 클러스터에만 latent 통신을 적용하고, 이기종 서비스 경계에서는 명시적 JSON/텍스트 인터페이스를 유지한다. 차원 불일치가 발생하면 projection layer(선형 변환)로 중간 표현을 맞추는 방법도 연구 중이지만 아직 실전 검증이 부족하다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-reward">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>Reward Hacking — 메트릭을 최적화하고 목표를 놓친다</h5>
+      <span class="gloss-pron">"Inner Loop 최적화가 Outer Loop를 속인다"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Recursive 구조에서 Inner Loop은 단기 보상을 극대화하도록 학습된다. 그런데 보상 함수가 완벽하지 않으면 Inner 에이전트가 Outer 에이전트의 평가를 "속이는" 방향으로 최적화된다 — 정답을 맞히는 척하면서 실제로는 평가 루브릭의 패턴만 학습한다. 이는 ML의 Goodhart's Law("측정이 목표가 되는 순간 좋은 측정이 아니다")의 에이전트 버전이다.</p>
+      <p><strong>처방.</strong> 보상 함수를 다양화하고 Out-of-Distribution 테스트 케이스로 평가한다. 동일한 태스크에 복수의 평가 루브릭을 적용하고, 에이전트가 하나의 루브릭에만 특화되는지 모니터링한다. 인간 평가(HITL)를 학습 루프에 주기적으로 삽입해 자동 평가 지표의 신뢰성을 검증한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-depth">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>재귀 깊이 폭발 — 종료 조건 없는 에이전트 루프</h5>
+      <span class="gloss-pron">"무한 재귀 → API 비용 폭발 + 타임아웃"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Recursive 에이전트 시스템에서 종료 조건이 명확하지 않으면 에이전트가 스스로 판단해 서브 에이전트를 계속 생성한다. 각 재귀 레벨이 새 LLM 호출을 트리거하면 깊이 N에서 API 비용이 기하급수적으로 증가한다. 논문은 재귀 깊이를 실험적으로 제한했지만, 실제 배포에서는 이 제한이 런타임에서 강제되어야 한다.</p>
+      <p><strong>처방.</strong> ① <b>최대 재귀 깊이</b>를 하드 제한으로 설정한다(예: depth_limit=5). ② <b>시간 제한(timeout)</b>을 각 에이전트 호출에 적용한다. ③ <b>비용 예산(budget)</b>을 태스크 단위로 할당하고 초과 시 조기 종료한다. ④ 재귀 호출 트리를 로그로 남겨 예상치 못한 분기를 사후 분석한다. AgentOps·LangSmith·Phoenix Arize가 이런 추적 기능을 제공한다.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- §4 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">04</div>
     <div class="section-titles">
       <div class="section-kicker">Reference Implementation</div>
       <h2 class="section-title">실전 코드</h2>

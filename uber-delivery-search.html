@@ -240,6 +240,17 @@
     .section, .point, .diagram-block, .code-card { animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
     @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
   }
+
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
 </style>
 </head>
 <body>
@@ -267,6 +278,15 @@
         <li><a href="#d-mrl" data-close><span>02</span>Matryoshka 임베딩</a></li>
         <li><a href="#d-funnel" data-close><span>03</span>Retrieval 파이프라인</a></li>
         <li><a href="#d-wins" data-close><span>04</span>성능 개선 지표</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#pitfalls" data-close>Gotchas</a>
+      <ul class="toc-sub">
+        <li><a href="#p-twotower" data-close><span>01</span>Two-Tower 품질 저하</a></li>
+        <li><a href="#p-int7" data-close><span>02</span>int7 양자화 오차</a></li>
+        <li><a href="#p-boolean" data-close><span>03</span>Boolean Filter 과도 적용</a></li>
+        <li><a href="#p-matryoshka" data-close><span>04</span>Matryoshka 차원 선택</a></li>
       </ul>
     </li>
     <li><a href="#code" data-close>실전 코드</a></li>
@@ -614,10 +634,70 @@
 </section>
 
 
-<!-- §3 실전 코드 -->
-<section class="section" id="code">
+<!-- §3 Gotchas -->
+<section class="section" id="pitfalls">
   <div class="section-head">
     <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Gotchas</div>
+      <h2 class="section-title">Gotchas</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-twotower">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>Two-Tower는 학습 후 그대로 서빙하면 된다</h5>
+      <span class="gloss-pron">"피처 드리프트 — 온라인/오프라인 품질 괴리"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> Two-Tower 모델은 User Tower와 Item Tower를 각각 학습해 임베딩 공간에서 유사도로 retrieval한다. 학습 후 Item 임베딩을 사전 계산해 벡터 DB에 적재하는 오프라인 단계가 있다. 이 임베딩이 <b>시간이 지나도 그대로 유효</b>하다는 가정이 틀렸다 — 음식점 메뉴 변경, 위치 이전, 신규 등록 등이 실시간으로 발생하고 임베딩은 과거 상태를 반영한다.</p>
+      <p><strong>처방.</strong> Item 임베딩을 <b>주기적으로 재계산</b>해야 한다. 변경이 잦은 속성(메뉴, 영업 여부)은 별도 필터로 처리하고 임베딩은 상대적으로 안정적인 속성(음식점 분위기, 메뉴 카테고리)만 포함한다. Uber는 음식점 임베딩을 매일 재계산하고, 사용자 임베딩은 세션 단위로 실시간 갱신한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-int7">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>int7 양자화로 70% 스토리지를 줄일 수 있다</h5>
+      <span class="gloss-pron">"정밀도 손실 → recall 저하"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Uber는 FP32 → int7(7비트 정수) 양자화로 스토리지를 70% 절감했다. 그러나 양자화는 <b>벡터 값의 정밀도를 희생</b>한다. 유사도가 매우 가까운 벡터들(예: 비슷한 메뉴를 가진 음식점들) 사이에서 순서가 바뀌거나 정답이 누락될 수 있다. "양자화해도 결과는 같다"는 가정이 고정밀도 요구 워크로드에서 틀렸다.</p>
+      <p><strong>처방.</strong> 양자화 전후 recall@k를 측정해 허용 범위 안에 있는지 검증한다. 양자화 레벨을 점진적으로 낮추면서 (FP32 → FP16 → int8 → int7) 각 단계에서 품질 메트릭을 확인한다. Uber의 경우 int7에서 recall@100이 0.5% 미만 하락해 스토리지 이득이 품질 손실을 정당화했다. 도메인에 따라 임계점이 다르므로 자체 측정이 필수다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-boolean">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>Boolean Pre-filter를 과도하게 적용하면</h5>
+      <span class="gloss-pron">"Recall 폭락 — 후보 풀이 빈다"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Uber Delivery Search는 "지금 배달 가능한 음식점"이라는 Boolean Filter를 ANN 검색 전에 적용한다. 그런데 시간대와 지역에 따라 배달 가능 음식점이 전체의 5% 이하로 줄어드는 경우가 있다. 이 상태에서 IVF 기반 ANN에 pre-filter를 적용하면 <b>후보 풀이 너무 작아져 관련성 높은 결과를 못 찾는다</b>.</p>
+      <p><strong>처방.</strong> 필터 selectivity가 낮은 경우를 자동 감지해 <b>인덱스 전략을 동적으로 전환</b>한다. Uber의 접근: selectivity &lt; 10%면 필터 통과 음식점만으로 별도 brute-force 검색을 수행한다. 지역·시간대별 파티션 분리(음식점을 배달 권역별로 인덱스 분리)도 효과적이다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-matryoshka">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>Matryoshka Embedding은 차원이 적을수록 항상 빠르다</h5>
+      <span class="gloss-pron">"차원 vs 품질 트레이드오프"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> Matryoshka Representation Learning은 임베딩의 앞부분 차원만 잘라도 유효한 표현이 되도록 학습한다. 64차원으로 잘라 쓰면 768차원보다 훨씬 빠르다. 그러나 <b>차원을 얼마나 줄일 수 있느냐는 데이터 복잡도에 따라 다르다</b> — 음식 도메인에서 "중식"과 "한식"을 구분하는 데는 64차원으로 충분하지만, "마라탕"과 "마라샹궈"를 구분하려면 더 많은 차원이 필요하다.</p>
+      <p><strong>처방.</strong> 세분화된 분류가 필요한 retrieval에는 <b>더 높은 차원으로 후보를 과다 추출(over-retrieve)한 뒤 낮은 차원으로 재정렬</b>하는 Two-Stage를 사용한다. Uber는 1st stage: 64차원 × 10배 후보 → 2nd stage: 256차원으로 re-rank. 최종 차원 선택은 recall@k vs latency를 실제 쿼리로 측정해서 결정한다.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- §4 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">04</div>
     <div class="section-titles">
       <div class="section-kicker">Reference Implementation</div>
       <h2 class="section-title">실전 코드</h2>

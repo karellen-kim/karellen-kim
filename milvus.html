@@ -255,6 +255,17 @@
     .section, .point, .diagram-block, .code-card { animation: rise 0.6s cubic-bezier(0.22,1,0.36,1) both; }
     @keyframes rise { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
   }
+
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
 </style>
 </head>
 <body>
@@ -287,6 +298,15 @@
         <li><a href="#ls-index" data-close><span>02</span>인덱스 빌드 최적화</a></li>
         <li><a href="#ls-scalar" data-close><span>03</span>스칼라 필터링</a></li>
         <li><a href="#ls-config" data-close><span>04</span>핵심 설정 참조</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#pitfalls" data-close>Gotchas</a>
+      <ul class="toc-sub">
+        <li><a href="#p-oom" data-close><span>01</span>QueryNode OOM</a></li>
+        <li><a href="#p-compaction" data-close><span>02</span>Compaction Lag</a></li>
+        <li><a href="#p-index" data-close><span>03</span>인덱스 빌드 중 서빙</a></li>
+        <li><a href="#p-etcd" data-close><span>04</span>etcd 병목</a></li>
       </ul>
     </li>
     <li><a href="#code" data-close>실전 코드</a></li>
@@ -755,10 +775,70 @@
   <strong>Milvus vs Qdrant vs Weaviate:</strong> Milvus는 최대 규모와 다양한 인덱스 유형이 강점. Qdrant는 Rust 기반으로 단순하고 빠른 배포가 강점(소~중규모). Weaviate는 모듈 시스템으로 GraphQL API와 다중 모달 지원이 강점. 자가 호스팅 소규모 프로젝트라면 pgvector(PostgreSQL 확장)도 충분하다.
 </div>
 
-<!-- §04 실전 코드 -->
-<section class="section" id="code">
+<!-- §04 Gotchas -->
+<section class="section" id="pitfalls">
   <div class="section-head">
     <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Gotchas</div>
+      <h2 class="section-title">Gotchas</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-oom">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>QueryNode OOM — Growing Segment의 메모리 함정</h5>
+      <span class="gloss-pron">"collection.load() 전 크기 계산 필수"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Milvus에서 QueryNode는 <b>Growing Segment(실시간 ingest 버퍼)를 메모리에 유지</b>한다. 급격한 대량 insert 시 Growing Segment가 빠르게 커지고 QueryNode 메모리 제한을 초과 → OOM Killer 발동 → 검색 불가 상태. Kubernetes 환경에서 특히 자주 발생한다.</p>
+      <p><strong>처방.</strong> <code>collection.load()</code> 전에 데이터 크기를 계산한다: 레코드 수 × (벡터 차원 × 4B + 스칼라 필드) × 1.5(인덱스 오버헤드). QueryNode의 <code>queryNode.gracefulTime</code>과 메모리 limit을 맞게 설정한다. 대량 bulk insert는 Milvus Bulk Insert API를 통해 S3에서 직접 로드하는 방식이 메모리 압박을 줄인다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-compaction">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>Compaction Lag — 소규모 Segment 증식</h5>
+      <span class="gloss-pron">"검색 브로드캐스트 비용 폭증"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Growing Segment가 Sealed Segment로 전환될 때 크기가 작으면 컴팩션 없이 그대로 누적된다. Segment 수가 수백~수천 개로 늘어나면 <b>검색 요청이 모든 Segment에 브로드캐스트</b>되어 QueryCoord → QueryNode 간 네트워크 비용이 폭증한다. 쿼리 latency가 ingest 속도에 비례해 올라간다.</p>
+      <p><strong>처방.</strong> 수동 compaction을 주기적으로 실행한다: <code>utility.compact(collection_name)</code>. Milvus 2.4+의 L0 Compaction과 자동 Compaction 설정을 활성화한다(<code>dataCoord.enableCompaction=true</code>). Segment 크기 목표를 512MB~1GB로 설정해 자연스럽게 작은 Segment가 병합되게 한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-index">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>인덱스 빌드 중 Brute-Force 서빙</h5>
+      <span class="gloss-pron">"latency 급등 구간 무시"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> HNSW·IVF 인덱스를 새로 빌드하거나 재빌드하는 동안 Milvus는 <b>Brute-Force(완전 탐색)</b>로 검색을 처리한다. 벡터 수백만 개 컬렉션이면 이 구간의 쿼리 latency가 평시 대비 10~100배 올라갈 수 있다. 배포 직후 "갑자기 검색이 느려졌다"는 신고의 흔한 원인이다.</p>
+      <p><strong>처방.</strong> 인덱스 빌드 상태를 확인한 후 서빙을 시작한다: <code>utility.index_building_progress(collection_name)</code>가 100%가 될 때까지 기다린다. 대규모 컬렉션은 <b>Blue-Green 방식으로 새 컬렉션에 인덱스를 먼저 빌드하고 alias를 전환</b>해 서비스 중단 없이 교체한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-etcd">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>etcd 병목 — 메타데이터 처리량 한계</h5>
+      <span class="gloss-pron">"30k ops/s 초과 시 전체 응답 지연"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Milvus는 컬렉션 스키마, 세그먼트 위치, 파티션 정보 등 모든 메타데이터를 <b>etcd에 저장</b>한다. etcd의 처리량 한계는 약 30,000 ops/s다. 수백 개 컬렉션 + 활발한 ingest + 잦은 flush가 동시에 발생하면 etcd write 큐가 쌓이고 전체 Milvus 응답이 지연된다.</p>
+      <p><strong>처방.</strong> 컬렉션 수를 최소화하고, 비슷한 스키마의 데이터는 파티션으로 관리한다. etcd 전용 SSD 볼륨을 사용하고 etcd 클러스터를 Milvus와 분리해서 운영한다. etcd의 <code>quota-backend-bytes</code>와 압축 주기를 조정해 데이터 누적을 방지한다.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- §05 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">05</div>
     <div class="section-titles">
       <div class="section-kicker">Hands-On</div>
       <h2 class="section-title">실전 코드</h2>

@@ -491,6 +491,17 @@
       to { opacity: 1; transform: translateY(0); }
     }
   }
+
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
 </style>
 </head>
 <body>
@@ -531,6 +542,15 @@
         <li><a href="#ls-skew" data-close><span>02</span>데이터 스큐 & Salting</a></li>
         <li><a href="#ls-format" data-close><span>03</span>오픈 테이블 포맷</a></li>
         <li><a href="#ls-config" data-close><span>04</span>핵심 설정 튜닝</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#pitfalls" data-close>Gotchas</a>
+      <ul class="toc-sub">
+        <li><a href="#p-shuffle" data-close><span>01</span>Shuffle 파티션 수</a></li>
+        <li><a href="#p-skew" data-close><span>02</span>데이터 스큐 OOM</a></li>
+        <li><a href="#p-gc" data-close><span>03</span>JVM GC 압박</a></li>
+        <li><a href="#p-lazy" data-close><span>04</span>Lazy Evaluation 함정</a></li>
       </ul>
     </li>
     <li><a href="#code" data-close>실전 코드</a></li>
@@ -1159,10 +1179,72 @@
 </section>
 
 
-<!-- §04 실전 코드 -->
-<section class="section" id="code">
+<!-- §04 Gotchas -->
+<section class="section" id="pitfalls">
   <div class="section-head">
     <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Gotchas</div>
+      <h2 class="section-title">Gotchas</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-shuffle">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>기본 shuffle 파티션 수 200개면 충분하다</h5>
+      <span class="gloss-pron">"spark.sql.shuffle.partitions — 가장 많이 틀리는 설정"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> <code>spark.sql.shuffle.partitions</code>의 기본값은 <b>200</b>이다. 10GB 데이터를 200개로 나누면 파티션당 50MB — 적당하다. 그러나 1TB 데이터라면 파티션당 5GB → 메모리 부족으로 Spill → 성능 폭락. 반대로 100MB 데이터를 200개로 나누면 파티션당 500KB → Task 오버헤드가 처리 시간보다 크다.</p>
+      <p><strong>숨은 비용.</strong> Shuffle은 <b>모든 Executor가 다른 모든 Executor에 데이터를 쓰고 읽는 All-to-All 연산</b>이다. 파티션 수 N이면 Shuffle 파일 수는 N × Executor 수. 파티션이 너무 많으면 소규모 파일이 폭발해 Driver와 HDFS/S3 메타데이터 서버에 부하가 집중된다.</p>
+      <p><strong>처방.</strong> 타깃: <b>파티션당 100MB~1GB</b>. Shuffle 후 총 데이터 크기 ÷ 목표 파티션 크기로 계산한다. AQE(Adaptive Query Execution)를 활성화(<code>spark.sql.adaptive.enabled=true</code>)하면 런타임에 자동 조정된다 — Spark 3.0+에서는 기본 활성화.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-skew">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>데이터 스큐 OOM — 한 Task만 죽는다</h5>
+      <span class="gloss-pron">"Hot Key → 단일 Executor 과부하"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> groupBy·join에서 특정 키에 데이터가 집중되면 <b>한 Executor만 수백만 건을 처리</b>하는 동안 나머지는 유휴 상태가 된다. 그 Executor가 OOM으로 죽으면 Stage가 실패하고 전체 Job이 재시도된다. Spark History Server에서 "Task 199개: 2초, Task 1개: 3분"이 보이면 스큐다.</p>
+      <p><strong>처방 — Salting.</strong> 핫 키에 <b>랜덤 접두어(salt)</b>를 붙여 여러 파티션에 분산한다. 예: <code>user_id</code> → <code>user_id + "_" + random(0, 9)</code>. 집계 후 salt를 제거해 재집계한다. AQE의 <code>spark.sql.adaptive.skewJoin.enabled=true</code>로 자동 스큐 join 처리를 활성화한다(Spark 3.0+).</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-gc">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>JVM GC 압박 — OOM보다 무서운 Stop-the-World</h5>
+      <span class="gloss-pron">"Full GC pause → Task 실패 연쇄"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Spark Executor의 JVM 힙이 가득 차면 Full GC가 발생한다. <b>수 초~수십 초의 Stop-the-World pause</b> 동안 모든 처리가 멈추고 Executor가 Heartbeat를 보내지 못한다 → Driver가 Executor를 Dead로 판정 → Task를 다른 Executor에 재할당 → 재할당된 Executor도 GC → 연쇄 실패. GC 로그에서 "Full GC(Ergonomics)"가 빈번하면 이 상황이다.</p>
+      <p><strong>처방.</strong> Executor 메모리를 늘리거나 파티션 수를 늘려 Task당 데이터를 줄인다. <code>spark.memory.fraction</code>(기본 0.6)을 올려 실행 메모리를 확보한다. <b>G1GC</b>를 사용하면 Full GC pause를 줄일 수 있다(<code>-XX:+UseG1GC</code>). Python UDF 대신 PySpark 네이티브 함수를 사용해 직렬화 오버헤드를 제거한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-lazy">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>Lazy Evaluation은 항상 최적화해준다</h5>
+      <span class="gloss-pron">"count()·persist() 위치가 성능을 결정한다"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> Catalyst Optimizer가 Transformation 체인을 최적화해주지만, <b>개발자가 Action을 어디에 넣느냐</b>에 따라 전혀 다른 결과가 나온다. <code>df.count()</code> 두 번 호출 → 같은 데이터를 두 번 읽고 처리. <code>df.persist()</code> 없이 반복 사용 → 매번 처음부터 재계산. "Spark가 알아서 최적화해준다"는 가정이 운영 환경에서 비용 폭발의 원인이 된다.</p>
+      <p><strong>처방.</strong> 여러 번 재사용하는 DataFrame은 <b>첫 Action 전에 <code>.persist(StorageLevel.MEMORY_AND_DISK)</code></b>를 호출한다. Action 수를 최소화하고 같은 정보가 필요하면 한 번의 Action으로 여러 결과를 동시에 집계한다. <code>explain(extended=True)</code>로 Physical Plan을 확인해 예상치 못한 Full Scan이 없는지 검증한다.</p>
+    </div>
+  </div>
+
+</section>
+
+
+<!-- §05 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">05</div>
     <div class="section-titles">
       <div class="section-kicker">PySpark</div>
       <h2 class="section-title">실전 코드</h2>

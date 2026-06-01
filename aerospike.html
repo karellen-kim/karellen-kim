@@ -177,6 +177,17 @@
   .toc-sub a:hover { color: var(--accent-deep); }
   .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); }
   body.menu-open { overflow: hidden; }
+
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
 </style>
 </head>
 <body>
@@ -208,6 +219,15 @@
         <li><a href="#ls-partition" data-close><span>02</span>파티션 & 리밸런싱</a></li>
         <li><a href="#ls-hotkey" data-close><span>03</span>핫키 & 처리량 튜닝</a></li>
         <li><a href="#ls-config" data-close><span>04</span>핵심 설정 참조</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#pitfalls" data-close>Gotchas</a>
+      <ul class="toc-sub">
+        <li><a href="#p-dram" data-close><span>01</span>DRAM 인덱스 한계</a></li>
+        <li><a href="#p-ssd" data-close><span>02</span>SSD Wear-Out</a></li>
+        <li><a href="#p-ns" data-close><span>03</span>Namespace 설계 불변</a></li>
+        <li><a href="#p-record" data-close><span>04</span>대형 레코드 지연</a></li>
       </ul>
     </li>
     <li><a href="#code" data-close>실전 코드</a></li>
@@ -602,10 +622,71 @@
 
 <div class="margin-note">Aerospike는 Redis와 비교될 때가 많지만 목적이 다르다. <strong>Redis</strong>는 캐시 레이어로 데이터 크기가 수 GB~수십 GB 수준이고, Aerospike는 수 TB의 데이터를 1ms 미만으로 서빙하는 기본 스토어로 사용된다. Aerospike Enterprise Edition은 ACID 트랜잭션(단일 레코드 수준)과 Strong Consistency를 제공한다. 멀티 레코드 ACID는 지원하지 않으므로 트랜잭션이 필요하면 애플리케이션 레벨에서 처리해야 한다.</div>
 
-<!-- §04 실전 코드 -->
-<section class="section" id="code">
+<!-- §04 Gotchas -->
+<section class="section" id="pitfalls">
   <div class="section-head">
     <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Gotchas</div>
+      <h2 class="section-title">Gotchas</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-dram">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>인덱스는 자동으로 들어간다</h5>
+      <span class="gloss-pron">"DRAM 인덱스 상한 — 레코드 수 설계"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> Aerospike의 Primary Index는 <b>항상 DRAM에 상주</b>한다. 레코드 수 × 64바이트가 DRAM 인덱스 용량이다. 1억 레코드 = 6.4GB DRAM. 이 계산 없이 레코드를 무한정 쌓다가 DRAM이 꽉 차면 <b>새 레코드 쓰기가 실패</b>한다. SSD 스토리지 용량과 무관하게 인덱스 DRAM이 병목이 된다.</p>
+      <p><strong>검증 방법.</strong> <code>asinfo -v "statistics" | grep "index_used_pct"</code>로 인덱스 사용률을 확인한다. 80% 초과 시 확장 계획이 필요하다. DRAM 증설 또는 레코드 TTL 강화로 만료를 늘린다.</p>
+      <p><strong>처방.</strong> 초기 용량 계획 시 <b>예상 최대 레코드 수 × 64B × 1.5(여유)</b>를 DRAM 요구사항으로 잡는다. 레코드에 TTL을 필수로 설정해 자연 만료를 유도한다. 데이터 수명이 없는 레코드를 많이 쌓아야 한다면 Secondary Index가 아닌 <b>Aerospike Enterprise의 All-Flash namespace</b>(인덱스를 NVMe에 저장)를 고려한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-ssd">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>SSD Wear-Out — 쓰기 집약 워크로드의 숨은 비용</h5>
+      <span class="gloss-pron">"TBW 초과 → 장치 수명 단축"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Aerospike는 SSD에 직접 쓰기(raw device access)로 OS 페이지 캐시를 우회한다. 장점은 낮은 지연이지만 단점은 <b>SSD 쓰기 증폭</b>이 크다. 광고 서빙·실시간 카운터처럼 write-heavy 워크로드에서 SSD의 TBW(Total Bytes Written) 한도에 빠르게 도달한다.</p>
+      <p><strong>처방.</strong> 엔터프라이즈급 NVMe SSD(TBW 수 PB 이상)를 사용하고, 드라이브 SMART 데이터로 <code>media_wearout_indicator</code>를 모니터링한다. Defrag 동작을 조정해 불필요한 재기록을 줄인다(<code>defrag-startup-minimum</code> 파라미터). DRAM 레이어를 cache tier로 앞에 두어 SSD 직접 쓰기 빈도를 낮추는 것도 방법이다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-ns">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>Namespace 설정은 나중에 바꿀 수 있다</h5>
+      <span class="gloss-pron">"데몬 재시작 필요 — 운영 중 변경 불가"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> Namespace는 Aerospike의 최상위 데이터 컨테이너로, 스토리지 엔진 유형(memory vs device)과 파라미터는 <b>노드 재시작 없이 변경 불가</b>다. 처음에 <code>storage-engine memory</code>로 시작했다가 데이터가 커져서 <code>storage-engine device</code>로 전환하려면 마이그레이션이 필요하다.</p>
+      <p><strong>처방.</strong> 데이터 크기 예측, 접근 패턴, 지연 요구사항을 초기에 충분히 분석해 스토리지 엔진을 결정한다. 변경 가능성이 있다면 Set 단위로 논리적 구분을 해두어 나중에 새 Namespace로 마이그레이션할 때 범위를 최소화한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-record">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>대형 레코드 쓰기 — 1ms 보장이 사라지는 순간</h5>
+      <span class="gloss-pron">"128KB 초과 → 멀티 블록 I/O"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> SSD 블록 크기(기본 128KB)를 초과하는 레코드는 <b>여러 SSD 블록에 걸쳐</b> 기록되어 I/O 횟수가 늘어난다. Aerospike의 &lt;1ms latency SLA는 레코드가 단일 블록 안에 들어갈 때를 기준으로 한다. 대형 레코드가 많아지면 p99 latency가 수 ms~수십 ms로 올라간다.</p>
+      <p><strong>처방.</strong> 레코드당 크기를 <b>4KB~16KB 이하</b>로 유지한다. 큰 데이터는 Aerospike에 참조 키만 두고 실제 데이터는 S3·GCS 같은 오브젝트 스토어에 저장하는 패턴을 사용한다. Bin 수도 최소화 — Bin별로 메타데이터 오버헤드가 발생한다.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- §05 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">05</div>
     <div class="section-titles">
       <div class="section-kicker">Code</div>
       <h2 class="section-title">실전 코드</h2>

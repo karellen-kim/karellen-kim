@@ -1062,6 +1062,15 @@
         <li><a href="#d-prod" data-close><span>05</span>프로덕션 도전과제</a></li>
       </ul>
     </li>
+    <li>
+      <a href="#pitfalls" data-close>Gotchas</a>
+      <ul class="toc-sub">
+        <li><a href="#p-context" data-close><span>01</span>Context 오염</a></li>
+        <li><a href="#p-cost" data-close><span>02</span>토큰 비용 폭발</a></li>
+        <li><a href="#p-llmjudge" data-close><span>03</span>LLM Judge 편향</a></li>
+        <li><a href="#p-coord" data-close><span>04</span>에이전트 조율 실패</a></li>
+      </ul>
+    </li>
     <li><a href="#code" data-close>실전 코드</a></li>
   </ol>
 
@@ -1476,10 +1485,70 @@
 </section>
 
 
-<!-- §3 실전 코드 -->
-<section class="section" id="code">
+<!-- §3 Gotchas -->
+<section class="section" id="pitfalls">
   <div class="section-head">
     <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Gotchas</div>
+      <h2 class="section-title">Gotchas</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-context">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>Subagent Context 오염 — 초기 편향이 전체에 전파된다</h5>
+      <span class="gloss-pron">"Lead 에이전트의 가설이 Subagent 검색을 유도"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Lead 에이전트가 초기 가설을 형성하고 Subagent에게 검색 방향을 지시할 때, <b>Subagent는 그 가설을 확인하는 방향으로 검색을 편향</b>한다. Lead의 초기 판단이 틀렸어도 Subagent가 반증 증거를 적극적으로 찾지 않으면 전체 연구 결과가 편향된다. 인간 연구의 확증 편향(Confirmation Bias)과 동일한 문제가 에이전트 시스템에도 나타난다.</p>
+      <p><strong>처방.</strong> ① Lead 에이전트의 지시에 "<b>반대 증거를 적극적으로 찾아라</b>"를 명시적으로 포함한다. ② Subagent를 서로 다른 가설(hypothesis A / hypothesis B)을 검증하는 그룹으로 나눠 병렬로 실행한다. ③ Synthesizer가 결론을 내릴 때 "<b>이 결론에 반하는 가장 강한 증거는 무엇인가</b>"를 명시적으로 요청한다. Anthropic의 연구에서는 이 반증 단계가 결과 품질을 유의미하게 개선했다고 보고한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-cost">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>토큰 비용 폭발 — 단일 태스크에 수십 달러</h5>
+      <span class="gloss-pron">"Subagent 수 × context 크기 = 예상 외 비용"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Multi-Agent 시스템은 각 Subagent가 독립적인 context를 가진다. Subagent 10개 × 컨텍스트 50k 토큰 = 500k 토큰이 한 번의 연구 태스크에 소비된다. Anthropic이 보고한 "단일 에이전트 대비 15x 토큰 소비"는 품질 향상의 대가다. 예산 없이 이 구조를 프로덕션에 올리면 비용 폭발이 발생한다.</p>
+      <p><strong>처방.</strong> ① <b>태스크당 토큰 예산</b>을 설정하고 초과 시 조기 종료한다. ② Subagent 수를 태스크 복잡도에 따라 동적으로 조정한다(간단한 질의 = 2-3개, 복잡한 연구 = 10-15개). ③ <b>모델 라우팅</b>: 단순 검색은 Haiku, 복잡한 추론만 Sonnet/Opus로 처리. ④ 중간 결과를 캐싱해 동일 쿼리 재실행을 방지한다. Anthropic의 내부 연구에서는 예산 제어 없이 실행했을 때 단일 태스크에 50~200달러가 소비된 사례가 있었다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-llmjudge">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>LLM Judge는 공정하다</h5>
+      <span class="gloss-pron">"자가 평가 편향 — 같은 모델이 만든 답을 더 좋게 평가"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> 연구 결과의 품질을 LLM이 평가할 때(LLM-as-Judge), 평가 LLM과 생성 LLM이 같은 모델 패밀리면 <b>자가 편향(Self-Preference Bias)</b>이 발생한다 — Claude가 Claude의 답을 GPT의 답보다 더 좋게 평가하는 경향. 또한 긴 답변을 더 좋게 평가하거나, 자신감 있게 쓰인 답변을 선호하는 편향이 알려져 있다.</p>
+      <p><strong>처방.</strong> ① 평가 LLM을 생성 LLM과 <b>다른 패밀리</b>로 쓴다(생성: Claude, 평가: GPT-4o 또는 반대). ② <b>복수의 Judge</b>(2-3개 다른 모델)를 앙상블해 편향을 상쇄한다. ③ 핵심 태스크는 <b>HITL(Human-in-the-Loop)</b> 샘플링으로 LLM Judge 신뢰성을 정기 검증한다. ④ 루브릭(채점 기준)을 구체적으로 작성해 Judge가 형식이 아닌 내용을 평가하도록 유도한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-coord">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>에이전트 조율 실패 — 누가 뭘 하는지 아무도 모른다</h5>
+      <span class="gloss-pron">"중복 작업 + 정보 사일로"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Lead 에이전트가 Subagent를 병렬로 실행할 때 조율이 불충분하면 <b>여러 Subagent가 동일한 검색을 중복 수행</b>하거나, 서로 관련된 정보를 발견했지만 공유하지 않아 Synthesizer가 전체 그림을 못 그린다. 특히 동적으로 Subagent를 생성하는 구조에서 상태 관리 없이 실행하면 이 문제가 심각해진다.</p>
+      <p><strong>처방.</strong> ① Lead 에이전트가 <b>공유 작업 레지스트리</b>를 관리해 각 Subagent의 담당 범위를 명확히 한다. ② Subagent가 중간 결과를 공유 메모리(파일, 벡터 DB)에 기록해 다른 에이전트가 참조 가능하게 한다. ③ 작업 완료 신호를 명시적으로 구현하고, Lead가 완료 상태를 추적한다. LangGraph·CrewAI·AutoGen이 이 조율 패턴을 구조화된 방식으로 제공한다.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- §4 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">04</div>
     <div class="section-titles">
       <div class="section-kicker">Implementation</div>
       <h2 class="section-title">실전 코드</h2>

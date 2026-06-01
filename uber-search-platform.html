@@ -451,6 +451,15 @@
         <li><a href="#d-overall" data-close><span>07</span>전체 아키텍처</a></li>
       </ul>
     </li>
+    <li>
+      <a href="#pitfalls" data-close>Gotchas</a>
+      <ul class="toc-sub">
+        <li><a href="#p-pull" data-close><span>01</span>Pull Ingest 지연</a></li>
+        <li><a href="#p-bluegreen" data-close><span>02</span>Blue-Green 전환 비용</a></li>
+        <li><a href="#p-opensearch" data-close><span>03</span>OpenSearch 마이그레이션</a></li>
+        <li><a href="#p-ranker" data-close><span>04</span>Ranker 피처 드리프트</a></li>
+      </ul>
+    </li>
     <li><a href="#code" data-close>실전 코드</a></li>
   </ol>
 
@@ -990,10 +999,70 @@
 </section>
 
 
-<!-- §3 실전 코드 -->
-<section class="section" id="code">
+<!-- §3 Gotchas -->
+<section class="section" id="pitfalls">
   <div class="section-head">
     <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Gotchas</div>
+      <h2 class="section-title">Gotchas</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-pull">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>Pull-Based Ingest는 항상 최신 데이터를 보장한다</h5>
+      <span class="gloss-pron">"폴링 간격 × 소스 지연 = 검색 지연"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> Uber의 Sia는 Push 대신 <b>Pull-Based Ingest</b>를 선택했다 — 검색 엔진이 직접 소스 DB를 폴링해서 변경분을 가져온다. 이 구조는 소스 시스템이 다양하고 스키마가 제각각인 상황에서 운영 복잡도를 줄이는 장점이 있다. 그러나 폴링 간격이 검색 데이터의 <b>최신성(freshness) 상한</b>이 된다. "바로 업데이트된다"는 가정이 틀렸다.</p>
+      <p><strong>처방.</strong> freshness 요구사항을 SLA로 명시한다. 주문 상태처럼 실시간이 중요한 데이터는 Kafka CDC를 병행해 Near-Realtime 채널을 만든다. 음식점 정보처럼 수 분~수십 분 지연이 허용되는 데이터는 폴링 주기를 완화해 소스 DB 부하를 낮춘다. 두 채널 혼합이 Uber의 실제 운영 방식이다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-bluegreen">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>Blue-Green 인덱스 전환 — 인덱스 빌드 비용</h5>
+      <span class="gloss-pron">"두 배 스토리지 + 두 배 인제스트"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> 무중단 인덱스 업데이트를 위해 Blue-Green 방식을 쓰면 <b>두 개 인덱스가 동시에 존재</b>한다. 전환 기간 동안 스토리지 2배, 인제스트 부하 2배. 억 단위 문서를 인덱싱하는 대규모 시스템에서 전환 기간이 수 시간~수 일이 되면 운영 비용이 폭등한다.</p>
+      <p><strong>처방.</strong> 인덱스 전환 기간을 최소화하도록 <b>점진적 인덱싱(incremental)</b> + <b>전체 재색인(full reindex)</b>의 시나리오를 분리한다. 스키마 변경처럼 전체 재색인이 필요한 경우만 Blue-Green을 적용하고, 일상적인 문서 업데이트는 부분 업데이트로 처리한다. 전환 완료 즉시 Old 인덱스를 삭제해 스토리지를 회수한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-opensearch">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>Elasticsearch → OpenSearch 마이그레이션의 숨은 비호환</h5>
+      <span class="gloss-pron">"API 호환 ≠ 동작 동일"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> OpenSearch는 Elasticsearch 7.10 포크이므로 API가 대부분 호환된다. 그러나 <b>일부 플러그인, 저수준 세그먼트 호환성, BM25 기본값, 쿼리 플래너 동작</b>이 다를 수 있다. "그냥 갈아끼우면 된다"는 가정이 프로덕션 recall·relevance 품질 차이로 드러난다.</p>
+      <p><strong>처방.</strong> 마이그레이션 전 <b>A/B 테스트 환경</b>에서 쿼리 결과를 양쪽으로 비교한다. 검색 품질 회귀는 자동 테스트로 포착하기 어렵고 사람의 레이블링이 필요하다. 마이그레이션 체크리스트: 플러그인 호환성, slow query log 동작, 클러스터 설정 기본값, ILM 정책.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-ranker">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>Ranker 피처 드리프트 — 오프라인 메트릭이 올라도 온라인이 나빠진다</h5>
+      <span class="gloss-pron">"Training-Serving Skew"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> ML Ranker의 학습 피처와 서빙 시 계산되는 피처가 <b>미묘하게 달라지는 Training-Serving Skew</b>. 학습 시 사용한 피처 계산 로직이 서빙 코드와 동기화되지 않거나, 실시간 집계 윈도우가 달라지면 모델이 오프라인에서 좋아도 온라인에서 성능이 저하된다. Uber Search의 핵심 운영 도전 중 하나다.</p>
+      <p><strong>처방.</strong> 피처 계산 로직을 <b>Feature Store에 단일 소스로 관리</b>해 학습과 서빙에서 동일한 코드를 사용한다. 서빙 피처를 로그에 남겨 나중에 오프라인 학습에 재사용(Online-to-Offline 피처 로깅). 정기적으로 피처 분포를 모니터링해 드리프트를 조기 감지한다.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- §4 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">04</div>
     <div class="section-titles">
       <div class="section-kicker">Reference Implementation</div>
       <h2 class="section-title">실전 코드</h2>

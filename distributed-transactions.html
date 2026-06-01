@@ -171,6 +171,17 @@
   .toc-sub a:hover { color: var(--accent-deep); }
   .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); }
   body.menu-open { overflow: hidden; }
+
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
 </style>
 </head>
 <body>
@@ -202,6 +213,15 @@
         <li><a href="#lt-saga" data-close><span>02</span>Saga 설계 원칙</a></li>
         <li><a href="#lt-outbox" data-close><span>03</span>Outbox + CDC</a></li>
         <li><a href="#lt-select" data-close><span>04</span>기법 선택 가이드</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#pitfalls" data-close>Gotchas</a>
+      <ul class="toc-sub">
+        <li><a href="#p-2pc" data-close><span>01</span>2PC Coordinator 단일장애</a></li>
+        <li><a href="#p-saga" data-close><span>02</span>Saga 보상 트랜잭션 실패</a></li>
+        <li><a href="#p-outbox" data-close><span>03</span>Outbox 테이블 부하</a></li>
+        <li><a href="#p-idem" data-close><span>04</span>멱등성 미보장</a></li>
       </ul>
     </li>
     <li><a href="#code" data-close>실전 코드</a></li>
@@ -606,10 +626,70 @@
 
 <div class="margin-note"><strong>분산 트랜잭션의 근본 한계:</strong> 네트워크는 신뢰할 수 없다. 어떤 기법도 네트워크 파티션 동안 강한 일관성과 가용성을 동시에 보장할 수 없다(CAP 정리). 실무에서는 "충분히 좋은 일관성"을 목표로 한다. Stripe는 "99.999% 일관성 + 수동 보정 프로세스"를 표준으로 가져가며, 완벽한 자동화보다 운영 가능한 시스템을 우선시한다.</div>
 
-<!-- §04 실전 코드 -->
-<section class="section" id="code">
+<!-- §04 Gotchas -->
+<section class="section" id="pitfalls">
   <div class="section-head">
     <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Gotchas</div>
+      <h2 class="section-title">Gotchas</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-2pc">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>2PC Coordinator가 살아있으면 괜찮다</h5>
+      <span class="gloss-pron">"단일 장애점 — Prepare 후 Coordinator 크래시"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> 2PC(Two-Phase Commit)는 Coordinator가 Prepare 메시지를 보낸 후 Coordinator가 크래시하면 <b>모든 Participant가 Prepared 상태에서 무한 대기</b>한다. DB의 In-Doubt Transaction 상태. Coordinator가 복구될 때까지 해당 레코드의 잠금이 유지되어 다른 트랜잭션이 모두 블로킹된다.</p>
+      <p><strong>처방.</strong> 2PC를 사용한다면 Coordinator를 <b>HA(High Availability)로 구성</b>하고 복구 로직을 반드시 구현한다. 새 시스템을 설계할 때는 2PC보다 Saga + Outbox 패턴을 우선 검토한다. 마이크로서비스 환경에서 2PC는 DB 레벨까지만 허용하고(XA는 하나의 DB 안에서만), 서비스 간 트랜잭션은 Saga로 처리한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-saga">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>Saga 보상 트랜잭션도 실패할 수 있다</h5>
+      <span class="gloss-pron">"Compensation이 완벽하다는 가정"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Saga는 롤백 대신 <b>보상 트랜잭션(Compensation)</b>으로 이전 단계를 역으로 되돌린다. 그러나 보상 트랜잭션 자체도 실패할 수 있다 — 네트워크 단절, 외부 서비스 장애. "보상하면 원상복구 된다"는 가정이 깨지면 시스템이 <b>부분 적용된 불일치 상태</b>에 남는다.</p>
+      <p><strong>처방.</strong> 보상 트랜잭션은 <b>멱등하게 구현</b>하고 재시도 가능해야 한다. 보상도 실패하는 경우를 위한 <b>Dead Letter Queue + 수동 보정 프로세스</b>를 준비한다. Temporal·Conductor 같은 워크플로우 엔진은 보상 트랜잭션의 재시도와 상태 추적을 자동으로 처리한다. "보상이 실패하면 어떻게 되는가"를 사전에 시나리오로 정의해야 한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-outbox">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>Outbox 테이블이 계속 쌓인다</h5>
+      <span class="gloss-pron">"CDC 처리 지연 + 정리 미흡 → DB 부하"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정.</strong> Outbox Pattern은 비즈니스 트랜잭션과 함께 Outbox 테이블에 이벤트를 기록하고, 별도 프로세스(CDC)가 읽어 메시지 브로커로 발행한다. CDC가 지연되거나 처리된 레코드를 삭제하는 로직이 없으면 <b>Outbox 테이블이 무한히 증가</b>해 DB 성능을 잠식한다.</p>
+      <p><strong>처방.</strong> 처리 완료된 Outbox 레코드는 <b>주기적으로 삭제하거나 archived 컬럼으로 필터링</b>해 인덱스 효율을 유지한다. Debezium·Maxwell 같은 CDC 도구를 사용하면 DB WAL(Write-Ahead Log)을 직접 읽어 Outbox 테이블 없이 구현 가능하다. 이 경우 WAL 보존 기간과 LSN 추적 관리가 중요하다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-idem">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>At-Least-Once 전달 = 중복 처리 없음</h5>
+      <span class="gloss-pron">"멱등성 없이 재시도 → 중복 결제·중복 insert"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> 분산 시스템에서 메시지는 <b>최소 한 번(At-Least-Once) 전달</b>이 기본이다. 네트워크 재시도, Saga 재시도, CDC 재발행 등으로 같은 이벤트가 여러 번 처리될 수 있다. "Kafka 썼으니 한 번만 처리된다"는 가정은 Consumer 처리 로직이 멱등하지 않으면 틀렸다.</p>
+      <p><strong>처방.</strong> 모든 Consumer 처리 로직을 <b>멱등하게 구현</b>한다: 이벤트 ID를 처리 이력 테이블에 저장하고 중복 이벤트를 skip한다. DB 쓰기는 INSERT INTO ... ON CONFLICT DO NOTHING(PostgreSQL) 또는 UPSERT. 결제·포인트 적립 같은 critical 연산은 idempotency key를 외부 서비스에도 전달한다.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- §05 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">05</div>
     <div class="section-titles">
       <div class="section-kicker">Code</div>
       <h2 class="section-title">실전 코드</h2>

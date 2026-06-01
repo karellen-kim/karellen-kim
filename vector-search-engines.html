@@ -928,6 +928,125 @@
     </div>
   </div>
 
+  <!-- Deep Dive: IVF + Filter Recall Collapse -->
+  <div class="gloss">
+    <div class="gloss-head">
+      <span class="gloss-label">심화</span>
+      <h5>IVF + 필터링 — 왜 recall이 무너지는가</h5>
+      <span class="gloss-pron">"알고리즘의 구조적 한계"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>IVF 구조 복습.</strong> k-means로 데이터를 <code>nlist</code>개 클러스터(Voronoi cell)로 분할하고, 쿼리 시 쿼리에 가장 가까운 <code>nprobe</code>개 cell만 스캔한다. 전체의 <b>nprobe / nlist만 본다</b> — 예: nlist=1024, nprobe=16이면 <b>1.5%만 스캔</b>. 여기서 가속 효과가 나온다. <em>나머지 98.5%의 데이터에 정답이 있다고 가정하는 도박</em>이다.</p>
+      <p><strong>숨겨진 가정.</strong> IVF가 성립하려면 "<b>필터 통과 데이터가 nlist개 cell에 균등 분포</b>"한다는 암묵 가정이 깨지면 안 된다. 데이터 전체 selectivity가 5%면 각 cell 내부에서도 평균 5%가 통과해야 한다. 이 가정 위에서만 탐색한 nprobe개 cell 안에 충분한 후보가 살아남는다.</p>
+      <p><strong>가정이 깨지는 순간.</strong> selectivity가 1%로 떨어지면 nprobe개 cell 내부에서 살아남는 벡터가 <b>0~몇 개</b>로 무너진다 — top-k를 채울 후보 자체가 없다. 게다가 필터링이 특정 속성(예: <code>tenant_id</code>, <code>category</code>)에 의존하면 통과 데이터가 <b>특정 cell에 편중</b>되는 경향이 강하다. 그 cell이 nprobe에 안 잡히면 정답이 통째로 누락. 결과: <b>recall이 0.95에서 0.4로 폭락</b>한다. 후처리 필터(post-filter)는 더 나쁘다 — 이미 ANN이 작은 후보만 뱉은 뒤 필터로 또 깎이니 사실상 빈 결과가 돌아온다.</p>
+      <p><strong>HNSW가 같은 상황에서 더 견고한 이유.</strong> HNSW는 <b>그래프 탐색</b>이다. 필터 통과 노드를 따라 <b>계속 hop이 가능</b>하다 — 통과 못 하는 노드를 만나면 다른 엣지로 우회하면 된다. IVF의 "cell 안에 후보가 없다"는 dead-end가 잘 발생하지 않는다. 단 HNSW도 selectivity 1% 미만으로 가면 그래프 연결성 자체가 끊겨 무너진다 — 차이는 임계점의 위치일 뿐 본질은 같다.</p>
+      <p><strong>회피 전략 — 세 갈래.</strong> ① <b>nprobe를 nlist의 절반까지 확대</b>: recall은 회복되지만 사실상 brute-force, 가속 효과 소멸. ② <b>필터 컬럼으로 파티션 자체 분리</b>: <code>tenant_id</code>·<code>category</code>별로 별도 인덱스를 두면 IVF의 가정이 다시 성립. Milvus의 partition key, Elasticsearch의 routing, pgvector의 partial index가 같은 처방. ③ <b>HNSW로 전환</b>: 메모리 여유가 있다면 가장 단순한 해결. <em>IVF의 "빠르다"는 전제는 "필터가 약하다"이다.</em></p>
+      <p><strong>주의 — 이건 Milvus 문제가 아니다.</strong> Faiss IndexIVF·pgvector IVFFlat·Elasticsearch IVF·OpenSearch IVF — IVF 구조를 채택한 모든 엔진이 동일하게 겪는 <b>알고리즘 차원의 한계</b>다. 엔진을 갈아도 해결되지 않는다. 풀려면 인덱스 설계 자체를 바꿔야 한다.</p>
+    </div>
+  </div>
+
+  <!-- Deep Dive: pre-filter와 처방 -->
+  <div class="gloss">
+    <div class="gloss-head">
+      <span class="gloss-label">심화</span>
+      <h5>그럼 pre-filter는 뭐가 다른가 — 그리고 어떻게 풀어야 하는가</h5>
+      <span class="gloss-pron">"selectivity별 실전 처방"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>pre-filter가 해결하는 것 — 빈 결과 문제만.</strong> Milvus를 비롯한 대부분 엔진은 pre-filter를 지원한다. 동작 원리는 "<b>스칼라 조건으로 비트맵을 미리 만들고, ANN 탐색 중 거리 계산할 때마다 비트맵 체크해서 통과한 것만 결과에 누적</b>". 이렇게 하면 post-filter처럼 "ANN이 뱉은 100개 후보를 필터로 깎아 5개만 남는" 빈 결과 사고는 막을 수 있다. top-k를 채울 때까지 nprobe cell 내부에서 통과한 것만 끝까지 긁어모은다.</p>
+      <p><strong>pre-filter가 해결하지 못하는 것 — IVF의 본질.</strong> 그러나 <b>`nprobe`개 cell만 본다는 IVF의 골격은 그대로</b>다. pre-filter든 post-filter든 16개 방 밖은 안 본다. 정답이 안 본 cell에 있으면 영원히 못 찾는다. 즉 pre-filter는 "<em>본 후보를 효율적으로 거른다</em>"는 거지 "<em>안 본 cell을 더 본다</em>"는 게 아니다. 그래서 selectivity가 매우 낮을 땐 pre-filter여도 recall이 떨어진다 — 빈 결과는 안 나오지만 정답률이 낮은 결과가 나온다.</p>
+      <p><strong>Milvus의 실제 동작 — selectivity 매우 낮으면 IVF를 포기한다.</strong> Milvus 2.4+의 cost-based optimizer는 selectivity가 임계치 미만(대략 0.1~1%)일 때 <b>IVF 인덱스를 무시하고 필터 통과한 ID 목록 위에서 brute-force 거리 계산</b>으로 전환한다. 통과한 데이터가 5천 개 수준이면 brute-force가 더 빠르고 정확하니까. 결국 "pre-filter가 모든 selectivity를 cover한다"가 아니라 "<em>IVF가 통하는 구간에서만 IVF, 안 통하는 구간은 알아서 brute-force로 폴백</em>"하는 구조다.</p>
+      <p style="margin-top:1.1rem;"><strong>처방 — selectivity 구간별로 다르다.</strong> 무조건 좋은 한 가지는 없다. 워크로드의 selectivity 분포를 먼저 측정해야 한다 (쿼리 로그 샘플링).</p>
+      <div style="overflow-x:auto; margin: 0.8rem 0 1.1rem;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+          <thead>
+            <tr style="background:var(--paper-deep); border-top:2px solid var(--ink); border-bottom:1px solid var(--ink);">
+              <th style="text-align:left; padding:0.55rem 0.7rem; font-weight:600; color:var(--accent-deep); letter-spacing:0.04em;">selectivity</th>
+              <th style="text-align:left; padding:0.55rem 0.7rem; font-weight:600; color:var(--accent-deep);">처방</th>
+              <th style="text-align:left; padding:0.55rem 0.7rem; font-weight:600; color:var(--accent-deep);">왜</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--rule);">
+              <td style="padding:0.55rem 0.7rem; font-family:var(--mono); color:var(--ink); font-weight:600;">30%+</td>
+              <td style="padding:0.55rem 0.7rem;">그대로 두라</td>
+              <td style="padding:0.55rem 0.7rem; color:var(--ink-soft);">IVF + pre-filter로 충분. 안 깨졌으면 손대지 마라</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--rule);">
+              <td style="padding:0.55rem 0.7rem; font-family:var(--mono); color:var(--ink); font-weight:600;">5~30%</td>
+              <td style="padding:0.55rem 0.7rem;"><code style="font-family:var(--mono); padding:0.05rem 0.3rem; background:var(--paper-deep); border:1px solid var(--rule); color:var(--accent-deep);">nprobe</code> 64~128로 확대</td>
+              <td style="padding:0.55rem 0.7rem; color:var(--ink-soft);">탐색 cell 늘려 통과 후보 확보. latency 소폭 증가</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--rule); background:var(--accent-wash);">
+              <td style="padding:0.55rem 0.7rem; font-family:var(--mono); color:var(--ink); font-weight:600;">1~5%</td>
+              <td style="padding:0.55rem 0.7rem;"><b>Partition Key 분리</b></td>
+              <td style="padding:0.55rem 0.7rem; color:var(--ink);">가장 위험한 구간. 필터 컬럼으로 인덱스를 물리 분리하면 파티션 내부에서 IVF 가정 회복</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--rule);">
+              <td style="padding:0.55rem 0.7rem; font-family:var(--mono); color:var(--ink); font-weight:600;">&lt; 1%</td>
+              <td style="padding:0.55rem 0.7rem;">Brute-force fallback</td>
+              <td style="padding:0.55rem 0.7rem; color:var(--ink-soft);">통과 데이터 적으니 직접 거리 계산이 더 빠름. Milvus 2.4+ 자동</td>
+            </tr>
+            <tr>
+              <td style="padding:0.55rem 0.7rem; font-family:var(--mono); color:var(--ink); font-weight:600;">동적 필터</td>
+              <td style="padding:0.55rem 0.7rem;">HNSW로 전환</td>
+              <td style="padding:0.55rem 0.7rem; color:var(--ink-soft);">필터 조합이 임의면 partition 불가. 메모리 1.5~3x 더 쓰는 대가로 견고함</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>가장 강력한 정공법 — Partition Key.</strong> 자주 쓰이는 필터 컬럼(<code>tenant_id</code>·<code>category</code>·<code>region</code>·<code>language</code>)이 있으면 그걸로 데이터를 <b>물리적으로 분리</b>해 인덱스를 따로 짓는다. 핵심: 필터가 사라지는 게 아니라 <b>"필터 적용 = 파티션 선택"</b>이 된다. 각 파티션 안에서는 데이터 분포가 다시 균등해져 IVF의 가정이 회복된다.</p>
+      <p style="font-family:var(--mono); font-size:0.78rem; padding:0.9rem 1rem; background:var(--paper-deep); border-left:3px solid var(--accent); color:var(--ink); line-height:1.7;">
+        Milvus &nbsp;&nbsp;<b>partition_key</b> &nbsp;·&nbsp; Pinecone <b>namespace</b><br>
+        Elasticsearch &nbsp;<b>routing</b> &nbsp;·&nbsp; pgvector <b>partial index</b><br>
+        Qdrant &nbsp;<b>payload-based shard</b>
+      </p>
+      <p><strong>빅테크 실전 패턴.</strong> 어떤 워크로드냐에 따라 처방 조합이 달라진다.</p>
+      <div style="overflow-x:auto; margin: 0.6rem 0 1rem;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+          <thead>
+            <tr style="background:var(--paper-deep); border-top:2px solid var(--ink); border-bottom:1px solid var(--ink);">
+              <th style="text-align:left; padding:0.55rem 0.7rem; font-weight:600; color:var(--accent-deep);">워크로드</th>
+              <th style="text-align:left; padding:0.55rem 0.7rem; font-weight:600; color:var(--accent-deep);">실전 처방</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--rule);">
+              <td style="padding:0.55rem 0.7rem; color:var(--ink);">Multi-tenant SaaS<br><small style="color:var(--ink-faint);">Notion / Slack / Linear 검색</small></td>
+              <td style="padding:0.55rem 0.7rem; color:var(--ink-soft);"><b>tenant_id partition key</b> — 가장 흔한 정석</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--rule);">
+              <td style="padding:0.55rem 0.7rem; color:var(--ink);">카테고리 검색<br><small style="color:var(--ink-faint);">쇼핑·음악·동영상</small></td>
+              <td style="padding:0.55rem 0.7rem; color:var(--ink-soft);">category partition + 내부는 HNSW</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--rule);">
+              <td style="padding:0.55rem 0.7rem; color:var(--ink);">추천 시스템<br><small style="color:var(--ink-faint);">Netflix·Spotify·YouTube</small></td>
+              <td style="padding:0.55rem 0.7rem; color:var(--ink-soft);">user context를 <b>벡터 차원에 인코딩</b> — 필터를 거리에 반영</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--rule);">
+              <td style="padding:0.55rem 0.7rem; color:var(--ink);">ACL 필터링<br><small style="color:var(--ink-faint);">Google Drive·Confluence</small></td>
+              <td style="padding:0.55rem 0.7rem; color:var(--ink-soft);">권한 그룹별 별도 인덱스 + 결과 union</td>
+            </tr>
+            <tr>
+              <td style="padding:0.55rem 0.7rem; color:var(--ink);">동적 boolean 필터<br><small style="color:var(--ink-faint);">전자상거래 가격·브랜드·재고</small></td>
+              <td style="padding:0.55rem 0.7rem; color:var(--ink-soft);">HNSW + over-fetch (top-k의 10~100배 가져와 필터)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>의사결정 트리.</strong></p>
+      <pre style="font-family:var(--mono); font-size:0.78rem; padding:0.95rem 1.1rem; background:var(--paper-deep); border:1px solid var(--rule); color:var(--ink); line-height:1.7; margin-top:0.5rem; overflow-x:auto;">selectivity 측정 (쿼리 로그 100개 샘플링)
+    │
+    ├─ 30%+        → 그대로
+    ├─ 5~30%       → nprobe 키우기
+    ├─ 1~5%        → Partition Key 분리 ← 가장 강력
+    │                 └ 필터 동적이면 → HNSW 전환
+    └─ &lt;1%         → Brute-force fallback (자동)</pre>
+      <p><strong>최신 흐름 — filter-aware ANN.</strong> 알고리즘 자체에 필터를 끼워넣는 변종도 등장. <b>FilteredDiskANN</b>(Microsoft 2023, 그래프 엣지를 필터 라벨별로 클러스터링), <b>ACORN-1</b>(Weaviate, pre-filter를 graph traversal에 통합), <b>Vespa streaming mode</b>. 운영 도입은 아직 이른 영역이지만 selectivity 1~5%가 핵심 워크로드라면 추적 가치 있다.</p>
+      <p style="margin-top:1rem;"><strong>한 줄 요약.</strong> <em>"문제는 IVF인데 처방은 인덱스 설계 자체를 바꾸는 것"</em>이다. <code>nprobe</code> 튜닝으로 풀리는 건 5~30% 구간뿐. 1~5%가 자주 보이면 <b>partition key</b>, 동적이면 <b>HNSW 전환</b>이 정답이다.</p>
+    </div>
+  </div>
+
   <div class="decision">
     <h3>그래서 — 어떤 알고리즘부터?</h3>
     <div class="decision-table">

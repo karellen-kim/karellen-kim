@@ -913,22 +913,107 @@
       <span class="gloss-pron">"Consumer Group 모델의 숨은 상한"</span>
     </div>
     <div class="gloss-body">
-      <p><strong>가정.</strong> Consumer Group은 <b>파티션 당 최대 1개 컨슈머</b>만 할당된다. 파티션이 6개면 컨슈머를 100개 붙여도 6개만 일하고 나머지 94개는 유휴 대기한다. "서버 더 붙이면 처리량 늘어난다"는 전제가 파티션 수에 의해 막혀 있다.</p>
-      <p><strong>가정이 깨질 때.</strong> 트래픽이 10배 늘었을 때 컨슈머 인스턴스를 10배 늘렸는데 처리량이 그대로인 사고. 파티션 재설계 없이 scaling out이 아무 효과가 없다.</p>
-      <p><strong>처방.</strong> 피크 처리량 기준으로 파티션 수를 설계한다. 처리량 목표(msg/sec) ÷ 컨슈머당 처리량 = 파티션 수. 단, <b>파티션 수를 나중에 늘리면 키-파티션 매핑이 깨진다</b> — 같은 키가 다른 파티션으로 분산되어 순서 보장이 무너진다. 처음 설계 시 여유 있게 잡아야 한다.</p>
+      <p><strong>핵심 가정.</strong> Kafka Consumer Group은 <b>파티션 당 최대 1개 컨슈머</b>만 할당한다. 파티션이 6개면 컨슈머를 100개 붙여도 6개만 일하고 나머지 94개는 유휴 대기한다. "서버 더 붙이면 처리량 늘어난다"는 수평 확장의 전제가 파티션 수라는 상한에 막혀 있다.</p>
+
+      <!-- 시각 다이어그램 -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0;">
+        <div style="border:1px solid var(--rule); padding:1rem; background:var(--paper-deep);">
+          <div style="font-size:0.65rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:0.7rem;">파티션 6개, 컨슈머 10개</div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.3rem; margin-bottom:0.5rem;">
+            <div style="background:oklch(0.88 0.12 145); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono);">P1→C1</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono);">P2→C2</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono);">P3→C3</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono);">P4→C4</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono);">P5→C5</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono);">P6→C6</div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0.3rem;">
+            <div style="background:oklch(0.90 0.05 38); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono); color:var(--ink-faint);">C7 유휴</div>
+            <div style="background:oklch(0.90 0.05 38); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono); color:var(--ink-faint);">C8 유휴</div>
+            <div style="background:oklch(0.90 0.05 38); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono); color:var(--ink-faint);">C9 유휴</div>
+            <div style="background:oklch(0.90 0.05 38); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono); color:var(--ink-faint);">C10 유휴</div>
+          </div>
+          <div style="font-size:0.72rem; color:var(--accent-deep); margin-top:0.5rem;">컨슈머 4개 추가해도 처리량 0% 향상</div>
+        </div>
+        <div style="border:1px solid var(--rule); padding:1rem; background:var(--paper-deep);">
+          <div style="font-size:0.65rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:0.7rem;">파티션 수 = 컨슈머 수 (올바른 설계)</div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.3rem; margin-bottom:0.5rem;">
+            <div style="background:oklch(0.88 0.12 145); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono);">P1→C1</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono);">P2→C2</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono);">P3→C3</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono);">P4→C4</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono);">P5→C5</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.3rem; font-size:0.7rem; text-align:center; font-family:var(--mono);">P6→C6</div>
+          </div>
+          <div style="font-size:0.72rem; color:oklch(0.35 0.14 145); margin-top:0.5rem;">모든 컨슈머가 일한다 → 처리량 = 파티션 수에 비례</div>
+        </div>
+      </div>
+
+      <p><strong>가정이 깨지는 순간.</strong> 트래픽이 10배 늘어 컨슈머 인스턴스를 10배 증설했는데 처리량이 그대로인 사고. 코드를 아무리 최적화해도, 컨슈머를 아무리 붙여도 파티션 수 이상의 처리량은 나오지 않는다. 그 결과 Consumer Lag이 늘어나고, lag이 <code>retention</code> 기간을 넘으면 <b>데이터가 영구 유실</b>된다.</p>
+
+      <p><strong>계산 방법.</strong> 파티션 수 = 피크 처리량(msg/sec) ÷ 컨슈머 1개의 처리량(msg/sec). 예: 초당 100,000 메시지, 컨슈머 1개가 초당 5,000 메시지 처리 → 파티션 20개. 여기에 <b>여유 계수 1.5~2배</b>를 곱해 30~40개로 설정한다.</p>
+
+      <p><strong>치명적 경고 — 파티션 수는 늘릴 수는 있지만 대가가 크다.</strong> Kafka는 토픽 파티션 수 증가는 허용하지만 <b>키-파티션 매핑이 전체 재계산</b>된다. 예: <code>user_id=12345</code>가 파티션 6개에서는 P3에 들어가다가 12개로 늘리면 P7에 들어간다. 같은 키의 메시지 순서가 보장되어야 하는 워크로드(주문 처리 이벤트 등)에서 파티션 추가는 <b>순서 보장 완전 파기</b>를 의미한다. 처음 설계할 때 미래 피크의 2배 이상으로 넉넉하게 잡아야 한다.</p>
     </div>
   </div>
 
   <div class="gloss" id="p-delivery">
     <div class="gloss-head">
       <span class="gloss-label">가정</span>
-      <h5>EOS(Exactly-Once)는 Kafka 안에서만</h5>
-      <span class="gloss-pron">"경계 너머는 개발자 책임"</span>
+      <h5>Kafka EOS = 중복 처리 없음</h5>
+      <span class="gloss-pron">"EOS 범위는 Kafka 내부뿐 — 외부 DB는 개발자 책임"</span>
     </div>
     <div class="gloss-body">
-      <p><strong>가정.</strong> Kafka의 EOS는 <b>Kafka → Kafka 트랜잭션 내부</b>만 보장한다. Consumer가 메시지를 읽어 외부 DB에 쓰는 순간 EOS 범위를 벗어난다. "Kafka를 쓰면 중복 처리 걱정 없다"는 가정이 흔히 여기서 무너진다.</p>
-      <p><strong>가정이 깨질 때.</strong> Consumer가 처리 후 offset commit 직전에 크래시 → 재시작 시 같은 메시지 재처리 → 외부 DB에 중복 insert. Kafka EOS 설정과 무관하게 발생한다.</p>
-      <p><strong>처방.</strong> 외부 시스템 쓰기는 <b>idempotency key</b>나 <b>upsert</b>로 멱등성을 보장해야 한다. Zero-Copy도 마찬가지 — SSL 사용 시 sendfile()이 동작하지 않아 Zero-Copy 효과가 사라진다. 성능 측정은 실제 환경(SSL 포함)에서 해야 한다.</p>
+      <p><strong>EOS 범위 이해.</strong> Kafka Exactly-Once Semantics(EOS)는 <b>Kafka 내부의 Producer → Broker → Consumer Offset</b> 사이에서만 성립한다. 메시지 중복 없이 정확히 한 번 commit log에 기록하고, offset을 정확히 한 번 commit하는 것을 보장한다. 이 경계 안에서는 EOS가 맞다.</p>
+
+      <!-- EOS 범위 다이어그램 -->
+      <div style="border:1px solid var(--rule); background:var(--paper-deep); padding:1rem; margin:0.8rem 0;">
+        <div style="font-size:0.65rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:0.8rem;">EOS 보장 범위</div>
+        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+          <div style="background:oklch(0.88 0.12 145); border:1px solid oklch(0.65 0.14 145); padding:0.5rem 0.8rem; font-size:0.78rem; font-family:var(--mono); font-weight:600;">Producer</div>
+          <div style="color:oklch(0.65 0.14 145); font-weight:700; font-size:1.1rem;">→</div>
+          <div style="background:oklch(0.88 0.12 145); border:1px solid oklch(0.65 0.14 145); padding:0.5rem 0.8rem; font-size:0.78rem; font-family:var(--mono); font-weight:600;">Kafka Broker</div>
+          <div style="color:oklch(0.65 0.14 145); font-weight:700; font-size:1.1rem;">→</div>
+          <div style="background:oklch(0.88 0.12 145); border:1px solid oklch(0.65 0.14 145); padding:0.5rem 0.8rem; font-size:0.78rem; font-family:var(--mono); font-weight:600;">Consumer (offset)</div>
+          <div style="color:var(--accent); font-weight:700; font-size:1.3rem; padding:0 0.3rem;">|</div>
+          <div style="background:oklch(0.92 0.05 38); border:1px solid var(--accent); padding:0.5rem 0.8rem; font-size:0.78rem; font-family:var(--mono); color:var(--accent-deep); font-weight:600;">외부 DB (보장 없음)</div>
+        </div>
+        <div style="margin-top:0.6rem; font-size:0.72rem; color:var(--ink-faint);">← EOS 보장 구간 → &nbsp;&nbsp; ← 개발자 책임 →</div>
+      </div>
+
+      <p><strong>가정이 깨지는 실제 시나리오.</strong> Consumer가 메시지를 처리해 외부 PostgreSQL에 <code>INSERT</code>한 뒤 offset을 commit하기 전에 프로세스가 죽는다. 재시작 시 offset이 commit되지 않았으므로 같은 메시지를 다시 읽고 PostgreSQL에 중복 insert가 발생한다. <b>Kafka EOS 설정(<code>enable.idempotence=true</code>, 트랜잭션)과 완전히 무관한 문제</b>다. 이 실패는 외부 시스템 쓰기 레이어에서 발생한다.</p>
+
+      <p><strong>처방 — 3가지 방어 레이어.</strong></p>
+      <div style="overflow-x:auto; margin:0.6rem 0 0.8rem;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+          <thead>
+            <tr style="background:var(--paper-deep); border-top:2px solid var(--ink); border-bottom:1px solid var(--ink);">
+              <th style="text-align:left; padding:0.5rem 0.7rem; font-weight:600; color:var(--accent-deep);">방법</th>
+              <th style="text-align:left; padding:0.5rem 0.7rem; font-weight:600; color:var(--accent-deep);">구현</th>
+              <th style="text-align:left; padding:0.5rem 0.7rem; font-weight:600; color:var(--accent-deep);">적합한 상황</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--rule);">
+              <td style="padding:0.5rem 0.7rem; font-weight:600;">UPSERT</td>
+              <td style="padding:0.5rem 0.7rem; font-family:var(--mono); font-size:0.82rem;"><code>ON CONFLICT DO UPDATE</code></td>
+              <td style="padding:0.5rem 0.7rem; color:var(--ink-soft);">DB 쓰기 멱등성. 가장 단순</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--rule); background:var(--accent-wash);">
+              <td style="padding:0.5rem 0.7rem; font-weight:600;">Idempotency Key</td>
+              <td style="padding:0.5rem 0.7rem; font-family:var(--mono); font-size:0.82rem;"><code>event_id</code> 처리 이력 테이블</td>
+              <td style="padding:0.5rem 0.7rem; color:var(--ink);">외부 결제·포인트 등 Critical</td>
+            </tr>
+            <tr>
+              <td style="padding:0.5rem 0.7rem; font-weight:600;">Transactional Outbox</td>
+              <td style="padding:0.5rem 0.7rem; font-family:var(--mono); font-size:0.82rem;">DB 트랜잭션 + Outbox 테이블</td>
+              <td style="padding:0.5rem 0.7rem; color:var(--ink-soft);">비즈니스 트랜잭션과 메시지 발행을 원자적으로</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p><strong>Zero-Copy 주의사항.</strong> 별개이지만 자주 혼동되는 함정 — Kafka의 Zero-Copy 전송(<code>sendfile()</code>)은 <b>TLS/SSL 사용 시 작동하지 않는다</b>. 데이터가 커널 → 유저 공간 → OpenSSL → 커널 순서로 복사돼야 하기 때문. "Kafka는 Zero-Copy라서 빠르다"는 주장은 TLS 없는 환경에서만 유효하다. 보안이 필요한 프로덕션에서 성능 측정은 TLS 포함 환경으로 해야 한다.</p>
     </div>
   </div>
 
@@ -936,24 +1021,109 @@
     <div class="gloss-head">
       <span class="gloss-label">함정</span>
       <h5>log.retention.bytes vs .hours — 먼저 걸린 쪽이 이긴다</h5>
-      <span class="gloss-pron">"의도치 않은 삭제"</span>
+      <span class="gloss-pron">"OR 조건 — 의도치 않은 조기 삭제"</span>
     </div>
     <div class="gloss-body">
-      <p><strong>함정.</strong> <code>log.retention.bytes</code>와 <code>log.retention.hours</code>는 <b>OR 조건</b>이다. 둘 중 먼저 도달하는 쪽이 삭제를 트리거한다. 시간이 7일이어도 디스크가 꽉 차면 그 전에 삭제된다. "7일치 데이터는 무조건 살아있다"는 가정이 틀렸다.</p>
-      <p><strong>운영 처방.</strong> 재처리를 보장해야 하는 토픽은 <b>bytes 제한 없이 시간으로만</b> 관리하고 디스크를 충분히 확보한다. 반대로 스토리지 절감이 목표면 bytes를 기준으로 잡는다. 두 설정을 동시에 쓰면 의도치 않은 삭제가 발생한다.</p>
+      <p><strong>함정의 구조.</strong> Kafka의 두 보존 설정은 <b>OR 조건</b>으로 동작한다. 둘 중 어느 쪽이든 먼저 트리거되는 쪽이 삭제를 실행한다. "7일치 데이터는 무조건 살아있다"는 가정은 디스크 용량이 충분할 때만 성립한다.</p>
+
+      <!-- 타임라인 다이어그램 -->
+      <div style="border:1px solid var(--rule); background:var(--paper-deep); padding:1rem; margin:0.8rem 0;">
+        <div style="font-size:0.65rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:0.8rem;">retention.bytes 먼저 도달하는 시나리오</div>
+        <div style="display:flex; align-items:stretch; gap:0; height:2.5rem; border:1px solid var(--rule);">
+          <div style="flex:2; background:oklch(0.88 0.12 145); display:flex; align-items:center; justify-content:center; font-size:0.72rem; font-family:var(--mono);">D+1 쓰기</div>
+          <div style="flex:2; background:oklch(0.88 0.12 145); display:flex; align-items:center; justify-content:center; font-size:0.72rem; font-family:var(--mono);">D+2 쓰기</div>
+          <div style="flex:1; background:oklch(0.90 0.05 38); display:flex; align-items:center; justify-content:center; font-size:0.72rem; color:var(--accent-deep); font-family:var(--mono);">bytes 상한</div>
+          <div style="flex:2; background:oklch(0.92 0.02 260); display:flex; align-items:center; justify-content:center; font-size:0.72rem; color:var(--ink-faint); font-family:var(--mono);">삭제 (D+3)</div>
+          <div style="flex:2; background:oklch(0.92 0.02 260); display:flex; align-items:center; justify-content:center; font-size:0.72rem; color:var(--ink-faint); font-family:var(--mono);">D+4~D+7 없음</div>
+        </div>
+        <div style="margin-top:0.4rem; font-size:0.72rem; color:var(--accent-deep);">retention.hours = 7일 설정이어도 D+3에 삭제 발생</div>
+      </div>
+
+      <p><strong>가장 위험한 시나리오.</strong> 트래픽 급증 이벤트(블랙 프라이데이, 신규 서비스 런칭) 때 데이터 쓰기가 평소보다 10배 증가하면 <code>retention.bytes</code> 상한에 수 시간 안에 도달한다. 이 기간에 Consumer가 지연을 겪고 있다면, 아직 처리하지 못한 메시지가 삭제되어 <b>영구 유실</b>이 발생한다.</p>
+
+      <p><strong>처방 — 목적별로 설정을 분리한다.</strong></p>
+      <div style="overflow-x:auto; margin:0.6rem 0 0.8rem;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+          <thead>
+            <tr style="background:var(--paper-deep); border-top:2px solid var(--ink); border-bottom:1px solid var(--ink);">
+              <th style="text-align:left; padding:0.5rem 0.7rem; font-weight:600; color:var(--accent-deep);">목적</th>
+              <th style="text-align:left; padding:0.5rem 0.7rem; font-weight:600; color:var(--accent-deep);">권장 설정</th>
+              <th style="text-align:left; padding:0.5rem 0.7rem; font-weight:600; color:var(--accent-deep);">주의</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--rule);">
+              <td style="padding:0.5rem 0.7rem; font-weight:600;">재처리 보장</td>
+              <td style="padding:0.5rem 0.7rem; font-family:var(--mono); font-size:0.82rem;"><code>retention.bytes=-1</code> + <code>retention.hours=168</code></td>
+              <td style="padding:0.5rem 0.7rem; color:var(--ink-soft);">bytes 무제한. 디스크 충분히 확보</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--rule); background:var(--accent-wash);">
+              <td style="padding:0.5rem 0.7rem; font-weight:600;">스토리지 절감</td>
+              <td style="padding:0.5rem 0.7rem; font-family:var(--mono); font-size:0.82rem;"><code>retention.bytes=50GB</code> + <code>retention.hours=-1</code></td>
+              <td style="padding:0.5rem 0.7rem; color:var(--ink);">시간 무제한. bytes만 관리</td>
+            </tr>
+            <tr>
+              <td style="padding:0.5rem 0.7rem; font-weight:600;">혼합 (피하기)</td>
+              <td style="padding:0.5rem 0.7rem; font-family:var(--mono); font-size:0.82rem;"><code>retention.bytes=50GB</code> + <code>retention.hours=168</code></td>
+              <td style="padding:0.5rem 0.7rem; color:var(--accent-deep); font-weight:600;">먼저 도달한 쪽이 삭제. 예측 불가</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>모니터링.</strong> <code>kafka-log-dirs.sh --describe</code>로 토픽별 디스크 사용량을 확인한다. bytes 상한의 70%에 도달하면 디스크 증설 또는 retention 정책 조정을 검토한다.</p>
     </div>
   </div>
 
   <div class="gloss" id="p-rebalance">
     <div class="gloss-head">
       <span class="gloss-label">함정</span>
-      <h5>Rebalance Storm — 배포할 때마다 전체가 멈춘다</h5>
-      <span class="gloss-pron">"Eager Rebalance의 대가"</span>
+      <h5>Rebalance Storm — 배포할 때마다 처리가 멈춘다</h5>
+      <span class="gloss-pron">"Eager vs Cooperative Rebalance"</span>
     </div>
     <div class="gloss-body">
-      <p><strong>함정.</strong> 기본 Eager Rebalance 프로토콜은 Consumer Group 멤버가 바뀌면 <b>모든 파티션 할당을 해제하고 처음부터 재분배</b>한다. 배포 중 인스턴스 하나가 내려가거나 올라갈 때마다 전체 그룹이 수백 ms~수 초 동안 처리를 멈춘다. 서비스 배포가 곧 처리 지연을 의미한다.</p>
-      <p><strong>처방.</strong> Kafka 2.4+의 <b>Cooperative (Incremental) Rebalance</b>로 전환한다. <code>partition.assignment.strategy=CooperativeStickyAssignor</code> — 빠져나가는 파티션만 재할당하고 나머지는 유지된다. Consumer가 떠날 때 <code>session.timeout.ms</code>와 <code>heartbeat.interval.ms</code>를 적절히 설정해 빠른 감지와 잦은 오탐 사이 균형을 잡는다. Kafka Streams는 기본 Cooperative Rebalance를 사용한다.</p>
-      <p><strong>Consumer Lag 폭발.</strong> 별개 함정이지만 연관이 높다. Rebalance가 잦으면 lag이 급등하고, lag이 retention 기간을 초과하면 <b>데이터 유실</b>이 발생한다. Consumer의 처리 속도 ≥ 생산 속도를 항상 모니터링해야 한다. lag이 늘기 시작하면 파티션 추가보다 먼저 처리 로직 병목을 확인한다.</p>
+      <p><strong>Eager Rebalance — 기본 프로토콜의 문제.</strong> Consumer Group에 멤버가 들어오거나 나가면 Kafka는 Rebalance를 시작한다. 기본 Eager Rebalance는 <b>모든 파티션 할당을 해제(revoke)</b>하고 처음부터 재분배한다. 이 과정에서 모든 Consumer가 처리를 중단하고 할당을 기다린다. 배포 중 인스턴스가 하나라도 교체되면 전체 그룹이 멈춘다 — 파티션 100개 × Consumer 50개 그룹이면 재분배에 수 초가 걸릴 수 있다.</p>
+
+      <!-- Eager vs Cooperative 비교 다이어그램 -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0;">
+        <div style="border:1px solid var(--rule); padding:1rem; background:var(--paper-deep);">
+          <div style="font-size:0.7rem; font-weight:600; color:var(--accent-deep); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.6rem;">Eager Rebalance (기본)</div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.2rem; margin-bottom:0.3rem;">
+            <div style="background:oklch(0.88 0.12 145); padding:0.25rem; font-size:0.65rem; text-align:center; font-family:var(--mono);">C1:P1,P2</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.25rem; font-size:0.65rem; text-align:center; font-family:var(--mono);">C2:P3,P4</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.25rem; font-size:0.65rem; text-align:center; font-family:var(--mono);">C3:P5,P6</div>
+          </div>
+          <div style="text-align:center; font-size:0.8rem; margin:0.3rem 0; color:var(--accent-deep); font-weight:600;">↓ C4 추가 시</div>
+          <div style="background:oklch(0.90 0.05 38); padding:0.35rem; text-align:center; font-size:0.7rem; color:var(--accent-deep); font-weight:600; margin-bottom:0.3rem;">전체 revoke — 모든 처리 중단</div>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0.2rem;">
+            <div style="background:oklch(0.88 0.12 145); padding:0.25rem; font-size:0.65rem; text-align:center; font-family:var(--mono);">C1:P1,P2</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.25rem; font-size:0.65rem; text-align:center; font-family:var(--mono);">C2:P3,P4</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.25rem; font-size:0.65rem; text-align:center; font-family:var(--mono);">C3:P5</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.25rem; font-size:0.65rem; text-align:center; font-family:var(--mono);">C4:P6</div>
+          </div>
+        </div>
+        <div style="border:1px solid var(--rule); padding:1rem; background:var(--paper-deep);">
+          <div style="font-size:0.7rem; font-weight:600; color:oklch(0.35 0.14 145); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.6rem;">Cooperative Rebalance (권장)</div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.2rem; margin-bottom:0.3rem;">
+            <div style="background:oklch(0.88 0.12 145); padding:0.25rem; font-size:0.65rem; text-align:center; font-family:var(--mono);">C1:P1,P2</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.25rem; font-size:0.65rem; text-align:center; font-family:var(--mono);">C2:P3,P4</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.25rem; font-size:0.65rem; text-align:center; font-family:var(--mono);">C3:P5,P6</div>
+          </div>
+          <div style="text-align:center; font-size:0.8rem; margin:0.3rem 0; color:oklch(0.35 0.14 145); font-weight:600;">↓ C4 추가 시</div>
+          <div style="background:oklch(0.93 0.06 145); padding:0.35rem; text-align:center; font-size:0.7rem; color:oklch(0.3 0.14 145); font-weight:600; margin-bottom:0.3rem;">P6만 revoke — 나머지 처리 계속</div>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0.2rem;">
+            <div style="background:oklch(0.88 0.12 145); padding:0.25rem; font-size:0.65rem; text-align:center; font-family:var(--mono);">C1:P1,P2</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.25rem; font-size:0.65rem; text-align:center; font-family:var(--mono);">C2:P3,P4</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.25rem; font-size:0.65rem; text-align:center; font-family:var(--mono);">C3:P5</div>
+            <div style="background:oklch(0.88 0.12 145); padding:0.25rem; font-size:0.65rem; text-align:center; font-family:var(--mono);">C4:P6</div>
+          </div>
+        </div>
+      </div>
+
+      <p><strong>처방 1 — Cooperative Rebalance로 전환.</strong> Kafka 2.4+에서 Consumer 설정에 <code>partition.assignment.strategy=CooperativeStickyAssignor</code>를 추가한다. 이후 Rebalance는 빠져나가는 파티션만 재할당하고 나머지는 기존 Consumer가 계속 처리한다. Kafka Streams는 2.4+에서 기본적으로 Cooperative Rebalance를 사용한다.</p>
+
+      <p><strong>처방 2 — Rebalance 트리거 최소화.</strong> <code>session.timeout.ms</code>(기본 45초)와 <code>heartbeat.interval.ms</code>(기본 3초) 설정을 조정한다. session.timeout을 늘리면 죽은 Consumer 감지가 늦어지고, 줄이면 일시적 지연에도 Rebalance가 발생한다. Kubernetes 환경에서 롤링 업데이트 시 <code>--max-surge</code>와 <code>--max-unavailable</code>을 조정해 한 번에 교체되는 Consumer 수를 최소화한다.</p>
+
+      <p><strong>Consumer Lag과의 연결.</strong> Rebalance가 잦으면 Lag이 급등한다. Lag이 <code>retention</code> 기간 내에 해소되지 않으면 데이터가 삭제되고 <b>재처리 불가 상태</b>가 된다. <code>kafka-consumer-groups.sh --describe</code>로 Lag을 실시간 모니터링하고, Lag이 증가 추세면 파티션 추가보다 먼저 Consumer의 처리 병목(네트워크 I/O, 외부 DB 응답 시간)을 확인한다.</p>
     </div>
   </div>
 

@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feature Store — 학습 노트</title>
+<link rel="icon" href="./favicon.svg?v=3" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .hero { max-width: 1200px; margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); position: relative; }
+  .hero::before { content: ""; position: absolute; top: 2rem; left: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); height: 1px; background: var(--ink); }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.5rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.95; font-weight: 600; margin-top: clamp(2rem, 5vw, 3rem); letter-spacing: -0.035em; color: var(--ink); }
+  .hero-title em { font-style: normal; font-weight: 300; color: var(--accent-deep); }
+  .hero-sub { margin-top: 1.4rem; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: var(--ink-soft); max-width: 42rem; line-height: 1.5; font-weight: 300; }
+  .hero-grid { margin-top: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .hero-grid > div { background: var(--paper); padding: 1.25rem 1.5rem; }
+  .hero-grid .k { display: block; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 0.4rem; }
+  .hero-grid .v { font-size: 1.2rem; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .hero-grid .v small { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; font-weight: 400; }
+
+  .section { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem); position: relative; }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head { display: grid; grid-template-columns: auto 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: baseline; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .section-num { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.85; color: var(--accent); font-weight: 200; letter-spacing: -0.04em; }
+  .section-titles { border-left: 1px solid var(--ink); padding-left: clamp(1rem, 3vw, 2rem); padding-top: 0.5rem; }
+  .section-kicker { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .section-title { font-size: clamp(1.65rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.028em; }
+
+  .tldr-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
+  @media (min-width: 720px) { .tldr-grid { grid-template-columns: repeat(12, 1fr); } }
+  .tldr-lead {
+    grid-column: 1 / -1;
+    font-size: clamp(1.2rem, 2.1vw, 1.6rem);
+    line-height: 1.45;
+    color: var(--ink);
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+    letter-spacing: -0.012em;
+  }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead::first-letter { font-size: 3.4em; float: left; line-height: 0.9; padding-right: 0.12em; padding-top: 0.08em; color: var(--accent-deep); font-weight: 200; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  @media (min-width: 720px) { .tldr-lead { grid-column: 2 / 12; } }
+
+  .points { display: contents; }
+  .point { grid-column: 1 / -1; display: grid; grid-template-columns: 4ch 1fr; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 720px) { .point { grid-column: 2 / 12; grid-template-columns: 5ch 1fr; gap: 2rem; } }
+  .point .n { font-size: 1.25rem; color: var(--accent); line-height: 1; font-weight: 300; letter-spacing: 0.05em; text-transform: uppercase; }
+  .point h3 { font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.3; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.015em; }
+  .point p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
+  .point p strong { color: var(--ink); font-weight: 600; }
+  .point p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+
+  .diagram-block { margin-bottom: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .db-text h4 { font-size: clamp(1.3rem, 2.3vw, 1.75rem); line-height: 1.25; margin-bottom: 0.8rem; color: var(--ink); font-weight: 600; letter-spacing: -0.022em; }
+  .db-text h4 .num { display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em; color: var(--accent-deep); vertical-align: middle; background: var(--accent-wash); padding: 0.28rem 0.55rem; border-radius: 999px; margin-right: 0.65rem; font-weight: 600; position: relative; top: -0.15em; }
+  .db-text p { color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.65; font-size: 0.95rem; }
+  .db-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .db-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .db-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas {
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    padding: clamp(1.25rem, 3vw, 2rem);
+    position: relative;
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .canvas::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 0.7rem;
+    left: 0.9rem;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+
+  .box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.6rem 0.85rem;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    font-family: var(--sans);
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.3;
+    min-width: 0;
+    max-width: 100%;
+    position: relative;
+    word-break: keep-all;
+    flex-direction: column;
+  }
+  .box.accent { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); }
+  .box.soft { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .box.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .box small { display: block; font-size: 0.6rem; font-weight: 400; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.18rem; }
+  .box.accent small { color: var(--accent-wash); opacity: 0.85; }
+  .box.dark small { color: oklch(0.75 0.01 260); }
+
+  /* 대용량 처리 섹션 */
+  .ls-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .ls-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .ls-block { margin-bottom: clamp(3rem, 5vw, 4.5rem); padding-bottom: clamp(3rem, 5vw, 4.5rem); border-bottom: 1px solid var(--rule); }
+  .ls-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .ls-kicker { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.35rem; }
+  .ls-title { font-size: clamp(1.15rem, 1.9vw, 1.45rem); font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.2rem; color: var(--ink); }
+  .ls-body { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .ls-body { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .ls-text p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.65; margin-bottom: 0.9rem; }
+  .ls-text p:last-child { margin-bottom: 0; }
+  .ls-text p strong { color: var(--ink); font-weight: 600; }
+  .ls-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .ls-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .ls-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .ls-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+  .company-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+  .company-row .cl { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-right: 0.1rem; }
+  .badge { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; padding: 0.18rem 0.5rem; border: 1px solid var(--accent); color: var(--accent-deep); background: var(--accent-wash); }
+
+  /* Config reference */
+  .config-ref { margin-top: 1.5rem; border-top: 2px solid var(--ink); }
+  .config-ref-head { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.5rem 0; border-bottom: 1px solid var(--ink-faint); }
+  .config-ref-head span { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; }
+  .config-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.65rem 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .config-row:last-child { border-bottom: none; }
+  .config-row .ck { font-family: var(--mono); font-size: 0.71rem; color: var(--accent-deep); word-break: break-all; line-height: 1.4; }
+  .config-row .cv { font-family: var(--mono); font-size: 0.75rem; color: var(--ink); font-weight: 600; white-space: nowrap; }
+  .config-row .cd { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.4; }
+
+  /* 처리량 시각화 */
+  .d-throughput { width: 100%; display: flex; flex-direction: column; gap: 0.8rem; }
+  .d-throughput .tp-label { font-size: 0.6rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint); margin-bottom: 0.2rem; }
+  .d-throughput .tp-row { display: flex; align-items: center; gap: 0.5rem; }
+  .d-throughput .tp-key { font-size: 0.62rem; color: var(--ink-soft); min-width: 7rem; flex-shrink: 0; font-family: var(--mono); }
+  .d-throughput .tp-bar { height: 1.1rem; background: var(--accent-wash); border: 1.5px solid var(--accent); min-width: 2px; }
+  .d-throughput .tp-bar.full { background: var(--ink); border-color: var(--ink); }
+  .d-throughput .tp-bar.mid { background: var(--accent); border-color: var(--accent-deep); }
+  .d-throughput .tp-val { font-family: var(--mono); font-size: 0.62rem; color: var(--ink-faint); flex-shrink: 0; }
+
+  /* 코드 섹션 */
+  .code-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card { margin-bottom: 2.5rem; border: 1px solid var(--rule); background: var(--paper); overflow: hidden; }
+  .code-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 1rem 1.4rem;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-deep);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .code-head h4 { font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .code-head .tag { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--accent); color: var(--paper); border-radius: 2px; }
+  .code-head .head-right { display: flex; align-items: center; gap: 0.5rem; }
+  .copy-btn { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease; font-weight: 600; }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .code-card pre { margin: 0; padding: 1.35rem 1.5rem; overflow-x: auto; background: oklch(0.18 0.02 260); color: oklch(0.92 0.015 75); font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note { padding: 1rem 1.4rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper-deep); line-height: 1.6; }
+  .code-card .note strong { color: var(--accent-deep); }
+
+  .code-card pre, .code-card .note { display: none; }
+  .code-card.expanded pre, .code-card.expanded .note { display: block; }
+  .code-card .code-head { cursor: pointer; user-select: none; transition: background 0.15s ease; }
+  .code-card .code-head:hover { background: var(--paper); }
+  .expand-indicator { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-faint); transition: transform 0.2s ease; display: inline-block; line-height: 1; }
+  .code-card.expanded .expand-indicator { transform: rotate(90deg); color: var(--accent-deep); }
+
+  .margin-note { max-width: 1200px; margin: 0 auto; color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; padding: 1.1rem clamp(1.5rem, 5vw, 4rem); background: var(--paper-deep); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); font-weight: 300; }
+  .margin-note::before { content: "노트"; font-weight: 600; color: var(--accent-deep); font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-right: 0.8rem; display: inline-block; padding-right: 0.7rem; border-right: 1px solid var(--rule); }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  footer { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: var(--ink-faint); }
+  footer .lockup { font-size: 1.1rem; color: var(--ink); font-weight: 600; letter-spacing: 0.02em; }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  .home-link { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 60; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0 0.95rem; height: 48px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.04em; transition: background 0.2s ease, color 0.2s ease; }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow { font-family: var(--mono); font-size: 0.95rem; transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  .menu-btn { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; transition: background 0.2s ease; }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span { display: block; width: 20px; height: 1.5px; background: var(--ink); transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, background 0.2s ease; transform-origin: center; }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  .toc-backdrop { position: fixed; inset: 0; background: oklch(0.18 0.015 260 / 0.35); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+
+  .toc-panel { position: fixed; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--ink); z-index: 55; transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); overflow-y: auto; padding: 6rem 2.5rem 3rem; }
+  .toc-panel.open { transform: translateX(0); }
+
+  .toc-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .toc-title { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.03em; color: var(--ink); margin-bottom: 2.2rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule); }
+
+  .toc-list { list-style: none; counter-reset: toc; }
+  .toc-list > li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a { display: grid; grid-template-columns: 2.5rem 1fr; align-items: baseline; text-decoration: none; color: var(--ink); font-weight: 500; font-size: 1.05rem; letter-spacing: -0.012em; transition: color 0.2s ease; }
+  .toc-list > li > a::before { counter-increment: toc; content: counter(toc, decimal-leading-zero); color: var(--accent); font-weight: 300; font-size: 0.85rem; letter-spacing: 0.05em; }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+
+  .toc-sub { list-style: none; margin-top: 0.6rem; margin-left: 2.5rem; padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a { color: var(--ink-soft); text-decoration: none; font-size: 0.88rem; font-weight: 400; transition: color 0.2s ease; display: flex; align-items: baseline; gap: 0.6rem; }
+  .toc-sub a span { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; min-width: 1.6rem; }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-sub a:hover span { color: var(--accent); }
+
+  .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); line-height: 1.6; }
+
+  body.menu-open { overflow: hidden; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card {
+      animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html" aria-label="홈으로 돌아가기">
+  <span class="arrow">←</span><span>notebook</span>
+</a>
+
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+
+<div class="toc-backdrop" id="tocBackdrop"></div>
+
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#arch" data-close>이중 저장소 아키텍처</a>
+      <ul class="toc-sub">
+        <li><a href="#d-dual" data-close><span>01</span>이중 저장소</a></li>
+        <li><a href="#d-pit" data-close><span>02</span>Point-in-Time Correct Join</a></li>
+        <li><a href="#d-pipeline" data-close><span>03</span>스트리밍 vs 배치 파이프라인</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#largescale" data-close>대용량 처리</a>
+      <ul class="toc-sub">
+        <li><a href="#ls-serial" data-close><span>01</span>직렬화 전략</a></li>
+        <li><a href="#ls-cache" data-close><span>02</span>다층 캐시</a></li>
+        <li><a href="#ls-partition" data-close><span>03</span>파티셔닝과 핫 엔티티</a></li>
+        <li><a href="#ls-config" data-close><span>04</span>핵심 설정 참조</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#pitfalls" data-close>Gotchas</a>
+      <ul class="toc-sub">
+        <li><a href="#p-skew" data-close><span>01</span>학습-서빙 스큐</a></li>
+        <li><a href="#p-leakage" data-close><span>02</span>Point-in-Time 누수</a></li>
+        <li><a href="#p-consistency" data-close><span>03</span>온라인-오프라인 일관성</a></li>
+        <li><a href="#p-ttl" data-close><span>04</span>피처 TTL과 신선도</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+  <div class="toc-foot">
+    Feature Store — ML 피처 중앙 저장·서빙<br>학습 노트 · 2026.06.02
+  </div>
+</aside>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="meta-row">
+    <span>karellen-kim · notebook</span>
+    <span>ML 플랫폼</span>
+  </div>
+  <h1 class="hero-title">Feature <em>Store</em></h1>
+  <p class="hero-sub">ML 피처를 중앙 저장·서빙하는 인프라 — 학습용 오프라인 피처와 추론용 온라인 피처를 동일한 정의에서 제공해 학습-서빙 스큐를 제거한다</p>
+  <div class="hero-grid">
+    <div><span class="k">온라인 레이턴시</span><span class="v">&lt;10ms<small>p99 Redis</small></span></div>
+    <div><span class="k">Uber Feast</span><span class="v">5억+<small>피처 관리</small></span></div>
+    <div><span class="k">Meta FBLearner</span><span class="v">1조+<small>피처 서빙</small></span></div>
+    <div><span class="k">작성</span><span class="v">2026<small>.06.02</small></span></div>
+  </div>
+</header>
+
+<!-- §01 한 줄로 이해하기 -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <div class="section-kicker">TL;DR</div>
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      Feature Store는 <em>ML 피처를 중앙 저장·서빙하는 인프라</em>다. 학습용 배치 피처와 추론용 온라인 피처가 동일한 정의에서 나오도록 보장해 <span class="hl">학습-서빙 스큐(Training-Serving Skew)</span>를 제거한다. 한 번 계산한 피처를 여러 모델이 재사용하고, Point-in-Time Correct Join으로 데이터 누수 없이 학습 데이터를 생성한다.
+    </p>
+
+    <div class="points">
+      <div class="point">
+        <span class="n">01</span>
+        <div>
+          <h3>이중 저장소</h3>
+          <p>오프라인 스토어(Hive/S3, 학습용)와 온라인 스토어(Redis/DynamoDB, 추론 &lt;10ms)를 동일한 피처 정의에서 채운다. 학습과 서빙이 같은 로직을 공유하므로 <strong>스큐가 구조적으로 불가능</strong>하다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">02</span>
+        <div>
+          <h3>Point-in-Time Correct Join</h3>
+          <p>학습 데이터 생성 시 레이블 시점 이전 피처만 조회한다. 미래 정보를 학습에 포함하는 <strong>데이터 누수(Label Leakage)</strong>를 방지한다. 오프라인 집계는 레이블 타임스탬프 기준으로 경계를 잘라낸다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">03</span>
+        <div>
+          <h3>피처 공유</h3>
+          <p>한 팀이 계산한 <code>user_purchase_count_7d</code>를 추천·광고·사기탐지 모델 모두가 재사용한다. 중복 파이프라인 제거, 일관된 피처 정의, 계산 비용 절감이 동시에 달성된다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">04</span>
+        <div>
+          <h3>실시간 피처</h3>
+          <p>Kafka 스트림 → Flink 집계 → 온라인 스토어 경로로 수초 이내 지연의 실시간 피처를 서빙한다. 배치 피처(일별)와 스트리밍 피처(초 단위)를 혼합해 추론 시 결합한다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">05</span>
+        <div>
+          <h3>빅테크 현황</h3>
+          <p>Uber가 Feast를 오픈소스로 공개. Meta FBLearner, Google Feast, LinkedIn Frame, Airbnb Zipline이 각자 독자 구현을 운영한다. 공통 패턴은 <strong>오프라인/온라인 이중 저장소 + Feature Registry</strong>다.</p>
+        </div>
+      </div>
+      <div class="point">
+        <span class="n">06</span>
+        <div>
+          <h3>핵심 Trade-off</h3>
+          <p>온라인 스토어 P99 &lt;5ms 달성을 위한 Redis 운영 복잡도 vs 오프라인 PIT 정확성을 위한 타임스탬프 관리 정밀도 vs 스트리밍 파이프라인 유지 비용의 세 축이 항상 충돌한다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §02 그림으로 보는 구조 -->
+<section class="section" id="arch">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Architecture</div>
+      <h2 class="section-title">이중 저장소 아키텍처</h2>
+    </div>
+  </div>
+
+  <!-- 다이어그램 01: 이중 저장소 -->
+  <div class="diagram-block" id="d-dual">
+    <div class="db-text">
+      <h4><span class="num">01</span>이중 저장소</h4>
+      <p>피처 파이프라인은 오프라인 스토어와 온라인 스토어에 동시에 쓴다. 학습 시에는 오프라인에서 대량 배치로 읽고, 추론 시에는 온라인에서 단건 저지연으로 읽는다. <strong>Feature Registry</strong>가 피처 정의와 메타데이터를 중앙 관리한다.</p>
+      <p>오프라인은 컬럼형 포맷(Parquet/Hive)으로 쿼리 효율을 높이고, 온라인은 키-값(Redis/DynamoDB)으로 ms 이내 응답을 보장한다.</p>
+      <div class="use-when">
+        <strong>언제 쓰나</strong>
+        <p>같은 피처를 학습과 서빙 양쪽에서 써야 할 때. 여러 모델이 공통 피처를 재사용할 때. 스큐로 인한 모델 성능 저하가 반복될 때.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Dual Store Architecture">
+      <div style="display:flex;flex-direction:column;gap:0.7rem;width:100%;">
+        <!-- 데이터 소스 -->
+        <div style="display:flex;gap:0.5rem;justify-content:center;">
+          <div style="padding:0.45rem 0.7rem;border:1.5px solid var(--rule);background:var(--paper);font-size:0.68rem;font-weight:500;text-align:center;flex:1;max-width:110px;">Kafka Events</div>
+          <div style="padding:0.45rem 0.7rem;border:1.5px solid var(--rule);background:var(--paper);font-size:0.68rem;font-weight:500;text-align:center;flex:1;max-width:110px;">Batch ETL</div>
+        </div>
+        <div style="text-align:center;font-family:var(--mono);font-size:0.68rem;color:var(--ink-faint);">↓</div>
+        <!-- 피처 파이프라인 -->
+        <div style="padding:0.55rem 0.8rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-size:0.72rem;font-weight:600;text-align:center;">Feature Pipeline</div>
+        <div style="display:flex;gap:0.5rem;align-items:flex-start;">
+          <div style="flex:1;text-align:center;font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">↙</div>
+          <div style="flex:0 0 auto;text-align:center;font-family:var(--mono);font-size:0.65rem;color:var(--accent-deep);padding:0 0.2rem;">Feature<br>Registry</div>
+          <div style="flex:1;text-align:center;font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">↘</div>
+        </div>
+        <!-- 저장소 -->
+        <div style="display:flex;gap:0.5rem;">
+          <div style="flex:1;padding:0.55rem 0.6rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.68rem;font-weight:600;text-align:center;color:var(--accent-deep);">오프라인 스토어<br><span style="font-weight:400;font-size:0.6rem;">S3 / Hive / Parquet</span></div>
+          <div style="flex:1;padding:0.55rem 0.6rem;border:1.5px solid var(--ink);background:var(--paper-deep);font-size:0.68rem;font-weight:600;text-align:center;">온라인 스토어<br><span style="font-weight:400;font-size:0.6rem;">Redis / DynamoDB</span></div>
+        </div>
+        <!-- 사용처 -->
+        <div style="display:flex;gap:0.5rem;">
+          <div style="flex:1;padding:0.4rem 0.5rem;border:1px dashed var(--accent);font-size:0.62rem;text-align:center;color:var(--accent-deep);">학습 (배치)</div>
+          <div style="flex:1;padding:0.4rem 0.5rem;border:1px dashed var(--ink-faint);font-size:0.62rem;text-align:center;color:var(--ink-soft);">추론 (&lt;10ms)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 다이어그램 02: Point-in-Time Correct Join -->
+  <div class="diagram-block" id="d-pit">
+    <div class="db-text">
+      <h4><span class="num">02</span>Point-in-Time Correct Join</h4>
+      <p>레이블 이벤트(t3)가 발생했을 때, 그 시점 이전의 가장 최신 피처(t2)만 학습에 사용한다. t3 이후 시점의 피처(t4)를 포함하면 미래 정보가 학습에 유출된다.</p>
+      <p>잘못된 조인: <code>LEFT JOIN ON entity_id</code> — 레이블 시점을 무시하고 최신 피처를 그대로 붙인다. 올바른 PIT 조인: 레이블 타임스탬프보다 작거나 같은 피처만 선택한다.</p>
+      <div class="use-when">
+        <strong>누수가 위험한 이유</strong>
+        <p>오프라인 백테스트에서 성능이 높게 나오다가 실제 배포 후 성능이 급락한다면 PIT 조인 누락이 1순위 의심 대상이다. 사기 탐지, 신용 평가, 이탈 예측에서 특히 치명적이다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Point-in-Time Correct Join">
+      <div style="display:flex;flex-direction:column;gap:0.9rem;width:100%;">
+        <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-faint);">타임라인</div>
+        <!-- 피처 타임라인 -->
+        <div style="display:flex;align-items:center;gap:0.3rem;">
+          <div style="font-size:0.62rem;color:var(--ink-soft);min-width:4.5rem;font-family:var(--mono);">피처 업데이트</div>
+          <div style="display:flex;gap:0.3rem;flex:1;align-items:center;">
+            <div style="padding:0.3rem 0.45rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.62rem;font-family:var(--mono);text-align:center;">t1<br><span style="color:var(--ink-faint);font-size:0.55rem;">피처A</span></div>
+            <div style="flex:1;height:1px;background:var(--rule);"></div>
+            <div style="padding:0.3rem 0.45rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.62rem;font-family:var(--mono);text-align:center;color:var(--accent-deep);">t2<br><span style="font-size:0.55rem;">피처B</span></div>
+            <div style="flex:1;height:1px;background:var(--rule);"></div>
+            <div style="padding:0.3rem 0.45rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.62rem;font-family:var(--mono);text-align:center;color:var(--ink-faint);">t4<br><span style="font-size:0.55rem;">피처C</span></div>
+          </div>
+        </div>
+        <!-- 레이블 타임라인 -->
+        <div style="display:flex;align-items:center;gap:0.3rem;">
+          <div style="font-size:0.62rem;color:var(--ink-soft);min-width:4.5rem;font-family:var(--mono);">레이블</div>
+          <div style="display:flex;gap:0.3rem;flex:1;align-items:center;padding-left:calc(33% + 0.3rem);">
+            <div style="padding:0.3rem 0.45rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-size:0.62rem;font-family:var(--mono);text-align:center;">t3<br><span style="font-size:0.55rem;color:oklch(0.75 0.01 260);">레이블</span></div>
+          </div>
+        </div>
+        <hr style="border:none;border-top:1px dashed var(--rule);">
+        <!-- 판정 -->
+        <div style="display:flex;gap:0.5rem;">
+          <div style="flex:1;padding:0.5rem 0.6rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.65rem;text-align:center;color:var(--accent-deep);">
+            <div style="font-weight:600;margin-bottom:0.2rem;">올바른 PIT</div>
+            <div style="font-family:var(--mono);">t2 피처 사용</div>
+            <div style="font-size:0.58rem;margin-top:0.2rem;">t3 이전 최신값</div>
+          </div>
+          <div style="flex:1;padding:0.5rem 0.6rem;border:1.5px dashed var(--ink-faint);background:var(--paper-deep);font-size:0.65rem;text-align:center;color:var(--ink-faint);">
+            <div style="font-weight:600;margin-bottom:0.2rem;">잘못된 조인</div>
+            <div style="font-family:var(--mono);">t4 피처 사용</div>
+            <div style="font-size:0.58rem;margin-top:0.2rem;">미래 정보 누수</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 다이어그램 03: 스트리밍 vs 배치 -->
+  <div class="diagram-block" id="d-pipeline">
+    <div class="db-text">
+      <h4><span class="num">03</span>스트리밍 vs 배치 파이프라인</h4>
+      <p>배치 파이프라인은 Spark로 대용량 집계를 처리해 오프라인 스토어에 저장한다. 지연은 시간~일 단위지만 처리량과 정확도가 높다.</p>
+      <p>스트리밍 파이프라인은 Kafka → Flink → Redis 경로로 초 단위 지연의 실시간 피처를 온라인 스토어에 지속 갱신한다. 둘을 혼합하면 추론 시 배치 피처(7일 집계)와 스트리밍 피처(최근 1시간)를 결합할 수 있다.</p>
+      <div class="use-when">
+        <strong>파이프라인 선택 기준</strong>
+        <p>신선도 SLA &lt;60초이면 스트리밍 필수. 신선도 SLA 1시간 이상이고 대용량 집계가 필요하면 배치로 충분. 대부분의 프로덕션은 두 경로를 병행 운영한다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Streaming vs Batch Pipeline">
+      <div style="display:flex;flex-direction:column;gap:0.7rem;width:100%;">
+        <!-- 배치 경로 -->
+        <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-faint);">배치 경로 (시간~일 단위)</div>
+        <div style="display:flex;align-items:center;gap:0.3rem;">
+          <div style="padding:0.35rem 0.5rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.65rem;font-weight:500;text-align:center;min-width:3.5rem;">Spark</div>
+          <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">→</div>
+          <div style="padding:0.35rem 0.5rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.65rem;font-weight:500;text-align:center;flex:1;">DeltaLake / Hive</div>
+          <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">→</div>
+          <div style="padding:0.35rem 0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.65rem;font-weight:600;text-align:center;color:var(--accent-deep);min-width:4rem;">오프라인<br>스토어</div>
+        </div>
+        <hr style="border:none;border-top:1px dashed var(--rule);margin:0.1rem 0;">
+        <!-- 스트리밍 경로 -->
+        <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-faint);">스트리밍 경로 (초 단위)</div>
+        <div style="display:flex;align-items:center;gap:0.3rem;">
+          <div style="padding:0.35rem 0.5rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.65rem;font-weight:500;text-align:center;min-width:3.5rem;">Kafka</div>
+          <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">→</div>
+          <div style="padding:0.35rem 0.5rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.65rem;font-weight:500;text-align:center;flex:1;">Flink</div>
+          <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">→</div>
+          <div style="padding:0.35rem 0.5rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-size:0.65rem;font-weight:600;text-align:center;min-width:4rem;">온라인<br>스토어</div>
+        </div>
+        <hr style="border:none;border-top:1px dashed var(--rule);margin:0.1rem 0;">
+        <!-- 추론 시 결합 -->
+        <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-faint);">추론 시</div>
+        <div style="display:flex;gap:0.4rem;">
+          <div style="flex:1;padding:0.4rem 0.4rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.62rem;text-align:center;color:var(--accent-deep);">배치 피처<br>7일 집계</div>
+          <div style="display:flex;align-items:center;font-family:var(--mono);font-size:0.8rem;color:var(--ink-faint);">+</div>
+          <div style="flex:1;padding:0.4rem 0.4rem;border:1.5px solid var(--ink);background:var(--paper-deep);font-size:0.62rem;text-align:center;">스트리밍 피처<br>최근 1시간</div>
+          <div style="display:flex;align-items:center;font-family:var(--mono);font-size:0.8rem;color:var(--accent-deep);">→</div>
+          <div style="flex:0 0 auto;padding:0.4rem 0.5rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-size:0.62rem;text-align:center;">모델</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §03 대용량 처리 -->
+<section class="section" id="largescale">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Large Scale</div>
+      <h2 class="section-title">대용량 처리</h2>
+    </div>
+  </div>
+
+  <p class="ls-intro">
+    빅테크 Feature Store 운영의 핵심은 <em>온라인 스토어 레이턴시</em>와 <em>오프라인 PIT 정확성</em>을 동시에 달성하는 것이다. Uber Feast는 5억 개 이상의 피처를 p99 &lt;3ms로 서빙하고, Meta FBLearner는 1조 이상의 피처를 관리한다.
+  </p>
+
+  <!-- 직렬화 전략 -->
+  <div class="ls-block" id="ls-serial">
+    <div class="ls-kicker">01 · Serialization</div>
+    <div class="ls-title">직렬화 전략 — Redis 피처 페이로드 최소화</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row">
+          <span class="cl">측정</span>
+          <span class="badge">Uber</span>
+          <span class="badge">LinkedIn</span>
+        </div>
+        <p><strong>Protobuf &gt; MessagePack &gt; JSON.</strong> Uber 내부 측정에서 Protobuf는 JSON 대비 40% 작은 페이로드를 만든다. Redis에 저장되는 피처 벡터 크기가 작을수록 네트워크 대역폭과 메모리 사용량이 줄어든다.</p>
+        <p>피처 벡터 하나에 수십~수백 개의 숫자형 피처가 들어간다. 1억 엔티티 × 100 피처 × 4바이트(float32) = 40GB가 JSON이면 100GB+로 부풀어오른다. <strong>직렬화 포맷 선택이 인프라 비용을 직접 결정한다.</strong></p>
+        <div class="use-when">
+          <strong>직렬화 선택 기준</strong>
+          <p>피처 스키마가 고정적이면 Protobuf. 스키마가 자주 바뀌거나 임시 탐색용이면 MessagePack. JSON은 디버깅 용도로만 사용한다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Serialization Size">
+        <div class="d-throughput">
+          <div class="tp-label">피처 벡터 100개 · float32 기준</div>
+          <div class="tp-row"><span class="tp-key">JSON</span><div class="tp-bar full" style="width:100%;"></div><span class="tp-val">~7,200B</span></div>
+          <div class="tp-row"><span class="tp-key">MessagePack</span><div class="tp-bar mid" style="width:62%;"></div><span class="tp-val">~4,500B</span></div>
+          <div class="tp-row"><span class="tp-key">Protobuf</span><div class="tp-bar" style="width:42%;background:var(--accent);border-color:var(--accent-deep);"></div><span class="tp-val">~430B</span></div>
+          <div style="font-size:0.58rem;color:var(--ink-faint);font-family:var(--mono);margin-top:0.4rem;">Protobuf = JSON 대비 약 94% 절감 (Uber 내부 측정)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 다층 캐시 -->
+  <div class="ls-block" id="ls-cache">
+    <div class="ls-kicker">02 · Multi-Layer Cache</div>
+    <div class="ls-title">다층 캐시 — L1 인메모리 · L2 Redis · L3 DynamoDB</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row">
+          <span class="cl">패턴</span>
+          <span class="badge">Uber</span>
+          <span class="badge">Airbnb</span>
+          <span class="badge">Meta</span>
+        </div>
+        <p><strong>L1 — 프로세스 내 인메모리 캐시(100μs).</strong> 요청 배치 내에서 동일 엔티티를 중복 조회하는 경우를 잡는다. LRU 정책, 최대 수천~수만 엔티티, 짧은 TTL(수십초)로 운영한다. Caffeine(Java), cachetools(Python) 등이 일반적이다.</p>
+        <p><strong>L2 — Redis 클러스터(1~3ms).</strong> 서비스 전체의 공유 캐시. 피처 TTL을 엔티티 유형별로 다르게 설정한다(활성 사용자 5분, 비활성 사용자 1시간). Hash 자료구조로 엔티티 단위로 모든 피처를 묶어 저장한다.</p>
+        <p><strong>L3 — DynamoDB/Cassandra(5~10ms).</strong> Cold 엔티티나 Redis에서 만료된 피처의 fallback. 비용이 높으므로 자주 접근되는 엔티티는 Redis로 워밍업한다.</p>
+        <div class="use-when">
+          <strong>캐시 워밍업 전략</strong>
+          <p>추론 서버 배포 시 또는 Redis 장애 복구 후, 핵심 엔티티(DAU Top 10%)를 미리 Redis에 적재한다. Cold start latency spike를 방지한다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Multi-Layer Cache">
+        <div style="display:flex;flex-direction:column;gap:0.55rem;width:100%;">
+          <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-faint);">레이턴시 계층</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <div style="font-size:0.62rem;color:var(--ink-soft);min-width:4.5rem;font-family:var(--mono);">L1 In-Memory</div>
+            <div style="flex:1;padding:0.4rem 0.6rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-size:0.65rem;font-weight:600;text-align:center;">100μs</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <div style="font-size:0.62rem;color:var(--ink-soft);min-width:4.5rem;font-family:var(--mono);">L2 Redis</div>
+            <div style="flex:0.65;padding:0.4rem 0.6rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.65rem;font-weight:600;text-align:center;color:var(--accent-deep);">1~3ms</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <div style="font-size:0.62rem;color:var(--ink-soft);min-width:4.5rem;font-family:var(--mono);">L3 DynamoDB</div>
+            <div style="flex:0.35;padding:0.4rem 0.6rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.65rem;font-weight:500;text-align:center;">5~10ms</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <div style="font-size:0.62rem;color:var(--ink-faint);min-width:4.5rem;font-family:var(--mono);">Offline Store</div>
+            <div style="flex:0.18;padding:0.4rem 0.6rem;border:1px dashed var(--rule);font-size:0.65rem;font-weight:400;text-align:center;color:var(--ink-faint);">100ms+</div>
+          </div>
+          <div style="font-size:0.58rem;color:var(--ink-faint);font-family:var(--mono);margin-top:0.2rem;">목표: 추론 시 L1/L2 히트율 95%+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 파티셔닝과 핫 엔티티 -->
+  <div class="ls-block" id="ls-partition">
+    <div class="ls-kicker">03 · Hot Entity</div>
+    <div class="ls-title">파티셔닝과 핫 엔티티 처리 — 인기 아이템 핫스팟</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row">
+          <span class="cl">패턴</span>
+          <span class="badge">Meta</span>
+          <span class="badge">Airbnb</span>
+        </div>
+        <p><strong>엔티티 ID 기반 샤딩.</strong> Redis 클러스터는 <code>CRC16(key) mod 16384</code>로 슬롯을 배정한다. user_id나 item_id로 키를 구성하면 자동으로 분산된다. 그러나 인기 아이템 몇 개에 트래픽이 집중되면 특정 슬롯이 핫스팟이 된다.</p>
+        <p><strong>핫 엔티티 처리.</strong> 인기 아이템(Top 0.1%)의 피처는 여러 Redis 키에 복제한다. 요청 시 복제본 중 하나를 랜덤 선택해 읽기 부하를 분산한다. 쓰기는 fan-out으로 모든 복제본에 동시 갱신한다.</p>
+        <div class="use-when">
+          <strong>핫스팟 감지 방법</strong>
+          <p><code>redis-cli --hotkeys</code> 또는 <code>OBJECT FREQ</code> 명령으로 접근 빈도가 높은 키를 식별한다. 특정 슬롯의 ops/sec가 평균의 3배 이상이면 복제 적용을 검토한다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Hot Entity Replication">
+        <div style="display:flex;flex-direction:column;gap:0.7rem;width:100%;">
+          <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-faint);">핫 아이템 복제 패턴</div>
+          <!-- 쓰기 fan-out -->
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <div style="padding:0.35rem 0.5rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-size:0.65rem;font-weight:600;text-align:center;min-width:3.5rem;">Writer</div>
+            <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">fan-out →</div>
+            <div style="display:flex;flex-direction:column;gap:0.2rem;flex:1;">
+              <div style="padding:0.25rem 0.4rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.6rem;text-align:center;color:var(--accent-deep);font-family:var(--mono);">item:123:0</div>
+              <div style="padding:0.25rem 0.4rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.6rem;text-align:center;color:var(--accent-deep);font-family:var(--mono);">item:123:1</div>
+              <div style="padding:0.25rem 0.4rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.6rem;text-align:center;color:var(--accent-deep);font-family:var(--mono);">item:123:2</div>
+            </div>
+          </div>
+          <hr style="border:none;border-top:1px dashed var(--rule);">
+          <!-- 읽기 분산 -->
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <div style="display:flex;flex-direction:column;gap:0.2rem;flex:1;">
+              <div style="padding:0.25rem 0.4rem;border:1px solid var(--rule);background:var(--paper-deep);font-size:0.6rem;text-align:center;color:var(--ink-soft);">추론 서버 A</div>
+              <div style="padding:0.25rem 0.4rem;border:1px solid var(--rule);background:var(--paper-deep);font-size:0.6rem;text-align:center;color:var(--ink-soft);">추론 서버 B</div>
+              <div style="padding:0.25rem 0.4rem;border:1px solid var(--rule);background:var(--paper-deep);font-size:0.6rem;text-align:center;color:var(--ink-soft);">추론 서버 C</div>
+            </div>
+            <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">→ random pick</div>
+            <div style="padding:0.35rem 0.5rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.65rem;font-weight:600;text-align:center;color:var(--accent-deep);min-width:4rem;">복제본<br>1개</div>
+          </div>
+          <div style="font-size:0.58rem;color:var(--ink-faint);font-family:var(--mono);">읽기 부하 = 복제본 수로 나눔</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 핵심 설정 참조 -->
+  <div class="ls-block" id="ls-config">
+    <div class="ls-kicker">04 · Configuration</div>
+    <div class="ls-title">핵심 설정 참조표 — Redis + Pipeline 튜닝</div>
+    <div class="config-ref">
+      <div class="config-ref-head">
+        <span>파라미터</span>
+        <span>권장값</span>
+        <span>설명</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">maxmemory-policy</span>
+        <span class="cv">allkeys-lru</span>
+        <span class="cd">메모리 초과 시 LRU 기준 삭제. volatile-lru는 TTL 없는 키 삭제 못 함</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">feature TTL (활성 사용자)</span>
+        <span class="cv">300s</span>
+        <span class="cd">5분 이내 갱신 보장. DAU 기준 Top 10% 엔티티 대상</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">feature TTL (비활성)</span>
+        <span class="cv">3600s</span>
+        <span class="cd">1시간 TTL. 만료 시 오프라인 스토어에서 재적재</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">pipeline batch size</span>
+        <span class="cv">100~500</span>
+        <span class="cd">Redis Pipeline 배치 크기. 크게 할수록 RTT 절감, 메모리 압박 증가</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">maxmemory</span>
+        <span class="cv">서버 RAM 70%</span>
+        <span class="cd">나머지 30%는 OS 버퍼·fork 여유. OOM Killer 방지</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">save (RDB 스냅샷)</span>
+        <span class="cv">비활성화</span>
+        <span class="cd">Feature Store는 오프라인 스토어가 영속성 담당. Redis는 캐시 역할만</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">Feast materialization 주기</span>
+        <span class="cv">1h (배치) / 실시간 (스트림)</span>
+        <span class="cd">배치 피처는 1시간 배치, 실시간 피처는 Flink 스트리밍으로 즉시 갱신</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="margin-note">
+  <strong>Feature Store vs MLflow Artifact:</strong> Feature Store는 학습-서빙 경계를 넘어 피처를 일관성 있게 공유하는 인프라이고, MLflow Artifact는 모델 파일과 실험 결과를 버전 관리하는 도구다. 두 도구는 역할이 다르므로 보완적으로 함께 사용한다. Feature Store가 없으면 피처 계산 코드가 학습 코드와 추론 서버에 각각 존재해 스큐가 생긴다.
+</div>
+
+<!-- §04 Gotchas -->
+<section class="section" id="pitfalls">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Gotchas</div>
+      <h2 class="section-title">Gotchas</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-skew">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>학습-서빙 스큐 — 같은 피처 이름이면 같은 값이다</h5>
+      <span class="gloss-pron">"두 갈래 코드 경로가 만드는 조용한 불일치"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>핵심 가정.</strong> 학습 코드와 서빙 코드가 별도로 작성되면 같은 이름의 피처라도 <b>계산 방식이 달라질 수 있다</b>. 정규화 통계값(평균·분산)을 학습 시 데이터로 계산했지만 서빙 시에는 하드코딩하거나, 결측값 처리 방식이 다르거나, 집계 윈도우 경계를 다르게 자르는 경우가 대표적이다.</p>
+
+      <!-- 두 갈래 코드 경로 다이어그램 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0;">
+        <div style="border:1px solid var(--rule);padding:1rem;background:var(--paper-deep);">
+          <div style="font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:0.7rem;">학습 코드 경로</div>
+          <div style="display:flex;flex-direction:column;gap:0.3rem;font-size:0.68rem;font-family:var(--mono);">
+            <div style="padding:0.3rem 0.4rem;border:1px solid var(--rule);background:var(--paper);">raw_data (Hive)</div>
+            <div style="text-align:center;color:var(--ink-faint);">↓</div>
+            <div style="padding:0.3rem 0.4rem;border:1px solid var(--accent);background:var(--accent-wash);color:var(--accent-deep);">feature_eng.py v1<br><span style="font-size:0.58rem;">log(x+1), mean=0.34</span></div>
+            <div style="text-align:center;color:var(--ink-faint);">↓</div>
+            <div style="padding:0.3rem 0.4rem;border:1px solid var(--rule);background:var(--paper);">학습 데이터셋</div>
+          </div>
+        </div>
+        <div style="border:1px solid var(--rule);padding:1rem;background:var(--paper-deep);">
+          <div style="font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:0.7rem;">서빙 코드 경로</div>
+          <div style="display:flex;flex-direction:column;gap:0.3rem;font-size:0.68rem;font-family:var(--mono);">
+            <div style="padding:0.3rem 0.4rem;border:1px solid var(--rule);background:var(--paper);">실시간 이벤트</div>
+            <div style="text-align:center;color:var(--ink-faint);">↓</div>
+            <div style="padding:0.3rem 0.4rem;border:1.5px dashed var(--accent-deep);background:oklch(0.97 0.01 38);color:var(--accent-deep);">feature_server.py<br><span style="font-size:0.58rem;">log(x+1), mean=0.41</span></div>
+            <div style="text-align:center;color:var(--ink-faint);">↓</div>
+            <div style="padding:0.3rem 0.4rem;border:1px solid var(--rule);background:var(--paper);">추론 입력</div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:0.72rem;color:var(--accent-deep);margin-bottom:0.5rem;">mean 불일치 → 모델 입력 분포 이동 → 성능 저하 (탐지 어려움)</div>
+
+      <p><strong>가정이 깨지는 순간.</strong> 모델 재학습 후 오프라인 평가(AUC 0.91)는 그대로인데 온라인 A/B 테스트 지표가 하락하는 경우. 코드베이스를 뒤지면 학습 때 쓴 <code>fillna(0)</code>이 서빙 코드에는 <code>fillna(-1)</code>로 되어 있거나, 학습 시 1000으로 클리핑하던 피처를 서빙에서 클리핑하지 않는 식의 불일치가 발견된다.</p>
+
+      <p><strong>처방 — Feature Store가 근본 해결책.</strong> 피처 계산 로직을 Feature View 하나에 정의하고, 학습 시에는 오프라인 스토어에서, 서빙 시에는 온라인 스토어에서 읽는다. 두 스토어 모두 같은 파이프라인이 채우므로 코드 경로가 하나로 수렴된다. Feature Store 도입 전 임시 처방은 학습-서빙 피처 분포 모니터링(KL divergence, PSI)이다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-leakage">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>Point-in-Time 누수 — label leakage</h5>
+      <span class="gloss-pron">"레이블 이후 시점의 피처를 학습에 쓰면 미래를 아는 모델"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정의 구조.</strong> 레이블이 발생한 시점(t_label) 이후의 피처 값이 학습 데이터에 포함되면 모델이 <b>미래 정보를 이용해 과거를 예측하는 셈</b>이 된다. 오프라인 AUC는 매우 높게 나오지만 실제 배포 후 성능이 크게 떨어진다.</p>
+
+      <p><strong>구체적 시나리오 — 거래 사기 탐지.</strong> 사기 거래 발생(t0) 후 사기 판정(t0+7일)이 이루어진다. 사기 판정 시점에 학습 데이터를 생성하면서 t0~t0+7일 사이의 계정 행동 피처(거래 횟수 감소, 계정 잠금 여부 등)가 포함된다. 이 피처들은 이미 사기 발생 이후 행동이므로 실시간 예측에는 존재하지 않는 정보다.</p>
+
+      <p><strong>또 다른 패턴 — 오프라인 집계 윈도우 초과.</strong> "7일 평균 구매액"을 집계할 때 레이블 시점 기준으로 7일을 자르지 않고 최신 데이터 기준 7일을 쓰면 누수가 발생한다. 특히 배치 파이프라인이 매일 실행되어 날짜 경계를 매번 다르게 계산하면 재현이 어렵다.</p>
+
+      <p><strong>처방 1 — get_historical_features 사용.</strong> Feast의 <code>get_historical_features(entity_df=labels)</code>는 entity_df의 <code>event_timestamp</code>를 기준으로 PIT 조인을 수행한다. 레이블 데이터프레임에 정확한 레이블 발생 시점을 넣으면 그 이전 최신 피처만 반환한다.</p>
+      <p><strong>처방 2 — 누수 탐지 테스트.</strong> 학습 데이터를 시간 순서로 분리(temporal split)해 검증한다. 만약 시간 역순으로 학습해도 성능이 유지된다면 누수를 의심한다. 피처 중요도가 갑자기 높은 피처가 있다면 해당 피처의 생성 시점을 확인한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-consistency">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>온라인-오프라인 일관성 깨짐 — 서로 다른 집계 윈도우</h5>
+      <span class="gloss-pron">"오프라인 7일 이동평균 vs 온라인 캐시 만료 후 null"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정의 구조.</strong> 오프라인 스토어에서는 7일 이동평균으로 정의된 피처가, 온라인 스토어에서는 Redis TTL 만료로 인해 null을 반환하거나 다른 집계 윈도우(예: 1시간)로 계산된다. 모델은 학습 때 본 분포(7일 집계)와 다른 분포(null 또는 1시간 집계)를 추론 입력으로 받는다.</p>
+
+      <p><strong>Redis TTL 만료 시나리오.</strong> 피처 TTL을 1시간으로 설정했는데 스트리밍 파이프라인이 지연되거나 장애가 발생하면, 1시간 이상 접근 없는 엔티티의 피처가 만료된다. 추론 요청이 들어왔을 때 null 또는 stale 피처를 반환하면 모델 입력이 학습 때와 완전히 다른 분포가 된다.</p>
+
+      <p><strong>처방 — Fallback 레이어 설계.</strong> 온라인 스토어 조회 실패 시 (1) 기본값(피처 평균), (2) 오프라인 스토어 fallback, (3) null 허용 모델 입력 순으로 처리 레이어를 정의한다. Fallback이 발생한 비율을 메트릭으로 추적하고, 임계치(예: 1% 이상)를 넘으면 알럿을 발송한다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-ttl">
+    <div class="gloss-head">
+      <span class="gloss-label">함정</span>
+      <h5>피처 TTL과 신선도 — 오래된 피처가 조용히 성능을 낮춘다</h5>
+      <span class="gloss-pron">"TTL 모니터링 없이 운영하면 모델이 과거를 보고 있다"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>함정의 구조.</strong> 실시간 피처가 신선하지 않은 값을 반환할 때 모델 성능이 서서히 저하된다. 예를 들어 "사용자 최근 1시간 클릭 수" 피처가 1시간 이상 오래된 값을 반환하면 CTR 예측 모델의 클릭률 추정이 부정확해진다. <strong>배포 직후에는 정상이다가 시간이 지나면서 성능이 감소</strong>하는 패턴으로 나타난다.</p>
+
+      <p><strong>실제 시나리오.</strong> 스트리밍 파이프라인(Flink)이 Kafka consumer lag 누적으로 처리가 지연된다. 온라인 스토어의 피처는 1시간 전 값이 그대로 남아있지만 TTL이 24시간이어서 만료되지 않는다. 모델은 신선하지 않은 피처를 마치 최신인 것처럼 사용한다. Flink lag 모니터링이 없으면 며칠이 지나도 탐지가 안 된다.</p>
+
+      <p><strong>처방 — Freshness SLA 정의와 모니터링.</strong></p>
+      <div style="overflow-x:auto;margin:0.6rem 0 0.8rem;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+          <thead>
+            <tr style="background:var(--paper-deep);border-top:2px solid var(--ink);border-bottom:1px solid var(--ink);">
+              <th style="text-align:left;padding:0.5rem 0.7rem;font-weight:600;color:var(--accent-deep);">피처 유형</th>
+              <th style="text-align:left;padding:0.5rem 0.7rem;font-weight:600;color:var(--accent-deep);">Freshness SLA</th>
+              <th style="text-align:left;padding:0.5rem 0.7rem;font-weight:600;color:var(--accent-deep);">모니터링</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--rule);">
+              <td style="padding:0.5rem 0.7rem;font-weight:600;">실시간 클릭·노출</td>
+              <td style="padding:0.5rem 0.7rem;font-family:var(--mono);">&lt;60초</td>
+              <td style="padding:0.5rem 0.7rem;color:var(--ink-soft);">Flink lag + 피처 생성 시각</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--rule);background:var(--accent-wash);">
+              <td style="padding:0.5rem 0.7rem;font-weight:600;">사용자 행동 집계</td>
+              <td style="padding:0.5rem 0.7rem;font-family:var(--mono);">&lt;1시간</td>
+              <td style="padding:0.5rem 0.7rem;color:var(--ink);">배치 완료 시간 추적</td>
+            </tr>
+            <tr>
+              <td style="padding:0.5rem 0.7rem;font-weight:600;">장기 통계 (7일 평균)</td>
+              <td style="padding:0.5rem 0.7rem;font-family:var(--mono);">&lt;24시간</td>
+              <td style="padding:0.5rem 0.7rem;color:var(--ink-soft);">일별 배치 완료 여부</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>Fallback 전략.</strong> 피처가 Freshness SLA를 초과하면 (1) 더 오래된 배치 피처로 교체, (2) 이 피처를 사용하는 모델에 degraded mode 신호 전달, (3) 기본값 사용 순으로 fallback 처리한다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- §05 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">05</div>
+    <div class="section-titles">
+      <div class="section-kicker">Hands-On</div>
+      <h2 class="section-title">실전 코드</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    <em>Feast</em> 기반 구현 예제. Feast는 Uber가 오픈소스로 공개한 Feature Store로 오프라인/온라인 이중 저장소, PIT Correct Join, 실시간 materialization을 지원한다.
+  </p>
+
+  <!-- 코드 01: Feast Feature Definition -->
+  <div class="code-card">
+    <div class="code-head">
+      <h4>01. Feast Feature Definition</h4>
+      <div class="head-right">
+        <span class="tag">definition</span>
+      </div>
+    </div>
+    <pre><span class="kw">from</span> feast <span class="kw">import</span> FeatureStore, Entity, FeatureView, Field, FileSource
+<span class="kw">from</span> feast.types <span class="kw">import</span> Float64, Int64
+<span class="kw">from</span> datetime <span class="kw">import</span> timedelta
+
+<span class="com"># 엔티티 정의 — 피처 조인 키</span>
+user = <span class="fn">Entity</span>(
+    name=<span class="str">"user_id"</span>,
+    join_keys=[<span class="str">"user_id"</span>],
+    description=<span class="str">"사용자 ID"</span>,
+)
+
+<span class="com"># 오프라인 소스 (Parquet / S3)</span>
+user_source = <span class="fn">FileSource</span>(
+    path=<span class="str">"s3://my-bucket/features/user_features.parquet"</span>,
+    timestamp_field=<span class="str">"event_timestamp"</span>,  <span class="com"># PIT 조인에 사용되는 타임스탬프</span>
+    created_timestamp_column=<span class="str">"created"</span>,
+)
+
+<span class="com"># 피처 뷰 정의 — 학습과 서빙이 공유하는 단일 정의</span>
+user_features = <span class="fn">FeatureView</span>(
+    name=<span class="str">"user_features"</span>,
+    entities=[user],
+    ttl=<span class="fn">timedelta</span>(days=<span class="str">1</span>),          <span class="com"># 온라인 스토어 TTL</span>
+    schema=[
+        <span class="fn">Field</span>(name=<span class="str">"purchase_count_7d"</span>, dtype=Int64),
+        <span class="fn">Field</span>(name=<span class="str">"avg_order_value"</span>,   dtype=Float64),
+        <span class="fn">Field</span>(name=<span class="str">"days_since_last_purchase"</span>, dtype=Int64),
+        <span class="fn">Field</span>(name=<span class="str">"total_spend_30d"</span>,   dtype=Float64),
+    ],
+    source=user_source,
+    tags={<span class="str">"team"</span>: <span class="str">"growth"</span>, <span class="str">"model"</span>: <span class="str">"churn,recommendation"</span>},
+)
+
+<span class="com"># Feature Store 초기화 및 적용</span>
+store = <span class="fn">FeatureStore</span>(repo_path=<span class="str">"."</span>)
+store.<span class="fn">apply</span>([user, user_features])   <span class="com"># Feature Registry에 등록</span></pre>
+    <div class="note"><strong>포인트.</strong> <code>ttl</code>은 온라인 스토어에서 피처가 유효한 기간이다. TTL 만료 후 조회 시 null이 반환되므로 Freshness SLA보다 넉넉하게 설정하고, 파이프라인 지연을 별도로 모니터링해야 한다.</div>
+  </div>
+
+  <!-- 코드 02: Point-in-Time Correct Training Data -->
+  <div class="code-card">
+    <div class="code-head">
+      <h4>02. Point-in-Time Correct Training Data</h4>
+      <div class="head-right">
+        <span class="tag">pit-join</span>
+      </div>
+    </div>
+    <pre><span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">from</span> feast <span class="kw">import</span> FeatureStore
+
+store = <span class="fn">FeatureStore</span>(repo_path=<span class="str">"."</span>)
+
+<span class="com"># 레이블 데이터프레임 — event_timestamp가 PIT 기준점</span>
+<span class="com"># 이 시점 이전의 가장 최신 피처만 조회된다</span>
+labels = pd.<span class="fn">DataFrame</span>({
+    <span class="str">"user_id"</span>: [<span class="str">1001</span>, <span class="str">1002</span>, <span class="str">1003</span>, <span class="str">1004</span>],
+    <span class="str">"event_timestamp"</span>: pd.<span class="fn">to_datetime</span>([
+        <span class="str">"2026-01-10"</span>,   <span class="com"># 이 날짜 이전 피처만 조회</span>
+        <span class="str">"2026-01-11"</span>,
+        <span class="str">"2026-01-12"</span>,
+        <span class="str">"2026-01-15"</span>,
+    ]),
+    <span class="str">"churned"</span>: [<span class="str">1</span>, <span class="str">0</span>, <span class="str">1</span>, <span class="str">0</span>],  <span class="com"># 예측 대상 레이블</span>
+})
+
+<span class="com"># PIT Correct Join — timestamp 이전 최신 피처만 조회</span>
+training_df = store.<span class="fn">get_historical_features</span>(
+    entity_df=labels,
+    features=[
+        <span class="str">"user_features:purchase_count_7d"</span>,
+        <span class="str">"user_features:avg_order_value"</span>,
+        <span class="str">"user_features:days_since_last_purchase"</span>,
+        <span class="str">"user_features:total_spend_30d"</span>,
+    ],
+).<span class="fn">to_df</span>()
+
+<span class="com"># 결과: labels + 피처 컬럼들이 PIT 기준으로 join된 데이터프레임</span>
+<span class="fn">print</span>(training_df.columns.<span class="fn">tolist</span>())
+<span class="com"># ['user_id', 'event_timestamp', 'churned',</span>
+<span class="com">#  'purchase_count_7d', 'avg_order_value', ...]</span>
+
+<span class="com"># 데이터 누수 검증 — 피처 생성 시각이 레이블 시각 이후이면 경고</span>
+<span class="kw">assert</span> (training_df[<span class="str">"event_timestamp"</span>] &gt;=
+        training_df[<span class="str">"__user_features__event_timestamp"</span>]).<span class="fn">all</span>(), \
+    <span class="str">"PIT 조인 실패 — 미래 피처 포함"</span></pre>
+    <div class="note"><strong>포인트.</strong> <code>get_historical_features</code>는 내부적으로 each entity의 event_timestamp를 기준으로 feature store를 time-travel 조회한다. 레이블 데이터프레임에 정확한 레이블 발생 시각을 반드시 포함해야 PIT가 올바르게 동작한다.</div>
+  </div>
+
+  <!-- 코드 03: Online Feature Serving -->
+  <div class="code-card">
+    <div class="code-head">
+      <h4>03. Online Feature Serving — 추론 시 저지연 조회</h4>
+      <div class="head-right">
+        <span class="tag">online-serving</span>
+      </div>
+    </div>
+    <pre><span class="kw">import</span> redis
+<span class="kw">from</span> feast <span class="kw">import</span> FeatureStore
+
+store = <span class="fn">FeatureStore</span>(repo_path=<span class="str">"."</span>)
+
+<span class="com"># Feast 온라인 스토어 조회 (Redis 내부 사용, &lt;10ms)</span>
+feature_vector = store.<span class="fn">get_online_features</span>(
+    features=[
+        <span class="str">"user_features:purchase_count_7d"</span>,
+        <span class="str">"user_features:avg_order_value"</span>,
+        <span class="str">"user_features:days_since_last_purchase"</span>,
+    ],
+    entity_rows=[{<span class="str">"user_id"</span>: <span class="str">1001</span>}],
+).<span class="fn">to_dict</span>()
+
+<span class="com"># null 피처 처리 (TTL 만료 or 신규 엔티티)</span>
+<span class="kw">def</span> <span class="fn">safe_get</span>(d: dict, key: str, default):
+    val = d.<span class="fn">get</span>(key, [<span class="kw">None</span>])[<span class="str">0</span>]
+    <span class="kw">return</span> val <span class="kw">if</span> val <span class="kw">is not None</span> <span class="kw">else</span> default
+
+purchase_cnt = <span class="fn">safe_get</span>(feature_vector, <span class="str">"purchase_count_7d"</span>, <span class="str">0</span>)
+
+<span class="com"># Redis 직접 배치 조회 — 대량 엔티티 추론 시 (p99 &lt;3ms)</span>
+r = redis.<span class="fn">Redis</span>(
+    host=<span class="str">"feature-store-redis.internal"</span>,
+    port=<span class="str">6379</span>,
+    decode_responses=<span class="kw">False</span>,
+    socket_connect_timeout=<span class="str">0.1</span>,
+)
+
+<span class="kw">def</span> <span class="fn">batch_get_features</span>(user_ids: list[int]) -&gt; list[dict]:
+    pipeline = r.<span class="fn">pipeline</span>(transaction=<span class="kw">False</span>)  <span class="com"># 파이프라인으로 RTT 최소화</span>
+    <span class="kw">for</span> user_id <span class="kw">in</span> user_ids:
+        pipeline.<span class="fn">hgetall</span>(<span class="str">f"user:{user_id}:features"</span>)
+    raw_results = pipeline.<span class="fn">execute</span>()
+
+    <span class="com"># 역직렬화 + null 처리</span>
+    results = []
+    <span class="kw">for</span> uid, raw <span class="kw">in</span> <span class="fn">zip</span>(user_ids, raw_results):
+        <span class="kw">if</span> raw:
+            results.<span class="fn">append</span>({<span class="fn">k</span>.<span class="fn">decode</span>(): <span class="fn">float</span>(<span class="fn">v</span>) <span class="kw">for</span> k, v <span class="kw">in</span> raw.<span class="fn">items</span>()})
+        <span class="kw">else</span>:
+            results.<span class="fn">append</span>({<span class="str">"purchase_count_7d"</span>: <span class="str">0.0</span>, <span class="str">"avg_order_value"</span>: <span class="str">0.0</span>})
+    <span class="kw">return</span> results
+
+<span class="com"># 배치 추론 — 1000개 사용자 피처를 한 번에 조회</span>
+user_ids = <span class="fn">list</span>(<span class="fn">range</span>(<span class="str">1001</span>, <span class="str">2001</span>))
+features = <span class="fn">batch_get_features</span>(user_ids)</pre>
+    <div class="note"><strong>포인트.</strong> Redis Pipeline은 다수의 명령을 단일 TCP 왕복으로 처리한다. 1000개 엔티티를 개별 조회하면 RTT 1000번이지만, pipeline으로 묶으면 RTT 1번으로 처리된다. Uber Feast 내부 측정에서 batch 100~500 크기에서 p99 &lt;3ms를 달성한다.</div>
+  </div>
+</section>
+
+<footer>
+  <span class="lockup">Feature Store</span>
+  <div>
+    <a href="https://docs.feast.dev/" target="_blank" rel="noopener">원문 · docs.feast.dev</a>
+  </div>
+</footer>
+
+<script>
+(function () {
+  const btn = document.getElementById('menuBtn');
+  const panel = document.getElementById('tocPanel');
+  const backdrop = document.getElementById('tocBackdrop');
+
+  function openMenu() {
+    btn.classList.add('open');
+    panel.classList.add('open');
+    backdrop.classList.add('open');
+    document.body.classList.add('menu-open');
+    btn.setAttribute('aria-expanded', 'true');
+    panel.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeMenu() {
+    btn.classList.remove('open');
+    panel.classList.remove('open');
+    backdrop.classList.remove('open');
+    document.body.classList.remove('menu-open');
+    btn.setAttribute('aria-expanded', 'false');
+    panel.setAttribute('aria-hidden', 'true');
+  }
+
+  btn.addEventListener('click', () => btn.classList.contains('open') ? closeMenu() : openMenu());
+  backdrop.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', e => e.key === 'Escape' && closeMenu());
+  panel.querySelectorAll('[data-close]').forEach(a => a.addEventListener('click', closeMenu));
+
+  // 코드 카드: 헤드 클릭 토글 + copy 버튼 주입
+  document.querySelectorAll('.code-card').forEach(card => {
+    const head = card.querySelector('.code-head');
+    const headRight = card.querySelector('.head-right');
+
+    const indicator = document.createElement('span');
+    indicator.className = 'expand-indicator';
+    indicator.textContent = '▸';
+    headRight.prepend(indicator);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.textContent = 'copy';
+    headRight.appendChild(copyBtn);
+
+    head.addEventListener('click', () => card.classList.toggle('expanded'));
+
+    copyBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const code = card.querySelector('pre').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        copyBtn.textContent = 'copied';
+        copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = 'copy'; copyBtn.classList.remove('copied'); }, 1500);
+      }).catch(() => {
+        copyBtn.textContent = 'failed';
+        copyBtn.classList.add('failed');
+        setTimeout(() => { copyBtn.textContent = 'copy'; copyBtn.classList.remove('failed'); }, 1500);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apache Lucene — 학습 노트</title>
+<link rel="icon" href="./favicon.svg?v=3" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .hero { max-width: 1200px; margin: 0 auto; padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); position: relative; }
+  .hero::before { content: ""; position: absolute; top: 2rem; left: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); height: 1px; background: var(--ink); }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; padding-top: 2.5rem; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title { font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.95; font-weight: 600; margin-top: clamp(2rem, 5vw, 3rem); letter-spacing: -0.035em; color: var(--ink); }
+  .hero-title em { font-style: normal; font-weight: 300; color: var(--accent-deep); }
+  .hero-sub { margin-top: 1.4rem; font-size: clamp(1.05rem, 1.6vw, 1.25rem); color: var(--ink-soft); max-width: 42rem; line-height: 1.5; font-weight: 300; }
+  .hero-grid { margin-top: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .hero-grid > div { background: var(--paper); padding: 1.25rem 1.5rem; }
+  .hero-grid .k { display: block; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 0.4rem; }
+  .hero-grid .v { font-size: 1.2rem; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .hero-grid .v small { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); margin-left: 0.25rem; font-weight: 400; }
+
+  .section { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem); position: relative; }
+  .section + .section { border-top: 1px solid var(--rule); }
+  .section-head { display: grid; grid-template-columns: auto 1fr; gap: clamp(1.5rem, 4vw, 3rem); align-items: baseline; margin-bottom: clamp(2rem, 5vw, 3.5rem); }
+  .section-num { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.85; color: var(--accent); font-weight: 200; letter-spacing: -0.04em; }
+  .section-titles { border-left: 1px solid var(--ink); padding-left: clamp(1rem, 3vw, 2rem); padding-top: 0.5rem; }
+  .section-kicker { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .section-title { font-size: clamp(1.65rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.028em; }
+
+  .tldr-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
+  @media (min-width: 720px) { .tldr-grid { grid-template-columns: repeat(12, 1fr); } }
+  .tldr-lead {
+    grid-column: 1 / -1;
+    font-size: clamp(1.2rem, 2.1vw, 1.6rem);
+    line-height: 1.45;
+    color: var(--ink);
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+    letter-spacing: -0.012em;
+  }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead::first-letter { font-size: 3.4em; float: left; line-height: 0.9; padding-right: 0.12em; padding-top: 0.08em; color: var(--accent-deep); font-weight: 200; }
+  .tldr-lead .hl { background: linear-gradient(180deg, transparent 60%, var(--hl) 60%); padding: 0 0.05em; }
+  @media (min-width: 720px) { .tldr-lead { grid-column: 2 / 12; } }
+
+  .points { display: contents; }
+  .point { grid-column: 1 / -1; display: grid; grid-template-columns: 4ch 1fr; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+  @media (min-width: 720px) { .point { grid-column: 2 / 12; grid-template-columns: 5ch 1fr; gap: 2rem; } }
+  .point .n { font-size: 1.25rem; color: var(--accent); line-height: 1; font-weight: 300; letter-spacing: 0.05em; text-transform: uppercase; }
+  .point h3 { font-weight: 600; font-size: clamp(1.15rem, 1.9vw, 1.35rem); line-height: 1.3; margin-bottom: 0.4rem; color: var(--ink); letter-spacing: -0.015em; }
+  .point p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; }
+  .point p strong { color: var(--ink); font-weight: 600; }
+  .point p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+
+  .diagram-block { margin-bottom: clamp(3rem, 6vw, 5rem); display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .db-text h4 { font-size: clamp(1.3rem, 2.3vw, 1.75rem); line-height: 1.25; margin-bottom: 0.8rem; color: var(--ink); font-weight: 600; letter-spacing: -0.022em; }
+  .db-text h4 .num { display: inline-block; font-size: 0.68rem; letter-spacing: 0.14em; color: var(--accent-deep); vertical-align: middle; background: var(--accent-wash); padding: 0.28rem 0.55rem; border-radius: 999px; margin-right: 0.65rem; font-weight: 600; position: relative; top: -0.15em; }
+  .db-text p { color: var(--ink-soft); margin-bottom: 1rem; line-height: 1.65; font-size: 0.95rem; }
+  .db-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .db-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .db-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  .canvas {
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    padding: clamp(1.25rem, 3vw, 2rem);
+    position: relative;
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .canvas::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 0.7rem;
+    left: 0.9rem;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+
+  .box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.6rem 0.85rem;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    font-family: var(--sans);
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.3;
+    min-width: 0;
+    max-width: 100%;
+    position: relative;
+    word-break: keep-all;
+    flex-direction: column;
+  }
+  .box.accent { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); }
+  .box.soft { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .box.dark { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .box small { display: block; font-size: 0.6rem; font-weight: 400; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.18rem; }
+  .box.accent small { color: var(--accent-wash); opacity: 0.85; }
+  .box.dark small { color: oklch(0.75 0.01 260); }
+
+  /* 대용량 처리 섹션 */
+  .ls-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .ls-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .ls-block { margin-bottom: clamp(3rem, 5vw, 4.5rem); padding-bottom: clamp(3rem, 5vw, 4.5rem); border-bottom: 1px solid var(--rule); }
+  .ls-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .ls-kicker { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.35rem; }
+  .ls-title { font-size: clamp(1.15rem, 1.9vw, 1.45rem); font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.2rem; color: var(--ink); }
+  .ls-body { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+  @media (min-width: 880px) { .ls-body { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; } }
+  .ls-text p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.65; margin-bottom: 0.9rem; }
+  .ls-text p:last-child { margin-bottom: 0; }
+  .ls-text p strong { color: var(--ink); font-weight: 600; }
+  .ls-text p code { font-family: var(--mono); font-size: 0.85rem; padding: 0.05rem 0.3rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 2px; color: var(--accent-deep); }
+  .ls-text .use-when { margin-top: 1.2rem; padding: 1rem 1.1rem; border-left: 3px solid var(--accent); background: var(--paper-deep); }
+  .ls-text .use-when strong { display: block; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.35rem; font-weight: 600; }
+  .ls-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+  .company-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+  .company-row .cl { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-right: 0.1rem; }
+  .badge { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; padding: 0.18rem 0.5rem; border: 1px solid var(--accent); color: var(--accent-deep); background: var(--accent-wash); }
+
+  /* Config reference */
+  .config-ref { margin-top: 1.5rem; border-top: 2px solid var(--ink); }
+  .config-ref-head { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.5rem 0; border-bottom: 1px solid var(--ink-faint); }
+  .config-ref-head span { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; }
+  .config-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 1.5fr); gap: 0.8rem; padding: 0.65rem 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .config-row:last-child { border-bottom: none; }
+  .config-row .ck { font-family: var(--mono); font-size: 0.71rem; color: var(--accent-deep); word-break: break-all; line-height: 1.4; }
+  .config-row .cv { font-family: var(--mono); font-size: 0.75rem; color: var(--ink); font-weight: 600; white-space: nowrap; }
+  .config-row .cd { color: var(--ink-soft); font-size: 0.82rem; line-height: 1.4; }
+
+  /* 코드 섹션 */
+  .code-intro { font-size: clamp(1.05rem, 1.65vw, 1.2rem); color: var(--ink-soft); line-height: 1.6; margin-bottom: 2.5rem; font-weight: 300; }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card { margin-bottom: 2.5rem; border: 1px solid var(--rule); background: var(--paper); overflow: hidden; }
+  .code-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 1rem 1.4rem;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-deep);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .code-head h4 { font-size: 1.1rem; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .code-head .tag { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--accent); color: var(--paper); border-radius: 2px; }
+  .code-head .head-right { display: flex; align-items: center; gap: 0.5rem; }
+  .copy-btn { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.22rem 0.6rem; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease; font-weight: 600; }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .code-card pre { margin: 0; padding: 1.35rem 1.5rem; overflow-x: auto; background: oklch(0.18 0.02 260); color: oklch(0.92 0.015 75); font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note { padding: 1rem 1.4rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); background: var(--paper-deep); line-height: 1.6; }
+  .code-card .note strong { color: var(--accent-deep); }
+
+  .code-card pre, .code-card .note { display: none; }
+  .code-card.expanded pre, .code-card.expanded .note { display: block; }
+  .code-card .code-head { cursor: pointer; user-select: none; transition: background 0.15s ease; }
+  .code-card .code-head:hover { background: var(--paper); }
+  .expand-indicator { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-faint); transition: transform 0.2s ease; display: inline-block; line-height: 1; }
+  .code-card.expanded .expand-indicator { transform: rotate(90deg); color: var(--accent-deep); }
+
+  .margin-note { max-width: 1200px; margin: 0 auto; color: var(--ink-soft); font-size: 0.95rem; line-height: 1.6; padding: 1.1rem clamp(1.5rem, 5vw, 4rem); background: var(--paper-deep); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); font-weight: 300; }
+  .margin-note::before { content: "노트"; font-weight: 600; color: var(--accent-deep); font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-right: 0.8rem; display: inline-block; padding-right: 0.7rem; border-right: 1px solid var(--rule); }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  footer { max-width: 1200px; margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; font-size: 0.85rem; color: var(--ink-faint); }
+  footer .lockup { font-size: 1.1rem; color: var(--ink); font-weight: 600; letter-spacing: 0.02em; }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  .home-link { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 60; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0 0.95rem; height: 48px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.04em; transition: background 0.2s ease, color 0.2s ease; }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow { font-family: var(--mono); font-size: 0.95rem; transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  .menu-btn { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 60; width: 48px; height: 48px; border: 1px solid var(--ink); background: var(--paper); cursor: pointer; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; transition: background 0.2s ease; }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span { display: block; width: 20px; height: 1.5px; background: var(--ink); transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, background 0.2s ease; transform-origin: center; }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  .toc-backdrop { position: fixed; inset: 0; background: oklch(0.18 0.015 260 / 0.35); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+
+  .toc-panel { position: fixed; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--ink); z-index: 55; transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); overflow-y: auto; padding: 6rem 2.5rem 3rem; }
+  .toc-panel.open { transform: translateX(0); }
+
+  .toc-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; margin-bottom: 0.6rem; }
+  .toc-title { font-size: 1.85rem; font-weight: 600; letter-spacing: -0.03em; color: var(--ink); margin-bottom: 2.2rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--rule); }
+
+  .toc-list { list-style: none; counter-reset: toc; }
+  .toc-list > li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a { display: grid; grid-template-columns: 2.5rem 1fr; align-items: baseline; text-decoration: none; color: var(--ink); font-weight: 500; font-size: 1.05rem; letter-spacing: -0.012em; transition: color 0.2s ease; }
+  .toc-list > li > a::before { counter-increment: toc; content: counter(toc, decimal-leading-zero); color: var(--accent); font-weight: 300; font-size: 0.85rem; letter-spacing: 0.05em; }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+
+  .toc-sub { list-style: none; margin-top: 0.6rem; margin-left: 2.5rem; padding-left: 0.9rem; border-left: 1px solid var(--rule); }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a { color: var(--ink-soft); text-decoration: none; font-size: 0.88rem; font-weight: 400; transition: color 0.2s ease; display: flex; align-items: baseline; gap: 0.6rem; }
+  .toc-sub a span { color: var(--ink-faint); font-family: var(--mono); font-size: 0.72rem; min-width: 1.6rem; }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-sub a:hover span { color: var(--accent); }
+
+  .toc-foot { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-faint); line-height: 1.6; }
+
+  body.menu-open { overflow: hidden; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card {
+      animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html" aria-label="홈으로 돌아가기">
+  <span class="arrow">←</span><span>notebook</span>
+</a>
+
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+
+<div class="toc-backdrop" id="tocBackdrop"></div>
+
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#concepts" data-close>그림으로 보는 구조</a>
+      <ul class="toc-sub">
+        <li><a href="#d-inverted" data-close><span>01</span>역인덱스 구조</a></li>
+        <li><a href="#d-segment" data-close><span>02</span>세그먼트 아키텍처</a></li>
+        <li><a href="#d-files" data-close><span>03</span>Lucene 파일 포맷</a></li>
+        <li><a href="#d-nrt" data-close><span>04</span>NRT 검색 흐름</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#largescale" data-close>대용량 처리</a>
+      <ul class="toc-sub">
+        <li><a href="#ls-merge" data-close><span>01</span>세그먼트 Merge 전략</a></li>
+        <li><a href="#ls-docvalues" data-close><span>02</span>DocValues와 집계</a></li>
+        <li><a href="#ls-config" data-close><span>03</span>핵심 설정 참조</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#pitfalls" data-close>Gotchas</a>
+      <ul class="toc-sub">
+        <li><a href="#p-segment" data-close><span>01</span>세그먼트 폭증</a></li>
+        <li><a href="#p-fielddata" data-close><span>02</span>fielddata 힙 OOM</a></li>
+        <li><a href="#p-bm25" data-close><span>03</span>크로스 샤드 BM25 왜곡</a></li>
+        <li><a href="#p-analyzer" data-close><span>04</span>Analyzer 불일치</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+  <div class="toc-foot">
+    Apache Lucene — 역인덱스 내부 구조<br>학습 노트 · 2026.06.02
+  </div>
+</aside>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="meta-row">
+    <span>karellen-kim · notebook</span>
+    <span>검색 엔진</span>
+  </div>
+  <h1 class="hero-title">Apache <em>Lucene</em></h1>
+  <p class="hero-sub">역인덱스 기반 전문 검색 라이브러리 — Elasticsearch·Solr의 기반 엔진. 세그먼트·FST·BM25·DocValues·NRT 내부 구조</p>
+  <div class="hero-grid">
+    <div><span class="k">출시</span><span class="v">1999<small>Doug Cutting</small></span></div>
+    <div><span class="k">쿼리 지연</span><span class="v">&lt;10ms<small>Wikipedia p99</small></span></div>
+    <div><span class="k">Wikipedia 인덱스</span><span class="v">~50GB<small>21M 문서</small></span></div>
+    <div><span class="k">작성</span><span class="v">2026<small>.06.02</small></span></div>
+  </div>
+</header>
+
+<!-- §01 -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <div class="section-kicker">TL;DR</div>
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      루신은 <em>역인덱스(Inverted Index)</em> 기반 전문 검색 라이브러리다. Elasticsearch와 Solr는 모두 Lucene 위에서 돌아간다. Lucene이 어떻게 동작하는지 이해해야 <span class="hl">Elasticsearch 튜닝과 장애 대응</span>이 가능하다.
+    </p>
+
+    <div class="points">
+      <div class="point">
+        <span class="n">01</span>
+        <div>
+          <h3>역인덱스 구조</h3>
+          <p>Term → (DocId, Position, Offset) 매핑. 검색 시 텍스트를 토크나이즈한 뒤 역인덱스를 조회해 DocId 집합을 얻고, AND 쿼리는 교집합, OR 쿼리는 합집합으로 계산한다. <strong>Posting List</strong>는 DocId를 delta 인코딩으로 압축해 저장한다.</p>
+        </div>
+      </div>
+
+      <div class="point">
+        <span class="n">02</span>
+        <div>
+          <h3>세그먼트 아키텍처</h3>
+          <p>Lucene 인덱스는 여러 세그먼트의 합집합이다. 세그먼트는 <strong>불변(immutable)</strong>이다. 쓰기는 새 세그먼트를 생성하고, 삭제는 삭제 마커만 기록한다. 세그먼트 병합(merge)으로 공간을 회수하고 검색 성능을 최적화한다.</p>
+        </div>
+      </div>
+
+      <div class="point">
+        <span class="n">03</span>
+        <div>
+          <h3>BM25 스코어링</h3>
+          <p>TF-IDF를 계승한 BM25. 기본값 <code>k1=1.2</code>, <code>b=0.75</code>. 문서 길이 정규화가 포함된다. IDF는 <strong>코퍼스 전체 문서 수와 해당 term이 등장하는 문서 수</strong>로 계산하므로, 샤드가 다르면 IDF 값이 달라진다.</p>
+        </div>
+      </div>
+
+      <div class="point">
+        <span class="n">04</span>
+        <div>
+          <h3>근접 검색 — Position Index</h3>
+          <p>역인덱스에 위치(Position) 정보를 함께 저장한다. <code>PhraseQuery</code>는 두 토큰의 position 차이가 1인지 확인한다. <code>SpanQuery</code>로 슬롭(slop)을 지정하면 최대 N 토큰 거리 이내의 근접 일치를 허용한다.</p>
+        </div>
+      </div>
+
+      <div class="point">
+        <span class="n">05</span>
+        <div>
+          <h3>NRT — Near Real-Time 검색</h3>
+          <p><code>IndexWriter</code>가 문서를 추가하면 메모리 버퍼에 먼저 쌓인다. Flush 시 새 세그먼트가 생성되고, <code>DirectoryReader.openIfChanged()</code>가 이를 감지한다. 새 <code>IndexSearcher</code>로 교체하면 검색에 반영된다. <strong>커밋(fsync) 없이도 검색 가능</strong>하다.</p>
+        </div>
+      </div>
+
+      <div class="point">
+        <span class="n">06</span>
+        <div>
+          <h3>FST — Term Dictionary 압축</h3>
+          <p>Term Dictionary를 <strong>Finite State Transducer(FST)</strong>로 압축한다. 1,000만 term을 수십 MB에 저장하고, O(term length) 시간에 조회한다. 공통 prefix를 공유하는 DAG(Directed Acyclic Graph) 구조다. Lucene의 높은 메모리 효율의 핵심이다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §02 -->
+<section class="section" id="concepts">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Architecture</div>
+      <h2 class="section-title">그림으로 보는 구조</h2>
+    </div>
+  </div>
+
+  <!-- 다이어그램 01: 역인덱스 구조 -->
+  <div class="diagram-block" id="d-inverted">
+    <div class="db-text">
+      <h4><span class="num">01</span>역인덱스 구조</h4>
+      <p>문서 컬렉션을 토크나이즈해 <strong>Term → Posting List</strong>를 구성한다. 각 Posting에는 DocId, Term Frequency, Position이 포함된다. 쿼리 실행 시 관련 Term들의 Posting List를 가져와 교집합(AND) 또는 합집합(OR)을 계산한다.</p>
+      <p>Posting List는 DocId를 오름차순으로 정렬해 delta 인코딩으로 압축한다. 예: [1, 3, 7] → [1, 2, 4]. VInt로 인코딩하면 작은 숫자는 1바이트로 표현된다.</p>
+      <div class="use-when">
+        <strong>AND 쿼리 최적화</strong>
+        <p>여러 term의 AND 조건은 Posting List가 가장 짧은 term부터 순회한다. 작은 집합을 기준으로 순차 탐색하면 불필요한 비교를 줄인다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Inverted Index">
+      <div style="display:flex;flex-direction:column;gap:0.5rem;width:100%;">
+        <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-faint);margin-bottom:0.3rem;">Term Dictionary → Posting List</div>
+        <div style="display:grid;grid-template-columns:minmax(0,0.8fr) minmax(0,1.2fr);gap:0.3rem;align-items:center;">
+          <div style="padding:0.35rem 0.6rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.68rem;font-weight:600;color:var(--accent-deep);">kafka</div>
+          <div style="display:flex;gap:0.2rem;">
+            <div style="padding:0.28rem 0.4rem;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.62rem;">doc1</div>
+            <div style="padding:0.28rem 0.4rem;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.62rem;">doc3</div>
+            <div style="padding:0.28rem 0.4rem;border:1px solid var(--rule);font-family:var(--mono);font-size:0.62rem;color:var(--ink-faint);">pos:2,5</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,0.8fr) minmax(0,1.2fr);gap:0.3rem;align-items:center;">
+          <div style="padding:0.35rem 0.6rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.68rem;font-weight:600;color:var(--accent-deep);">lucene</div>
+          <div style="display:flex;gap:0.2rem;">
+            <div style="padding:0.28rem 0.4rem;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.62rem;">doc1</div>
+            <div style="padding:0.28rem 0.4rem;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.62rem;">doc2</div>
+            <div style="padding:0.28rem 0.4rem;border:1px solid var(--rule);font-family:var(--mono);font-size:0.62rem;color:var(--ink-faint);">pos:1,3</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,0.8fr) minmax(0,1.2fr);gap:0.3rem;align-items:center;">
+          <div style="padding:0.35rem 0.6rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.68rem;font-weight:600;color:var(--accent-deep);">search</div>
+          <div style="display:flex;gap:0.2rem;">
+            <div style="padding:0.28rem 0.4rem;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.62rem;">doc2</div>
+            <div style="padding:0.28rem 0.4rem;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:0.62rem;">doc3</div>
+            <div style="padding:0.28rem 0.4rem;border:1px solid var(--rule);font-family:var(--mono);font-size:0.62rem;color:var(--ink-faint);">pos:4,1</div>
+          </div>
+        </div>
+        <div style="border-top:1px dashed var(--rule);padding-top:0.5rem;margin-top:0.3rem;">
+          <div style="font-size:0.6rem;font-family:var(--mono);color:var(--ink-faint);">쿼리: "kafka AND lucene" → doc1 (교집합)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 다이어그램 02: 세그먼트 아키텍처 -->
+  <div class="diagram-block" id="d-segment">
+    <div class="db-text">
+      <h4><span class="num">02</span>세그먼트 아키텍처</h4>
+      <p>IndexWriter는 문서를 메모리 버퍼에 쌓다가 임계값(기본 16MB) 또는 시간 주기로 Flush한다. Flush 시 새로운 불변 세그먼트가 생성된다. IndexReader는 모든 세그먼트를 합쳐 검색한다.</p>
+      <p><strong>Merge Policy</strong>가 주기적으로 유사한 크기의 세그먼트를 합쳐 세그먼트 수를 줄인다. 병합 중에도 기존 세그먼트로 검색이 계속된다. 병합 완료 후 기존 세그먼트가 삭제된다.</p>
+      <div class="use-when">
+        <strong>세그먼트 수 vs 검색 성능</strong>
+        <p>검색은 모든 세그먼트를 순회하므로 세그먼트가 많을수록 느려진다. Force Merge로 세그먼트 수를 1개로 줄이면 읽기 전용 인덱스에서 최적 성능을 낼 수 있다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Segment Architecture">
+      <div style="display:flex;flex-direction:column;gap:0.5rem;width:100%;">
+        <div style="display:flex;gap:0.4rem;align-items:center;">
+          <div style="flex:1;padding:0.45rem 0.5rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-size:0.68rem;font-weight:600;text-align:center;">IndexWriter<small style="display:block;font-size:0.55rem;color:oklch(0.75 0.01 260);font-weight:400;">메모리 버퍼</small></div>
+          <div style="font-family:var(--mono);font-size:0.65rem;color:var(--ink-faint);">flush↓</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0.3rem;">
+          <div style="padding:0.4rem 0.35rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.65rem;font-weight:600;text-align:center;color:var(--accent-deep);">Seg A<small style="display:block;font-size:0.55rem;color:var(--accent);font-weight:400;">2MB</small></div>
+          <div style="padding:0.4rem 0.35rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.65rem;font-weight:600;text-align:center;color:var(--accent-deep);">Seg B<small style="display:block;font-size:0.55rem;color:var(--accent);font-weight:400;">1.8MB</small></div>
+          <div style="padding:0.4rem 0.35rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.65rem;font-weight:600;text-align:center;color:var(--ink-faint);">Seg C<small style="display:block;font-size:0.55rem;font-weight:400;">120MB</small></div>
+        </div>
+        <div style="text-align:center;font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);">TieredMergePolicy → Seg A+B 병합</div>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0.3rem;">
+          <div style="padding:0.4rem 0.35rem;border:1.5px solid var(--ink);background:var(--paper-deep);font-size:0.65rem;font-weight:600;text-align:center;">Seg D<small style="display:block;font-size:0.55rem;color:var(--ink-faint);font-weight:400;">A+B merged (3.8MB)</small></div>
+          <div style="padding:0.4rem 0.35rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.65rem;font-weight:600;text-align:center;color:var(--ink-faint);">Seg C<small style="display:block;font-size:0.55rem;font-weight:400;">120MB</small></div>
+        </div>
+        <div style="padding:0.35rem 0.5rem;border:1px dashed var(--rule);font-size:0.62rem;text-align:center;color:var(--ink-soft);">IndexReader: 모든 세그먼트 합집합 검색</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 다이어그램 03: Lucene 파일 포맷 -->
+  <div class="diagram-block" id="d-files">
+    <div class="db-text">
+      <h4><span class="num">03</span>Lucene 파일 포맷</h4>
+      <p>하나의 세그먼트는 역할별로 분리된 파일들로 구성된다. <code>.tim/.tip</code>은 Term Dictionary(FST), <code>.doc</code>는 Posting List(DocIDs), <code>.pos</code>는 Position Index다.</p>
+      <p><strong>DocValues</strong>(<code>.dvd/.dvm</code>)는 집계·정렬에 특화된 열 지향(columnar) 저장소다. <strong>Stored Fields</strong>(<code>.fdt/.fdx</code>)는 검색 결과 반환용 원본 문서를 저장한다. 두 저장소는 목적이 완전히 다르다.</p>
+      <div class="use-when">
+        <strong>Norms — 필드 길이 정규화</strong>
+        <p><code>.nvd/.nvm</code>에 저장된 Norms는 BM25의 필드 길이 정규화에 사용된다. 집계 전용 필드(<code>keyword</code>, <code>numeric</code>)는 Norms를 비활성화(<code>norms: false</code>)하면 인덱스 크기를 줄일 수 있다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Lucene File Format">
+      <div style="display:flex;flex-direction:column;gap:0.3rem;width:100%;">
+        <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-faint);margin-bottom:0.2rem;">세그먼트 파일 구성</div>
+        <div style="display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr);gap:0.25rem;align-items:center;">
+          <div style="padding:0.28rem 0.5rem;border:1px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.62rem;color:var(--accent-deep);font-weight:600;">.tim / .tip</div>
+          <div style="font-size:0.65rem;color:var(--ink-soft);">Term Dictionary (FST)</div>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr);gap:0.25rem;align-items:center;">
+          <div style="padding:0.28rem 0.5rem;border:1px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.62rem;color:var(--accent-deep);font-weight:600;">.doc</div>
+          <div style="font-size:0.65rem;color:var(--ink-soft);">Posting List (DocIDs + TF)</div>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr);gap:0.25rem;align-items:center;">
+          <div style="padding:0.28rem 0.5rem;border:1px solid var(--accent);background:var(--accent-wash);font-family:var(--mono);font-size:0.62rem;color:var(--accent-deep);font-weight:600;">.pos / .pay</div>
+          <div style="font-size:0.65rem;color:var(--ink-soft);">Position Index + Payload</div>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr);gap:0.25rem;align-items:center;">
+          <div style="padding:0.28rem 0.5rem;border:1px solid var(--ink);background:var(--ink);font-family:var(--mono);font-size:0.62rem;color:var(--paper);font-weight:600;">.dvd / .dvm</div>
+          <div style="font-size:0.65rem;color:var(--ink);">DocValues (집계·정렬용, 열 지향)</div>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr);gap:0.25rem;align-items:center;">
+          <div style="padding:0.28rem 0.5rem;border:1px solid var(--rule);background:var(--paper-deep);font-family:var(--mono);font-size:0.62rem;color:var(--ink-faint);font-weight:600;">.fdt / .fdx</div>
+          <div style="font-size:0.65rem;color:var(--ink-soft);">Stored Fields (원본 문서 반환용)</div>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr);gap:0.25rem;align-items:center;">
+          <div style="padding:0.28rem 0.5rem;border:1px solid var(--rule);background:var(--paper-deep);font-family:var(--mono);font-size:0.62rem;color:var(--ink-faint);font-weight:600;">.nvd / .nvm</div>
+          <div style="font-size:0.65rem;color:var(--ink-soft);">Norms (필드 길이 정규화)</div>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,0.7fr) minmax(0,1.3fr);gap:0.25rem;align-items:center;">
+          <div style="padding:0.28rem 0.5rem;border:1px solid var(--rule);background:var(--paper-deep);font-family:var(--mono);font-size:0.62rem;color:var(--ink-faint);font-weight:600;">.si / .cfs</div>
+          <div style="font-size:0.65rem;color:var(--ink-soft);">Segment Info + Compound File</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 다이어그램 04: NRT 흐름 -->
+  <div class="diagram-block" id="d-nrt">
+    <div class="db-text">
+      <h4><span class="num">04</span>NRT — Near Real-Time 검색 흐름</h4>
+      <p><code>IndexWriter.addDocument()</code> 호출 후 즉시 검색되지 않는다. Flush가 발생해야 새 세그먼트가 생기고, <code>DirectoryReader.openIfChanged()</code>로 새 세그먼트를 감지해야 한다.</p>
+      <p>Elasticsearch의 <code>refresh_interval=1s</code>(기본값)는 이 Flush 주기다. 인덱싱 직후 검색 결과가 없는 현상은 refresh가 아직 일어나지 않은 것이다. <strong><code>_refresh</code> API를 명시적으로 호출</strong>하면 즉시 반영된다.</p>
+      <div class="use-when">
+        <strong>Commit vs Refresh 차이</strong>
+        <p>Refresh는 새 세그먼트를 검색에 노출(메모리). Commit은 세그먼트를 디스크에 fsync해 영속화. Elasticsearch는 기본 5분마다 Commit한다. Commit 없이도 검색은 된다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="NRT Search Flow">
+      <div style="display:flex;flex-direction:column;gap:0.45rem;width:100%;">
+        <div style="padding:0.4rem 0.7rem;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);font-size:0.68rem;font-weight:600;text-align:center;">Document → IndexWriter.addDocument()</div>
+        <div style="text-align:center;font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);">↓ 메모리 버퍼 (즉시 검색 불가)</div>
+        <div style="padding:0.4rem 0.7rem;border:1.5px solid var(--accent);background:var(--accent-wash);font-size:0.68rem;font-weight:600;text-align:center;color:var(--accent-deep);">Flush (refresh_interval 또는 버퍼 임계값)</div>
+        <div style="text-align:center;font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);">↓ 새 세그먼트 생성 (디스크)</div>
+        <div style="padding:0.4rem 0.7rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.68rem;text-align:center;">DirectoryReader.openIfChanged()</div>
+        <div style="text-align:center;font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);">↓ 새 IndexSearcher 생성</div>
+        <div style="padding:0.4rem 0.7rem;border:1.5px solid var(--rule);background:var(--paper-deep);font-size:0.68rem;text-align:center;">IndexSearcher.search() → 결과 반환</div>
+        <div style="font-size:0.58rem;font-family:var(--mono);color:var(--accent-deep);text-align:center;margin-top:0.2rem;">Commit(fsync)은 별도 — 검색과 무관</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="margin-note">
+  <strong>FST vs Trie 차이:</strong> 일반 Trie는 공통 prefix만 공유하지만 FST는 suffix도 공유한다. 예: "mop", "moth", "stop", "star" 4개 단어를 FST로 표현하면 shared suffix로 상태 수가 Trie의 절반 이하가 된다. Lucene이 수천만 term을 수십 MB에 적재할 수 있는 이유다.
+</div>
+
+<!-- §03 대용량 처리 -->
+<section class="section" id="largescale">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Large Scale</div>
+      <h2 class="section-title">대용량 처리</h2>
+    </div>
+  </div>
+
+  <p class="ls-intro">Wikipedia 전체 텍스트 인덱스는 <em>약 21M 문서, 50GB Lucene 인덱스</em>로 쿼리 p99 10ms 미만이다. Elasticsearch는 Lucene 위에서 수십 TB 인덱스를 운영한다. 이 수치의 배경에 있는 Merge 전략, DocValues 설계, 설정 파라미터를 살펴본다.</p>
+
+  <!-- 세그먼트 Merge 전략 -->
+  <div class="ls-block" id="ls-merge">
+    <div class="ls-kicker">01 · Merge Policy</div>
+    <div class="ls-title">세그먼트 Merge 전략 — TieredMergePolicy vs LogByteSizeMergePolicy</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row">
+          <span class="cl">기본값</span>
+          <span class="badge">Elasticsearch</span>
+          <span class="badge">Lucene 9.x</span>
+        </div>
+        <p><strong>TieredMergePolicy</strong>(기본): 세그먼트를 크기 계층으로 분류하고, 동일 계층 내 인접 크기끼리만 병합한다. Elasticsearch 기본값 <code>maxMergeAtOnce=10</code>, <code>segmentsPerTier=10</code>이다. 계층 수가 적을수록 세그먼트 수가 적어진다.</p>
+        <p><strong>LogByteSizeMergePolicy</strong>: 세그먼트 크기를 로그 스케일로 보고 병합한다. 예측 가능한 동작이지만 TieredMergePolicy보다 세그먼트 수 조절 능력이 떨어진다.</p>
+        <p>샤드 크기 권장값: <strong>10~50GB/shard</strong>. 너무 작으면 세그먼트 수 폭증, Merge 오버헤드 과다. 너무 크면 Merge 시간 증가, 복구 지연. Elasticsearch 권장 최대 샤드 크기는 50GB다.</p>
+        <div class="use-when">
+          <strong>Force Merge 전략</strong>
+          <p>더 이상 쓰기가 없는 과거 시계열 인덱스는 <code>_forcemerge?max_num_segments=1</code>로 세그먼트를 1개로 병합한다. 검색 성능이 극적으로 향상된다. 단, Force Merge 중에는 쓰기 처리량이 감소한다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="Segment Count vs Search Speed" style="min-height:200px;">
+        <div style="display:flex;flex-direction:column;gap:0.7rem;width:100%;">
+          <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-faint);">세그먼트 수 vs 쿼리 지연</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.68rem;">
+            <span style="min-width:6rem;color:var(--ink-soft);">100 세그먼트</span>
+            <div style="flex:1;height:0.8rem;background:var(--ink);"></div>
+            <span style="font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);">~50ms</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.68rem;">
+            <span style="min-width:6rem;color:var(--ink-soft);">20 세그먼트</span>
+            <div style="flex:0.4;height:0.8rem;background:var(--accent);"></div>
+            <span style="font-family:var(--mono);font-size:0.6rem;color:var(--ink-faint);">~20ms</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.68rem;">
+            <span style="min-width:6rem;color:var(--accent-deep);font-weight:600;">5 세그먼트</span>
+            <div style="flex:0.1;height:0.8rem;background:var(--accent-wash);border:1.5px solid var(--accent);"></div>
+            <span style="font-family:var(--mono);font-size:0.6rem;color:var(--accent-deep);">~5ms</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.68rem;">
+            <span style="min-width:6rem;color:var(--accent-deep);font-weight:600;">1 세그먼트</span>
+            <div style="flex:0.04;height:0.8rem;background:oklch(0.70 0.14 145);border:1px solid oklch(0.55 0.14 145);"></div>
+            <span style="font-family:var(--mono);font-size:0.6rem;color:oklch(0.40 0.12 145);">&lt;2ms</span>
+          </div>
+          <div style="font-size:0.58rem;color:var(--ink-faint);font-family:var(--mono);">각 쿼리는 모든 세그먼트를 병렬 순회 → 세그먼트 수에 비례</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DocValues와 집계 -->
+  <div class="ls-block" id="ls-docvalues">
+    <div class="ls-kicker">02 · DocValues</div>
+    <div class="ls-title">DocValues와 집계 — 역인덱스와 열 지향 저장의 역할 분리</div>
+    <div class="ls-body">
+      <div class="ls-text">
+        <div class="company-row">
+          <span class="cl">함정</span>
+          <span class="badge">Elasticsearch fielddata OOM</span>
+        </div>
+        <p><strong>역인덱스는 검색용, DocValues는 집계·정렬용</strong>이다. 이 역할 분리를 이해하지 못하면 Elasticsearch에서 힙 OOM이 발생한다.</p>
+        <p>text 필드에서 집계를 시도하면 Elasticsearch는 역인덱스를 힙 메모리에 역변환(<code>fielddata=true</code>)해야 한다. 1,000만 문서 × 평균 10 토큰이면 힙 수 GB를 순식간에 소모한다. <strong>text 필드에는 집계하지 않는다</strong>는 원칙을 반드시 지켜야 한다.</p>
+        <p>DocValues는 <code>keyword</code>, <code>numeric</code>, <code>date</code> 필드에 기본 활성화된다. 열 지향 구조로 디스크에 저장하고 mmap으로 OS 페이지 캐시를 통해 접근한다. 집계 쿼리가 읽는 데이터가 페이지 캐시에 상주하면 I/O 없이 처리된다.</p>
+        <div class="use-when">
+          <strong>multi-field 패턴</strong>
+          <p>text 필드에 <code>fields: {keyword: {type: keyword}}</code>로 sub-field를 추가한다. 전문 검색은 text 필드로, 집계·정렬은 keyword sub-field(DocValues)로 수행한다.</p>
+        </div>
+      </div>
+      <div class="canvas" data-label="DocValues vs fielddata" style="min-height:200px;">
+        <div style="display:flex;flex-direction:column;gap:0.6rem;width:100%;">
+          <div style="display:flex;gap:0.4rem;">
+            <div style="flex:1;padding:0.6rem;border:1.5px solid var(--rule);background:var(--paper-deep);">
+              <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-faint);margin-bottom:0.4rem;">fielddata (비권장)</div>
+              <div style="font-size:0.65rem;color:var(--accent-deep);font-weight:600;">역인덱스 → 힙 역변환</div>
+              <div style="font-size:0.62rem;color:var(--ink-soft);margin-top:0.2rem;">메모리 상주 필수</div>
+              <div style="font-size:0.62rem;color:var(--accent-deep);margin-top:0.2rem;">OOM 위험</div>
+            </div>
+            <div style="flex:1;padding:0.6rem;border:1.5px solid var(--ink);background:var(--ink);">
+              <div style="font-size:0.6rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.08em;color:oklch(0.65 0.01 260);margin-bottom:0.4rem;">DocValues (권장)</div>
+              <div style="font-size:0.65rem;color:var(--paper);font-weight:600;">열 지향 디스크 저장</div>
+              <div style="font-size:0.62rem;color:oklch(0.75 0.01 260);margin-top:0.2rem;">mmap → OS 페이지 캐시</div>
+              <div style="font-size:0.62rem;color:oklch(0.75 0.01 260);margin-top:0.2rem;">힙 사용 없음</div>
+            </div>
+          </div>
+          <div style="font-size:0.6rem;font-family:var(--mono);color:var(--ink-faint);text-align:center;">text 필드 집계 → fielddata OOM<br>keyword 필드 집계 → DocValues 안전</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 핵심 설정 참조 -->
+  <div class="ls-block" id="ls-config">
+    <div class="ls-kicker">03 · Configuration</div>
+    <div class="ls-title">핵심 설정 참조표 — Elasticsearch 기준</div>
+    <div class="config-ref">
+      <div class="config-ref-head">
+        <span>파라미터</span>
+        <span>권장값</span>
+        <span>설명</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">index.refresh_interval</span>
+        <span class="cv">-1 (인덱싱 중)</span>
+        <span class="cd">기본 1s. 벌크 인덱싱 시 -1로 비활성화 → 완료 후 복구</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">index.number_of_replicas</span>
+        <span class="cv">0 (인덱싱 중)</span>
+        <span class="cd">초기 인덱싱 시 0으로 줄이고 완료 후 복구. 처리량 2배 향상</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">indices.memory.index_buffer_size</span>
+        <span class="cv">20%</span>
+        <span class="cd">기본 10%. 쓰기 헤비 워크로드에서 20%로 증가</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">index.merge.scheduler.max_thread_count</span>
+        <span class="cv">processorCount/2</span>
+        <span class="cd">기본 max(1, (CPU수/2)-1). SSD 기준 CPU수/2로 증가</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">index.merge.policy.max_merge_at_once</span>
+        <span class="cv">5</span>
+        <span class="cd">기본 10. 한 번에 병합할 최대 세그먼트 수. 줄이면 Merge I/O 분산</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">index.merge.policy.segments_per_tier</span>
+        <span class="cv">5.0</span>
+        <span class="cd">기본 10. 낮출수록 세그먼트 수 적어짐, 대신 Merge 빈도 증가</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">indices.fielddata.cache.size</span>
+        <span class="cv">15%</span>
+        <span class="cd">fielddata 캐시 힙 한도. 초과 시 LRU 축출. 가능하면 0으로 유지</span>
+      </div>
+      <div class="config-row">
+        <span class="ck">index.store.type</span>
+        <span class="cv">niofs (검색) / mmapfs (집계)</span>
+        <span class="cd">기본 hybridfs. NioFS는 검색 안정적, MMapFS는 DocValues 집계 빠름</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="margin-note">
+  <strong>Lucene Codec:</strong> Lucene 9.x 기본 Codec은 Lucene90PostingsFormat이다. 압축 강도는 <code>BEST_SPEED</code>(기본)와 <code>BEST_COMPRESSION</code>(Deflate65) 중 선택한다. BEST_COMPRESSION은 인덱스 크기 20~40% 감소, 쓰기/읽기 CPU 15~25% 증가. 검색 빈도가 낮고 저장 비용이 중요한 냉장 데이터에 적합하다.
+</div>
+
+<!-- §04 Gotchas -->
+<section class="section" id="pitfalls">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Gotchas</div>
+      <h2 class="section-title">Gotchas</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-segment">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>세그먼트 폭증 — 왜 인덱싱 후 검색이 느려지는가</h5>
+      <span class="gloss-pron">"refresh_interval=1s + 대량 인덱싱 = 재앙"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>메커니즘.</strong> <code>refresh_interval=1s</code>(기본값)이면 초당 1개의 세그먼트가 생성된다. 1시간 대량 인덱싱을 하면 <b>3,600개의 세그먼트</b>가 생긴다. Elasticsearch 쿼리는 모든 세그먼트를 병렬로 순회한다. 세그먼트 수에 비례해 쿼리 지연이 증가한다. TieredMergePolicy가 백그라운드로 병합하지만, 인덱싱 속도를 따라잡지 못하면 세그먼트 수가 계속 증가한다.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:0.8rem 0;">
+        <div style="border:1px solid var(--rule);padding:1rem;background:var(--paper-deep);">
+          <div style="font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:0.7rem;">refresh_interval=1s (기본)</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.2rem;margin-bottom:0.4rem;">
+            <div style="width:0.5rem;height:0.5rem;background:var(--accent);"></div>
+            <div style="width:0.5rem;height:0.5rem;background:var(--accent);"></div>
+            <div style="width:0.5rem;height:0.5rem;background:var(--accent);"></div>
+            <div style="width:0.5rem;height:0.5rem;background:var(--accent);"></div>
+            <div style="width:0.5rem;height:0.5rem;background:var(--accent);"></div>
+            <div style="width:0.5rem;height:0.5rem;background:var(--accent);"></div>
+            <div style="width:0.5rem;height:0.5rem;background:var(--accent);"></div>
+            <div style="width:0.5rem;height:0.5rem;background:var(--accent);"></div>
+            <div style="width:0.5rem;height:0.5rem;background:var(--accent);"></div>
+            <div style="width:0.5rem;height:0.5rem;background:var(--accent);"></div>
+            <div style="width:0.5rem;height:0.5rem;background:var(--ink-faint);"></div>
+            <div style="width:0.5rem;height:0.5rem;background:var(--ink-faint);"></div>
+            <div style="width:0.5rem;height:0.5rem;background:var(--ink-faint);"></div>
+            <div style="width:0.5rem;height:0.5rem;background:var(--ink-faint);"></div>
+            <div style="width:0.5rem;height:0.5rem;background:var(--ink-faint);"></div>
+            <div style="font-size:0.6rem;color:var(--ink-faint);font-family:var(--mono);">... 수백~수천 개</div>
+          </div>
+          <div style="font-size:0.72rem;color:var(--accent-deep);">쿼리 지연 수십~수백ms</div>
+        </div>
+        <div style="border:1px solid var(--rule);padding:1rem;background:var(--paper-deep);">
+          <div style="font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:0.7rem;">refresh_interval=-1 + Force Merge</div>
+          <div style="display:flex;gap:0.2rem;margin-bottom:0.4rem;">
+            <div style="width:1.5rem;height:0.5rem;background:var(--ink);"></div>
+            <div style="width:1.5rem;height:0.5rem;background:var(--ink);"></div>
+            <div style="width:1.5rem;height:0.5rem;background:var(--ink);"></div>
+          </div>
+          <div style="font-size:0.72rem;color:oklch(0.35 0.14 145);">쿼리 지연 1~5ms</div>
+        </div>
+      </div>
+
+      <p><strong>처방 — 3단계.</strong> (1) 벌크 인덱싱 전: <code>PUT /인덱스/_settings</code>로 <code>refresh_interval: "-1"</code>, <code>number_of_replicas: 0</code>. (2) 인덱싱 완료 후: <code>POST /인덱스/_forcemerge?max_num_segments=1</code>. (3) 설정 복구: <code>refresh_interval: "1s"</code>, <code>number_of_replicas: 1</code>. 이 순서를 지키면 인덱싱 처리량 2~5배, 검색 지연 10배 이상 개선된다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-fielddata">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>fielddata 힙 OOM — text 필드 집계 절대 금지</h5>
+      <span class="gloss-pron">"text 필드에 aggregation = 힙 폭발"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>무엇이 일어나는가.</strong> Elasticsearch에서 <code>text</code> 필드에 <code>terms aggregation</code>을 실행하면 기본적으로 오류가 난다 — <code>fielddata=false</code>가 기본이기 때문이다. <code>fielddata: true</code>로 활성화하면 역인덱스 전체를 힙 메모리에 역변환해서 올린다. 1,000만 문서, 평균 10 토큰이면 <b>수 GB의 힙이 즉시 소모</b>된다. 이것이 GC 압박 → 서비스 응답 지연 → OOM Killer로 이어진다.</p>
+
+      <p><strong>가정이 깨지는 순간.</strong> <code>text</code> 필드에 집계가 필요하다는 요구사항이 생겼을 때 <code>fielddata: true</code>로 설정하면서 시작된다. "일단 되니까" 운영하다가 데이터가 늘면서 힙 사용량이 비선형으로 증가한다. JVM 힙의 40~60%를 fielddata가 점령한 상태에서 트래픽 피크가 오면 OOM이 발생한다.</p>
+
+      <p><strong>처방.</strong> text 필드에 <code>fields</code> sub-field를 추가한다: <code>{"type": "text", "fields": {"raw": {"type": "keyword"}}}</code>. 전문 검색은 <code>content</code> 필드로, 집계·정렬은 <code>content.raw</code> keyword 필드로 수행한다. keyword 필드는 DocValues가 기본 활성화되므로 힙 없이 집계된다. <b>인덱스 매핑 설계 단계</b>에서 이 원칙을 적용해야 한다 — 이미 생성된 인덱스의 매핑은 변경할 수 없다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-bm25">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>BM25 스코어 비교 불가 — 크로스 샤드 스코어링 왜곡</h5>
+      <span class="gloss-pron">"IDF는 샤드별 로컬 통계 — 전체가 아니다"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>IDF가 왜 다른가.</strong> BM25의 IDF(Inverse Document Frequency)는 <b>해당 샤드의 문서 수와 term 등장 문서 수</b>로 계산한다. 샤드 A에 "machine learning"이 많고 샤드 B에 적다면, 샤드 B에서 "machine learning"의 IDF가 더 높게 계산된다. 결과적으로 동일한 문서라도 어느 샤드에 위치하느냐에 따라 스코어가 달라진다.</p>
+
+      <p><strong>가정이 깨지는 구체적 시나리오.</strong> 5개 샤드로 구성된 인덱스에서 top-10 결과를 가져온다. 각 샤드는 로컬 IDF로 계산한 상위 결과를 coordinator에 보낸다. Coordinator는 이것을 병합해 최종 top-10을 만든다. 샤드별 데이터 분포가 불균일하면 <b>전체 코퍼스 기준 top-10과 다른 결과</b>가 나온다.</p>
+
+      <p><strong>처방 2가지.</strong> (1) <code>search_type=dfs_query_then_fetch</code>: 1단계에서 모든 샤드의 term 통계를 수집해 전체 IDF를 계산한 뒤 2단계에서 검색한다. 네트워크 라운드트립 1회 추가, 정확도 향상. (2) 데이터 볼륨이 충분하면 <b>샤드 1개</b>로 운영한다 — IDF가 항상 전체 코퍼스 기준이 된다. 단, 단일 샤드는 수평 확장이 불가하다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p-analyzer">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>Analyzer 불일치 — 인덱싱과 쿼리의 변환이 다르면 매칭 실패</h5>
+      <span class="gloss-pron">"같은 단어인데 왜 안 찾히지?"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>메커니즘.</strong> Lucene은 인덱싱 시와 쿼리 시 모두 Analyzer를 통해 텍스트를 변환한다. 인덱싱 시 <code>standard</code> analyzer는 "Running"을 "running"으로 소문자화해 저장한다. 쿼리 시 다른 analyzer(또는 분석 없음)를 사용하면 "Running" 그대로 역인덱스를 조회한다. "running"이 있어도 "Running"을 찾으면 매칭이 실패한다.</p>
+
+      <p><strong>자주 발생하는 상황.</strong> (1) <code>match</code> 쿼리 대신 <code>term</code> 쿼리를 사용할 때: <code>term</code>은 분석 없이 그대로 조회한다. <code>term: {content: "Running"}</code>은 저장된 "running"과 매칭 안 된다. (2) <code>keyword</code> 필드에 <code>match</code> 쿼리: keyword 필드는 분석 없이 저장하므로 대소문자를 그대로 보존한다. (3) 인덱스 재생성 시 analyzer를 바꾸면 기존 문서와 새 문서의 토크나이제이션이 달라진다.</p>
+
+      <p><strong>처방.</strong> <code>GET /인덱스/_analyze</code> API로 실제 토큰을 확인한다. 매핑에서 <code>search_analyzer</code>를 명시적으로 지정해 인덱싱 analyzer와 동일하게 맞춘다. <code>term</code> 쿼리는 <code>keyword</code> 필드에만, <code>match</code> 쿼리는 <code>text</code> 필드에만 사용한다는 원칙을 팀 전체가 공유한다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- §05 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">05</div>
+    <div class="section-titles">
+      <div class="section-kicker">Code</div>
+      <h2 class="section-title">실전 코드</h2>
+    </div>
+  </div>
+
+  <p class="code-intro"><em>IndexWriter 튜닝</em>부터 Elasticsearch Python 하이브리드 검색, 세그먼트 진단 스크립트까지. 각 카드의 헤드를 클릭하면 코드가 펼쳐진다.</p>
+
+  <!-- 코드 1: Lucene Java IndexWriter -->
+  <div class="code-card">
+    <div class="code-head">
+      <h4>Lucene Java — IndexWriter &amp; TieredMergePolicy</h4>
+      <div class="head-right">
+        <span class="tag">lucene 9.x</span>
+      </div>
+    </div>
+<pre><span class="com">// Lucene 9.x 기준 — Maven: org.apache.lucene:lucene-core:9.x</span>
+<span class="kw">import</span> org.apache.lucene.analysis.standard.StandardAnalyzer;
+<span class="kw">import</span> org.apache.lucene.document.*;
+<span class="kw">import</span> org.apache.lucene.index.*;
+<span class="kw">import</span> org.apache.lucene.store.MMapDirectory;
+
+<span class="kw">var</span> analyzer = <span class="kw">new</span> <span class="fn">StandardAnalyzer</span>();
+<span class="kw">var</span> config = <span class="kw">new</span> <span class="fn">IndexWriterConfig</span>(analyzer);
+config.<span class="fn">setOpenMode</span>(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
+
+<span class="com">// TieredMergePolicy 튜닝 — SSD 환경 기준</span>
+<span class="kw">var</span> mergePolicy = <span class="kw">new</span> <span class="fn">TieredMergePolicy</span>();
+mergePolicy.<span class="fn">setMaxMergeAtOnce</span>(5);       <span class="com">// 기본 10 → 5로 낮춰 Merge I/O 분산</span>
+mergePolicy.<span class="fn">setSegmentsPerTier</span>(5.0);    <span class="com">// 기본 10 → 5로 낮춰 세그먼트 수 감소</span>
+config.<span class="fn">setMergePolicy</span>(mergePolicy);
+
+<span class="com">// 인덱싱 중 Refresh 비활성화 → IndexWriter 레벨에서는 commitOnClose 제어</span>
+config.<span class="fn">setCommitOnClose</span>(<span class="kw">true</span>);
+
+<span class="kw">try</span> (<span class="kw">var</span> directory = MMapDirectory.<span class="fn">open</span>(Path.<span class="fn">of</span>(<span class="str">"/data/index"</span>));
+     <span class="kw">var</span> writer = <span class="kw">new</span> <span class="fn">IndexWriter</span>(directory, config)) {
+
+    <span class="kw">var</span> doc = <span class="kw">new</span> <span class="fn">Document</span>();
+
+    <span class="com">// 검색용 역인덱스 — position 포함</span>
+    doc.<span class="fn">add</span>(<span class="kw">new</span> <span class="fn">TextField</span>(<span class="str">"title"</span>, <span class="str">"Apache Lucene Deep Dive"</span>, Field.Store.YES));
+
+    <span class="com">// 집계·정렬용 DocValues (역인덱스 없음)</span>
+    doc.<span class="fn">add</span>(<span class="kw">new</span> <span class="fn">SortedDocValuesField</span>(<span class="str">"category"</span>, <span class="kw">new</span> <span class="fn">BytesRef</span>(<span class="str">"search"</span>)));
+
+    <span class="com">// 숫자 범위 쿼리용 (BKD Tree로 저장됨)</span>
+    doc.<span class="fn">add</span>(<span class="kw">new</span> <span class="fn">LongPoint</span>(<span class="str">"timestamp"</span>, System.<span class="fn">currentTimeMillis</span>()));
+
+    writer.<span class="fn">addDocument</span>(doc);
+    writer.<span class="fn">commit</span>();  <span class="com">// fsync — 생략하면 검색은 되지만 재시작 시 손실</span>
+}</pre>
+    <div class="note"><strong>TieredMergePolicy 튜닝 핵심.</strong> <code>segmentsPerTier</code>를 낮추면 세그먼트 수가 줄어 검색 속도가 향상되지만 Merge 빈도가 증가한다. SSD 환경에서는 <code>max_thread_count</code>를 CPU 코어수/2로 올려 Merge를 병렬화한다.</div>
+  </div>
+
+  <!-- 코드 2: Elasticsearch Python 하이브리드 검색 -->
+  <div class="code-card">
+    <div class="code-head">
+      <h4>Elasticsearch Python — BM25 + kNN 하이브리드 RRF</h4>
+      <div class="head-right">
+        <span class="tag">elasticsearch 8.x</span>
+      </div>
+    </div>
+<pre><span class="kw">from</span> elasticsearch <span class="kw">import</span> Elasticsearch
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+es = <span class="fn">Elasticsearch</span>(<span class="str">"https://localhost:9200"</span>)
+
+<span class="com"># 쿼리 임베딩 (실제로는 모델 추론)</span>
+query_vector = np.<span class="fn">random</span>.<span class="fn">rand</span>(768).<span class="fn">tolist</span>()
+
+<span class="com"># 하이브리드 검색: BM25 + kNN RRF (Reciprocal Rank Fusion)</span>
+<span class="com"># Elasticsearch 8.9+에서 retriever API 사용</span>
+response = es.<span class="fn">search</span>(
+    index=<span class="str">"articles"</span>,
+    body={
+        <span class="str">"retriever"</span>: {
+            <span class="str">"rrf"</span>: {
+                <span class="str">"retrievers"</span>: [
+                    {
+                        <span class="str">"standard"</span>: {
+                            <span class="str">"query"</span>: {
+                                <span class="str">"match"</span>: {<span class="str">"content"</span>: <span class="str">"lucene inverted index"</span>}
+                            }
+                        }
+                    },
+                    {
+                        <span class="str">"knn"</span>: {
+                            <span class="str">"field"</span>: <span class="str">"embedding"</span>,
+                            <span class="str">"query_vector"</span>: query_vector,
+                            <span class="str">"num_candidates"</span>: 100,  <span class="com"># HNSW ef_search</span>
+                        }
+                    }
+                ],
+                <span class="str">"rank_window_size"</span>: 50,   <span class="com"># 각 retriever에서 가져올 후보 수</span>
+                <span class="str">"rank_constant"</span>: 60,      <span class="com"># RRF k 파라미터 (기본 60)</span>
+            }
+        },
+        <span class="str">"size"</span>: 10,
+    }
+)
+
+<span class="kw">for</span> hit <span class="kw">in</span> response[<span class="str">"hits"</span>][<span class="str">"hits"</span>]:
+    <span class="fn">print</span>(<span class="fn">f</span><span class="str">"score={hit['_score']:.4f} id={hit['_id']}"</span>)
+</pre>
+    <div class="note"><strong>RRF(Reciprocal Rank Fusion) 핵심.</strong> BM25 순위와 kNN 순위를 각각 <code>1/(k+rank)</code>로 변환해 합산한다. 두 스코어의 스케일이 달라도 순위 기반 합산이므로 정규화가 불필요하다. <code>rank_constant=60</code>은 순위 격차 완화 계수다.</div>
+  </div>
+
+  <!-- 코드 3: 세그먼트 진단 & 튜닝 -->
+  <div class="code-card">
+    <div class="code-head">
+      <h4>세그먼트 진단 &amp; 벌크 인덱싱 튜닝</h4>
+      <div class="head-right">
+        <span class="tag">ops</span>
+      </div>
+    </div>
+<pre><span class="kw">import</span> requests
+
+ES = <span class="str">"http://localhost:9200"</span>
+INDEX = <span class="str">"articles"</span>
+
+<span class="com"># 1. 세그먼트 현황 확인 — 수가 많으면 검색이 느린 원인</span>
+r = requests.<span class="fn">get</span>(<span class="fn">f</span><span class="str">"{ES}/_cat/segments/{INDEX}?v&amp;h=segment,size,docs.count,docs.deleted"</span>)
+<span class="fn">print</span>(<span class="str">"=== 세그먼트 현황 ==="</span>)
+<span class="fn">print</span>(r.text)
+
+<span class="com"># 2. 벌크 인덱싱 최적화 설정 적용</span>
+requests.<span class="fn">put</span>(<span class="fn">f</span><span class="str">"{ES}/{INDEX}/_settings"</span>, json={
+    <span class="str">"index"</span>: {
+        <span class="str">"refresh_interval"</span>: <span class="str">"-1"</span>,        <span class="com"># 자동 refresh 비활성화</span>
+        <span class="str">"number_of_replicas"</span>: <span class="str">"0"</span>       <span class="com"># 복제 비활성화 → 인덱싱 처리량 2배</span>
+    }
+})
+<span class="fn">print</span>(<span class="str">"[OK] 인덱싱 최적화 설정 적용"</span>)
+
+<span class="com"># ... 벌크 인덱싱 수행 ...</span>
+
+<span class="com"># 3. Force Merge — 세그먼트 1개로 병합 (읽기 전용 인덱스 최적화)</span>
+<span class="com">#    주의: 대용량 인덱스는 수십 분 소요. 운영 중 실행 시 I/O 급증</span>
+r = requests.<span class="fn">post</span>(<span class="fn">f</span><span class="str">"{ES}/{INDEX}/_forcemerge?max_num_segments=1"</span>)
+<span class="fn">print</span>(<span class="fn">f</span><span class="str">"[OK] Force Merge: {r.status_code}"</span>)
+
+<span class="com"># 4. 설정 복구</span>
+requests.<span class="fn">put</span>(<span class="fn">f</span><span class="str">"{ES}/{INDEX}/_settings"</span>, json={
+    <span class="str">"index"</span>: {
+        <span class="str">"refresh_interval"</span>: <span class="str">"1s"</span>,
+        <span class="str">"number_of_replicas"</span>: <span class="str">"1"</span>
+    }
+})
+<span class="fn">print</span>(<span class="str">"[OK] 설정 복구 완료"</span>)
+
+<span class="com"># 5. Analyzer 검증 — 실제 토큰 확인</span>
+r = requests.<span class="fn">post</span>(<span class="fn">f</span><span class="str">"{ES}/{INDEX}/_analyze"</span>, json={
+    <span class="str">"analyzer"</span>: <span class="str">"standard"</span>,
+    <span class="str">"text"</span>: <span class="str">"Running Lucene Indexer"</span>
+})
+tokens = [t[<span class="str">"token"</span>] <span class="kw">for</span> t <span class="kw">in</span> r.<span class="fn">json</span>()[<span class="str">"tokens"</span>]]
+<span class="fn">print</span>(<span class="fn">f</span><span class="str">"토큰: {tokens}"</span>)  <span class="com"># ['running', 'lucene', 'indexer']</span>
+</pre>
+    <div class="note"><strong>벌크 인덱싱 순서가 중요하다.</strong> refresh 비활성화 → 인덱싱 → force merge → 설정 복구 순서를 반드시 지킨다. Force Merge를 먼저 하면 이후 인덱싱이 다시 세그먼트를 쪼개고, refresh를 복구하기 전에 force merge하면 백그라운드 merge가 방해받는다.</div>
+  </div>
+</section>
+
+<footer>
+  <span class="lockup">karellen-kim · notebook</span>
+  <a href="https://lucene.apache.org/" target="_blank" rel="noopener">원문 · lucene.apache.org</a>
+</footer>
+
+<script>
+(function() {
+  // 코드 카드 collapse/expand + copy 버튼
+  document.querySelectorAll('.code-card').forEach(function(card) {
+    var head = card.querySelector('.code-head');
+    var headRight = card.querySelector('.head-right');
+    var pre = card.querySelector('pre');
+
+    // expand indicator 주입
+    var indicator = document.createElement('span');
+    indicator.className = 'expand-indicator';
+    indicator.textContent = '▸';
+    headRight.insertBefore(indicator, headRight.firstChild);
+
+    // copy 버튼 주입
+    var copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.textContent = 'copy';
+    headRight.appendChild(copyBtn);
+
+    // copy 동작
+    copyBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var code = pre ? pre.textContent : '';
+      navigator.clipboard.writeText(code).then(function() {
+        copyBtn.textContent = 'copied';
+        copyBtn.classList.add('copied');
+        setTimeout(function() {
+          copyBtn.textContent = 'copy';
+          copyBtn.classList.remove('copied');
+        }, 1500);
+      });
+    });
+
+    // 헤드 클릭 시 expand/collapse
+    head.addEventListener('click', function() {
+      card.classList.toggle('expanded');
+    });
+  });
+
+  // 햄버거 메뉴
+  var menuBtn = document.getElementById('menuBtn');
+  var tocPanel = document.getElementById('tocPanel');
+  var tocBackdrop = document.getElementById('tocBackdrop');
+
+  function openMenu() {
+    menuBtn.classList.add('open');
+    tocPanel.classList.add('open');
+    tocBackdrop.classList.add('open');
+    menuBtn.setAttribute('aria-expanded', 'true');
+    tocPanel.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('menu-open');
+  }
+
+  function closeMenu() {
+    menuBtn.classList.remove('open');
+    tocPanel.classList.remove('open');
+    tocBackdrop.classList.remove('open');
+    menuBtn.setAttribute('aria-expanded', 'false');
+    tocPanel.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('menu-open');
+  }
+
+  menuBtn.addEventListener('click', function() {
+    if (menuBtn.classList.contains('open')) closeMenu();
+    else openMenu();
+  });
+
+  tocBackdrop.addEventListener('click', closeMenu);
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeMenu();
+  });
+
+  document.querySelectorAll('[data-close]').forEach(function(link) {
+    link.addEventListener('click', closeMenu);
+  });
+})();
+</script>
+</body>
+</html>

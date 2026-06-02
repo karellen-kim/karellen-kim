@@ -775,7 +775,7 @@ client.<span class="fn">batch_write</span>(batch_records)</pre>
       <h4>Operate — 복합 원자 연산</h4>
       <div class="head-right"><span class="tag">operate</span></div>
     </div>
-    <pre"><span class="kw">from</span> aerospike_helpers <span class="kw">import</span> operations <span class="kw">as</span> ops
+    <pre><span class="kw">from</span> aerospike_helpers <span class="kw">import</span> operations <span class="kw">as</span> ops
 <span class="kw">from</span> aerospike_helpers.operations <span class="kw">import</span> list_operations <span class="kw">as</span> lops
 
 key = (<span class="str">"user-profiles"</span>, <span class="str">"web"</span>, <span class="str">"user:999"</span>)
@@ -811,7 +811,7 @@ write_policy = {
       <h4>Async API — 고처리량 비동기 요청</h4>
       <div class="head-right"><span class="tag">async</span></div>
     </div>
-    <pre"><span class="kw">import</span> asyncio
+    <pre><span class="kw">import</span> asyncio
 <span class="kw">import</span> aerospike_client_python <span class="kw">as</span> asc  <span class="com"># async 지원 클라이언트</span>
 
 <span class="com"># aerospike-client-python의 async는 실험적; 실무에서는 Java/Go 클라이언트 권장</span>

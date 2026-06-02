@@ -785,7 +785,7 @@ end
       <h4>SKIP LOCKED — 작업 큐 패턴</h4>
       <div class="head-right"><span class="tag">job queue</span></div>
     </div>
-    <pre"><span class="com">-- jobs 테이블: id, status, payload, created_at</span>
+    <pre><span class="com">-- jobs 테이블: id, status, payload, created_at</span>
 <span class="com">-- Worker가 미처리 작업을 가져가는 쿼리</span>
 
 <span class="com">-- 여러 Worker가 동시 실행해도 중복 처리 없음</span>
@@ -826,7 +826,7 @@ end
       <h4>Python asyncio 동시성 제어</h4>
       <div class="head-right"><span class="tag">async</span></div>
     </div>
-    <pre"><span class="kw">import</span> asyncio
+    <pre><span class="kw">import</span> asyncio
 <span class="kw">from</span> collections <span class="kw">import</span> defaultdict
 
 <span class="com"># 동시 처리 수 제한 — Semaphore</span>

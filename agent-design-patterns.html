@@ -1,0 +1,2135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Design Patterns (Lance Martin) — 학습 노트</title>
+<link rel="icon" href="./favicon.svg?v=3" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --serif: var(--sans);
+    --display: var(--sans);
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ───────── HERO ───────── */
+  .hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem);
+    position: relative;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    top: 2rem;
+    left: clamp(1.5rem, 5vw, 4rem);
+    right: clamp(1.5rem, 5vw, 4rem);
+    height: 1px;
+    background: var(--ink);
+  }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 2.5rem;
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title {
+    font-size: clamp(2.6rem, 7vw, 5.8rem);
+    line-height: 0.95;
+    font-weight: 600;
+    margin-top: clamp(2rem, 5vw, 3rem);
+    letter-spacing: -0.035em;
+    color: var(--ink);
+  }
+  .hero-title em {
+    font-style: normal;
+    font-weight: 300;
+    color: var(--accent-deep);
+  }
+  .hero-sub {
+    margin-top: 1.4rem;
+    font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+    color: var(--ink-soft);
+    max-width: 42rem;
+    line-height: 1.5;
+    font-weight: 300;
+  }
+  .hero-grid {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .hero-grid > div {
+    background: var(--paper);
+    padding: 1.25rem 1.5rem;
+  }
+  .hero-grid .k {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  .hero-grid .v {
+    font-size: 1.2rem;
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .hero-grid .v small {
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    margin-left: 0.25rem;
+    font-weight: 400;
+  }
+
+  /* ───────── SECTIONS ───────── */
+  .section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem);
+    position: relative;
+  }
+  .section + .section { border-top: 1px solid var(--rule); }
+
+  .section-head {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: baseline;
+    margin-bottom: clamp(2rem, 5vw, 3.5rem);
+  }
+  .section-num {
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    line-height: 0.85;
+    color: var(--accent);
+    font-weight: 200;
+    letter-spacing: -0.04em;
+  }
+  .section-titles {
+    border-left: 1px solid var(--ink);
+    padding-left: clamp(1rem, 3vw, 2rem);
+    padding-top: 0.5rem;
+  }
+  .section-kicker {
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+  }
+  .section-title {
+    font-size: clamp(1.65rem, 3.2vw, 2.3rem);
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: -0.028em;
+  }
+
+  /* ───────── §1 TL;DR ───────── */
+  .tldr-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  @media (min-width: 720px) {
+    .tldr-grid { grid-template-columns: repeat(12, 1fr); }
+  }
+  .tldr-lead {
+    grid-column: 1 / -1;
+    font-size: clamp(1.2rem, 2.1vw, 1.6rem);
+    line-height: 1.45;
+    color: var(--ink);
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+    letter-spacing: -0.012em;
+  }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead::first-letter {
+    font-size: 3.4em;
+    float: left;
+    line-height: 0.9;
+    padding-right: 0.12em;
+    padding-top: 0.08em;
+    color: var(--accent-deep);
+    font-weight: 200;
+  }
+  .tldr-lead .hl {
+    background: linear-gradient(180deg, transparent 60%, var(--hl) 60%);
+    padding: 0 0.05em;
+  }
+  @media (min-width: 720px) {
+    .tldr-lead { grid-column: 2 / 12; }
+  }
+
+  .points { display: contents; }
+  .point {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 4ch 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (min-width: 720px) {
+    .point { grid-column: 2 / 12; grid-template-columns: 5ch 1fr; gap: 2rem; }
+  }
+  .point .n {
+    font-size: 1.25rem;
+    color: var(--accent);
+    line-height: 1;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .point h3 {
+    font-weight: 600;
+    font-size: clamp(1.15rem, 1.9vw, 1.35rem);
+    line-height: 1.3;
+    margin-bottom: 0.4rem;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+  }
+  .point p {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .point p strong { color: var(--ink); font-weight: 600; }
+
+  /* ───────── §2 다이어그램 ───────── */
+  .diagram-block {
+    margin-bottom: clamp(3rem, 6vw, 5rem);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  @media (min-width: 880px) {
+    .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; }
+  }
+  .db-text h4 {
+    font-size: clamp(1.3rem, 2.3vw, 1.75rem);
+    line-height: 1.25;
+    margin-bottom: 0.8rem;
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: -0.022em;
+  }
+  .db-text h4 .num {
+    display: inline-block;
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    color: var(--accent-deep);
+    vertical-align: middle;
+    background: var(--accent-wash);
+    padding: 0.28rem 0.55rem;
+    border-radius: 999px;
+    margin-right: 0.65rem;
+    font-weight: 600;
+    position: relative;
+    top: -0.15em;
+  }
+  .db-text p {
+    color: var(--ink-soft);
+    margin-bottom: 1rem;
+    line-height: 1.65;
+    font-size: 0.95rem;
+  }
+  .db-text .use-when {
+    margin-top: 1.2rem;
+    padding: 1rem 1.1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--paper-deep);
+  }
+  .db-text .use-when strong {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+  }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  /* diagram canvas */
+  .canvas {
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    padding: clamp(1.25rem, 3vw, 2rem);
+    position: relative;
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .canvas::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 0.7rem;
+    left: 0.9rem;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+
+  /* Generic diagram pieces */
+  .box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.6rem 0.85rem;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    font-family: var(--sans);
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.3;
+    min-width: 4rem;
+    max-width: 100%;
+    position: relative;
+    word-break: keep-all;
+    flex-direction: column;
+  }
+  .box.accent { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); }
+  .box.soft { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .box.dashed { border-style: dashed; }
+  .box small {
+    display: block;
+    font-size: 0.6rem;
+    font-weight: 400;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.18rem;
+  }
+  .box.accent small { color: var(--accent-wash); opacity: 0.85; }
+
+  .arrow { display: inline-flex; align-items: center; color: var(--ink-soft); font-family: var(--mono); }
+  .arrow-h { width: 1.6rem; height: 1.5px; background: var(--ink-soft); position: relative; }
+  .arrow-h::after {
+    content: ""; position: absolute; right: -1px; top: 50%;
+    border: 4px solid transparent; border-left-color: var(--ink-soft); transform: translateY(-50%);
+  }
+
+  /* Augmented LLM diagram */
+  .d-augmented {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 1rem 1.2rem;
+    align-items: center;
+  }
+  .d-augmented .center {
+    grid-column: 2; grid-row: 2;
+    padding: 1.5rem 1.4rem;
+    background: var(--ink); color: var(--paper);
+    border: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-radius: 2px;
+  }
+  .d-augmented .sat {
+    padding: 0.7rem 1rem;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    font-size: 0.85rem;
+    text-align: center;
+    font-weight: 500;
+  }
+  .d-augmented .sat small {
+    display: block;
+    font-size: 0.64rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 0.15rem;
+    font-weight: 400;
+  }
+  .d-augmented .t { grid-column: 2; grid-row: 1; justify-self: center; }
+  .d-augmented .l { grid-column: 1; grid-row: 2; justify-self: end; }
+  .d-augmented .r { grid-column: 3; grid-row: 2; justify-self: start; }
+  .d-augmented .b { grid-column: 2; grid-row: 3; justify-self: center; }
+  .d-augmented svg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  /* Chaining */
+  .d-chain {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+  .d-chain .gate {
+    width: 0; height: 2.4rem;
+    border-left: 1.5px dashed var(--accent);
+    margin: 0 0.5rem;
+    position: relative;
+  }
+  .d-chain .gate::after {
+    content: "gate"; position: absolute; left: 50%; bottom: -1.2rem;
+    transform: translateX(-50%);
+    font-family: var(--mono); font-size: 0.6rem;
+    color: var(--accent-deep); letter-spacing: 0.08em;
+  }
+
+  /* Routing */
+  .d-route {
+    display: grid;
+    grid-template-columns: auto 1.4rem minmax(0, 1fr);
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    row-gap: 0.55rem;
+  }
+  .d-route .router {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    background: var(--accent);
+    color: var(--paper);
+    border-color: var(--accent-deep);
+    padding: 1rem 0.95rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    align-self: center;
+  }
+  .d-route .connect {
+    grid-column: 2;
+    height: 1.5px;
+    background: var(--ink-soft);
+    position: relative;
+  }
+  .d-route .connect::after {
+    content: "";
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    border: 4px solid transparent;
+    border-left-color: var(--ink-soft);
+    transform: translateY(-50%);
+  }
+  .d-route .leaf {
+    grid-column: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    padding: 0.7rem 0.95rem;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.3;
+    min-width: 0;
+    text-align: center;
+  }
+  .d-route .leaf small {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.22rem;
+  }
+
+  /* Parallel */
+  .d-parallel {
+    display: grid;
+    grid-template-columns: auto 1.4rem minmax(0, 1fr) 1.4rem auto;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    min-width: 0;
+  }
+  .d-parallel .lanes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .d-parallel .lanes .box {
+    width: 100%;
+    min-width: 0;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.74rem;
+  }
+  .d-parallel .fan {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    align-items: stretch;
+    font-family: var(--mono);
+    color: var(--ink-soft);
+    font-size: 0.7rem;
+  }
+  .d-parallel .fan span { padding: 0.3rem 0; text-align: center; border-top: 1px dashed var(--rule); }
+  .d-parallel .fan span:first-child { border-top: none; }
+
+  /* Orchestrator */
+  .d-orch {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+    justify-items: center;
+    width: 100%;
+    min-width: 0;
+  }
+  .d-orch .hub {
+    background: var(--ink); color: var(--paper);
+    padding: 0.85rem 1.1rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    border: none;
+  }
+  .d-orch .spokes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    width: 100%;
+    position: relative;
+  }
+  .d-orch .spokes .box {
+    width: 100%;
+    min-width: 0;
+    padding: 0.55rem 0.5rem;
+    font-size: 0.72rem;
+  }
+  .d-orch .spokes::before {
+    content: "";
+    position: absolute;
+    top: -0.7rem;
+    left: 50%;
+    width: 1.5px;
+    height: 0.7rem;
+    background: var(--ink-soft);
+  }
+  .d-orch .synth {
+    border-style: dashed;
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    background: transparent;
+    padding: 0.7rem 1.2rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+  .d-orch .down-arrow {
+    width: 1.5px; height: 0.8rem; background: var(--ink-soft); position: relative;
+  }
+  .d-orch .down-arrow::after {
+    content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%);
+    border: 4px solid transparent; border-top-color: var(--ink-soft);
+  }
+
+  /* Eval-Optimize loop */
+  .d-eval {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.2rem 1rem;
+    align-items: center;
+    position: relative;
+  }
+  .d-eval .gen, .d-eval .judge {
+    padding: 1.2rem 1rem;
+    text-align: center;
+  }
+  .d-eval .gen {
+    background: var(--paper); border: 1.5px solid var(--ink);
+  }
+  .d-eval .judge {
+    background: var(--accent-wash); border: 1.5px solid var(--accent);
+    color: var(--accent-deep);
+  }
+  .d-eval .gen h5, .d-eval .judge h5 {
+    font-size: 0.95rem;
+    font-weight: 600; margin-bottom: 0.2rem;
+    letter-spacing: -0.01em;
+  }
+  .d-eval .gen small, .d-eval .judge small {
+    display: block; font-size: 0.7rem; color: var(--ink-faint);
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .d-eval .loop-label {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--accent-deep);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    position: relative;
+    padding-top: 0.5rem;
+  }
+  .d-eval .loop-label::before, .d-eval .loop-label::after {
+    content: ""; position: absolute; top: 50%; width: 30%; height: 1.5px;
+    background: var(--accent);
+  }
+  .d-eval .loop-label::before { left: 0; }
+  .d-eval .loop-label::after { right: 0; }
+
+  /* Agent loop */
+  .d-agent {
+    width: 100%;
+    max-width: 360px;
+    aspect-ratio: 1;
+    position: relative;
+    margin: 0 auto;
+  }
+  .d-agent svg { width: 100%; height: 100%; }
+  .d-agent .node {
+    position: absolute;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    padding: 0.45rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+  }
+  .d-agent .node.brain {
+    background: var(--ink); color: var(--paper);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.6rem 0.9rem;
+    letter-spacing: 0.02em;
+  }
+  .d-agent .node.env {
+    background: var(--accent); color: var(--paper);
+    border-color: var(--accent-deep);
+  }
+
+  /* Decision table */
+  .decision {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    border-top: 2px solid var(--ink);
+    padding-top: 2.5rem;
+  }
+  .decision h3 {
+    font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    margin-bottom: 1.4rem;
+  }
+  .decision-table {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+  @media (min-width: 760px) {
+    .decision-table { grid-template-columns: 1fr 1fr; }
+  }
+  .decision-table > div {
+    background: var(--paper);
+    padding: 1.5rem;
+  }
+  .decision-table h4 {
+    font-size: 1.1rem;
+    margin-bottom: 0.7rem;
+    color: var(--accent-deep);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .decision-table ul {
+    list-style: none;
+    color: var(--ink-soft);
+  }
+  .decision-table li {
+    padding: 0.35rem 0;
+    padding-left: 1.1rem;
+    position: relative;
+    font-size: 0.92rem;
+  }
+  .decision-table li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-family: var(--mono);
+  }
+
+  /* ───────── §3 코드 ───────── */
+  .code-intro {
+    font-size: clamp(1.05rem, 1.65vw, 1.2rem);
+    color: var(--ink-soft);
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+  }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card {
+    margin-bottom: 2.5rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    overflow: hidden;
+  }
+  .code-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 1rem 1.4rem;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-deep);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .code-head h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+  }
+  .code-head .tag {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.22rem 0.6rem;
+    background: var(--accent);
+    color: var(--paper);
+    border-radius: 2px;
+  }
+  .code-head .head-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .copy-btn {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.22rem 0.6rem;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    font-weight: 600;
+  }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .copy-btn.failed { background: var(--paper-deep); color: var(--accent-deep); border-color: var(--accent); }
+  .code-card pre {
+    margin: 0;
+    padding: 1.35rem 1.5rem;
+    overflow-x: auto;
+    background: oklch(0.18 0.02 260);
+    color: oklch(0.92 0.015 75);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.7;
+  }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note {
+    padding: 1rem 1.4rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    background: var(--paper-deep);
+    line-height: 1.6;
+  }
+  .code-card .note strong { color: var(--accent-deep); }
+
+  /* ───────── §4 ADOPTION ───────── */
+  .adopt-lead {
+    font-size: clamp(1.05rem, 1.7vw, 1.25rem);
+    line-height: 1.55;
+    color: var(--ink-soft);
+    font-weight: 300;
+    margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  }
+  .adopt-lead strong { color: var(--ink); font-weight: 600; }
+
+  .tier {
+    margin-bottom: clamp(2rem, 4vw, 3.5rem);
+  }
+  .tier-head {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: 1.2rem;
+    padding: 0.7rem 0;
+    border-top: 2px solid var(--ink);
+    margin-bottom: 1.5rem;
+  }
+  .tier-rank {
+    font-size: 0.78rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+  .tier-title {
+    font-size: clamp(1.1rem, 1.8vw, 1.35rem);
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+  }
+  .tier-meta {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .tier-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (min-width: 760px) {
+    .tier-grid { grid-template-columns: 1fr 1fr; gap: 1px; background: var(--rule); }
+  }
+
+  .adopt {
+    background: var(--paper);
+    padding: 1.3rem 1.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (min-width: 760px) {
+    .adopt { border-bottom: none; }
+  }
+  .adopt:last-child { border-bottom: none; }
+
+  .adopt-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8rem;
+    margin-bottom: 0.7rem;
+    flex-wrap: wrap;
+  }
+  .adopt-head h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.018em;
+  }
+  .adopt-head .why {
+    font-size: 0.78rem;
+    color: var(--accent-deep);
+    font-weight: 500;
+    padding: 0.15rem 0.55rem;
+    background: var(--accent-wash);
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  .adopt .desc {
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    margin-bottom: 0.9rem;
+  }
+  .adopt ul {
+    list-style: none;
+  }
+  .adopt li {
+    color: var(--ink);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    padding: 0.35rem 0;
+    padding-left: 1.3rem;
+    position: relative;
+    border-top: 1px dashed var(--rule);
+  }
+  .adopt li:first-child { border-top: none; }
+  .adopt li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    top: 0.4rem;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+  }
+  .adopt li b {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  /* Roadmap */
+  .roadmap {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    padding-top: 2.5rem;
+    border-top: 2px solid var(--ink);
+  }
+  .roadmap-head {
+    margin-bottom: 1.8rem;
+  }
+  .roadmap-head h3 {
+    font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.025em;
+    margin-bottom: 0.4rem;
+  }
+  .roadmap-head p {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+  .steps {
+    counter-reset: step;
+    list-style: none;
+  }
+  .steps li {
+    display: grid;
+    grid-template-columns: 3rem 1fr;
+    gap: 1rem;
+    padding: 1.1rem 0;
+    border-bottom: 1px solid var(--rule);
+    align-items: baseline;
+  }
+  .steps li::before {
+    counter-increment: step;
+    content: counter(step, decimal-leading-zero);
+    font-family: var(--mono);
+    color: var(--accent);
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .steps h5 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.012em;
+  }
+  .steps p {
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+  .steps p code {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    padding: 0.05rem 0.35rem;
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    color: var(--accent-deep);
+  }
+
+  /* Antipattern */
+  .antipattern {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    padding: clamp(1.5rem, 3vw, 2rem);
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+  }
+  .antipattern h3 {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.018em;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .antipattern h3 .label {
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    background: var(--paper);
+    padding: 0.25rem 0.55rem;
+    border-radius: 2px;
+  }
+  .antipattern ul { list-style: none; }
+  .antipattern li {
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    padding: 0.45rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+    border-top: 1px dashed var(--rule);
+  }
+  .antipattern li:first-child { border-top: none; }
+  .antipattern li::before {
+    content: "×";
+    position: absolute;
+    left: 0;
+    top: 0.35rem;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-weight: 600;
+  }
+  .antipattern li b { color: var(--ink); font-weight: 600; }
+
+  /* ───────── FOOTER ───────── */
+  footer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+  }
+  footer .lockup {
+    font-size: 1.1rem;
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* Marginalia note */
+  .margin-note {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    padding: 1.1rem 1.3rem;
+    background: var(--paper-deep);
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    margin: 2rem 0;
+    font-weight: 300;
+  }
+  .margin-note::before {
+    content: "노트";
+    font-weight: 600;
+    color: var(--accent-deep);
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-right: 0.8rem;
+    display: inline-block;
+    padding-right: 0.7rem;
+    border-right: 1px solid var(--rule);
+  }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  /* ───────── HOME LINK ───────── */
+  .home-link {
+    position: fixed;
+    top: 1.5rem;
+    left: 1.5rem;
+    z-index: 60;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.95rem;
+    height: 48px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  /* ───────── HAMBURGER + TOC ───────── */
+  .menu-btn {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 60;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s ease;
+  }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span {
+    display: block;
+    width: 20px;
+    height: 1.5px;
+    background: var(--ink);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.2s ease,
+                background 0.2s ease;
+    transform-origin: center;
+  }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  .toc-backdrop {
+    position: fixed;
+    inset: 0;
+    background: oklch(0.18 0.015 260 / 0.35);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 50;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+
+  .toc-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(380px, 88vw);
+    height: 100vh;
+    background: var(--paper);
+    border-left: 1px solid var(--ink);
+    z-index: 55;
+    transform: translateX(100%);
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    overflow-y: auto;
+    padding: 6rem 2.5rem 3rem;
+  }
+  .toc-panel.open { transform: translateX(0); }
+
+  .toc-kicker {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+  }
+  .toc-title {
+    font-size: 1.85rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    margin-bottom: 2.2rem;
+    padding-bottom: 1.3rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .toc-list {
+    list-style: none;
+    counter-reset: toc;
+  }
+  .toc-list > li {
+    padding: 0.9rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    align-items: baseline;
+    text-decoration: none;
+    color: var(--ink);
+    font-weight: 500;
+    font-size: 1.05rem;
+    letter-spacing: -0.012em;
+    transition: color 0.2s ease;
+  }
+  .toc-list > li > a::before {
+    counter-increment: toc;
+    content: counter(toc, decimal-leading-zero);
+    color: var(--accent);
+    font-weight: 300;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+  }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+
+  .toc-sub {
+    list-style: none;
+    margin-top: 0.6rem;
+    margin-left: 2.5rem;
+    padding-left: 0.9rem;
+    border-left: 1px solid var(--rule);
+  }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 400;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+  .toc-sub a span {
+    color: var(--ink-faint);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    min-width: 1.6rem;
+  }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-sub a:hover span { color: var(--accent); }
+
+  .toc-foot {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    line-height: 1.6;
+  }
+
+  body.menu-open { overflow: hidden; }
+
+  /* Code card collapse — collapsed by default, click head to expand */
+  .code-card pre, .code-card .note { display: none; }
+  .code-card.expanded pre, .code-card.expanded .note { display: block; }
+  .code-card .code-head { cursor: pointer; user-select: none; transition: background 0.15s ease; }
+  .code-card .code-head:hover { background: var(--paper); }
+  .expand-indicator { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-faint); transition: transform 0.2s ease; display: inline-block; line-height: 1; }
+  .code-card.expanded .expand-indicator { transform: rotate(90deg); color: var(--accent-deep); }
+
+  /* Subtle reveal */
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card {
+      animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
+
+  /* ───────── SVG 아키텍처 ───────── */
+  .svg-arch { margin: clamp(2rem, 4vw, 3rem) 0; }
+  .svg-arch .head { display: flex; align-items: baseline; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .svg-arch .head .yr { font-family: var(--mono); font-size: 0.72rem; color: var(--accent-deep); letter-spacing: 0.1em; }
+  .svg-arch .head h4 { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.018em; color: var(--ink); }
+  .svg-arch .head .tag { font-family: var(--mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em; padding: 0.2rem 0.5rem; background: var(--accent-wash); color: var(--accent-deep); border-radius: 2px; margin-left: auto; }
+  .svg-arch .canvas-svg { border: 1px solid var(--rule); background: var(--paper-deep); padding: clamp(0.8rem, 2vw, 1.4rem); overflow-x: auto; }
+  .svg-arch .canvas-svg svg { display: block; width: 100%; height: auto; min-width: 0; }
+  .svg-arch .legend { margin-top: 0.9rem; font-size: 0.9rem; color: var(--ink-soft); line-height: 1.65; }
+  .svg-arch .legend strong { color: var(--ink); font-weight: 600; }
+  .svg-arch .legend em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+
+  /* 파라미터 참조표 */
+  .param-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.88rem; }
+  .param-table th, .param-table td { text-align: left; padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  .param-table th { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; border-bottom: 2px solid var(--ink); }
+  .param-table td code { font-family: var(--mono); font-size: 0.8rem; color: var(--accent-deep); }
+  .param-table tr:hover td { background: var(--paper-deep); }
+  .param-table .num { font-family: var(--mono); color: var(--ink); }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html" aria-label="홈으로 돌아가기">
+  <span class="arrow">←</span><span>notebook</span>
+</a>
+
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+
+<div class="toc-backdrop" id="tocBackdrop"></div>
+
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#structure" data-close>그림으로 보는 구조</a>
+      <ul class="toc-sub">
+        <li><a href="#s-rot" data-close><span>00</span>Context rot</a></li>
+        <li><a href="#s-map" data-close><span>01</span>8패턴 맵</a></li>
+        <li><a href="#s-layer" data-close><span>02</span>Action space</a></li>
+        <li><a href="#s-loop" data-close><span>03</span>Agent loop</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#patterns" data-close>8가지 설계 패턴</a>
+      <ul class="toc-sub">
+        <li><a href="#p1" data-close><span>01</span>Give a Computer</a></li>
+        <li><a href="#p2" data-close><span>02</span>Multi-Layer Action</a></li>
+        <li><a href="#p3" data-close><span>03</span>Progressive Disclosure</a></li>
+        <li><a href="#p4" data-close><span>04</span>Offload</a></li>
+        <li><a href="#p5" data-close><span>05</span>Cache</a></li>
+        <li><a href="#p6" data-close><span>06</span>Isolate</a></li>
+        <li><a href="#p7" data-close><span>07</span>Evolve</a></li>
+        <li><a href="#p8" data-close><span>08</span>Learned Mgmt</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#ops" data-close>운영 — 가정·처방</a>
+      <ul class="toc-sub">
+        <li><a href="#o-assume" data-close><span>01</span>숨은 가정</a></li>
+        <li><a href="#o-loop" data-close><span>02</span>권장 루프</a></li>
+        <li><a href="#o-open" data-close><span>03</span>미해결 과제</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+
+  <div class="toc-foot">
+    Agent design patterns · Lance Martin (LangChain) · 2026.01.09<br>학습 노트
+  </div>
+</aside>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="meta-row">
+    <span>Lance Martin · LangChain · 2026.01</span>
+    <span>학습 노트 · 읽는 시간 20분</span>
+  </div>
+
+  <h1 class="hero-title">Agent Design<br><em>Patterns</em></h1>
+
+  <p class="hero-sub">
+    "효과적인 에이전트 설계는 결국 <strong>컨텍스트 관리</strong>로 수렴한다." —
+    모델은 컨텍스트가 커질수록 나빠지고(context rot), 작업은 7개월마다 2배로 길어진다.
+    유한한 주의 예산을 다루는 8가지 패턴.
+  </p>
+
+  <div class="hero-grid">
+    <div>
+      <span class="k">원문</span>
+      <span class="v">Jan 9<small>· 2026</small></span>
+    </div>
+    <div>
+      <span class="k">패턴</span>
+      <span class="v">8<small>· design patterns</small></span>
+    </div>
+    <div>
+      <span class="k">핵심</span>
+      <span class="v">Context<small>· as finite</small></span>
+    </div>
+    <div>
+      <span class="k">방향</span>
+      <span class="v">Bitter Lesson</span>
+    </div>
+  </div>
+</header>
+
+
+<!-- §1 TL;DR -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      좋은 에이전트는 좋은 프레임워크에서 나오지 않는다 — <span class="hl">좋은 컨텍스트 관리</span>에서 나온다.
+      모델은 컨텍스트가 커질수록 성능이 떨어지고(<em>context rot</em>), 에이전트 작업 길이는 7개월마다 2배가 된다.
+      Lance Martin이 정리한 8가지 패턴은 모두 <em>유한한 주의 예산을 다음 스텝에 딱 맞게 채우는</em> 방법이다.
+    </p>
+
+    <div class="points">
+      <article class="point">
+        <div class="n">i</div>
+        <div>
+          <h3>컨텍스트는 유한 자원이다</h3>
+          <p>Anthropic의 표현 — "<strong>컨텍스트는 한계효용이 체감하는 유한 자원으로 다뤄야 한다</strong>". Chroma는 이를 <em>context rot</em>(컨텍스트가 길어질수록 모델이 망가짐)으로, METR은 "작업 길이가 7개월마다 2배"로 측정했다. Karpathy: "딱 맞는 정보로 창을 채우는 섬세한 기술".</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">ii</div>
+        <div>
+          <h3>에이전트에 컴퓨터를 줘라</h3>
+          <p>파일시스템(영속 컨텍스트) + 셸(유틸·CLI·자기작성 코드 실행). Claude Code는 "<strong>네 컴퓨터에 산다</strong>", Manus는 e2b 가상 컴퓨터. Rauchg: "코딩 에이전트의 근본 추상은 CLI다".</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iii</div>
+        <div>
+          <h3>도구 정의를 컨텍스트에 쌓지 마라</h3>
+          <p>도구를 100개 노출하지 말고 <strong>bash 하나</strong>를 노출해 코드로 엮어라. GitHub MCP 서버는 35개 도구가 정의만으로 <strong>~26K 토큰</strong>. Claude Code는 ~12개, Manus는 20개 미만으로 유지한다.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iv</div>
+        <div>
+          <h3>필요할 때만 보여주고, 밖으로 빼라</h3>
+          <p><strong>Progressive disclosure</strong> — 핵심만 먼저, 상세는 <code>--help</code>·인덱스·<code>SKILL.md</code>로 on-demand. <strong>Offload</strong> — 중간 결과·궤적을 파일시스템에 쓰고 선택적으로 읽되, 요약은 오프로딩의 효용이 떨어질 때만.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">v</div>
+        <div>
+          <h3>캐시하고, 격리하라</h3>
+          <p>Manus는 "<strong>cache hit rate가 프로덕션 에이전트의 가장 중요한 지표</strong>"라 단언 — 캐시가 있으면 더 큰 모델이 더 싸질 수 있다. 컨텍스트가 한 창에 안 들어가면 <strong>sub-agent로 격리</strong>하고 git 히스토리로 진행을 공유한다.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">vi</div>
+        <div>
+          <h3>진화시키고, 결국 학습에 맡겨라</h3>
+          <p>과거 궤적을 반성해 <strong>가중치가 아니라 컨텍스트(memory·skill)를 갱신</strong>(GEPA·Letta). 더 나아가 <em>모델이 스스로 컨텍스트를 관리</em>(RLM·sleep-time compute)하게 된다 — Bitter Lesson은 손으로 짠 scaffolding이 결국 모델 능력에 흡수된다고 예고한다.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- §2 그림으로 보는 구조 -->
+<section class="section" id="structure">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Structure</div>
+      <h2 class="section-title">그림으로 보는 구조</h2>
+    </div>
+  </div>
+
+  <!-- 00 context rot -->
+  <div class="diagram-block" id="s-rot">
+    <div class="db-text">
+      <h4><span class="num">00 · 전제</span>왜 컨텍스트를 관리하나</h4>
+      <p>
+        모든 패턴의 출발점은 하나의 사실이다 —
+        <strong>컨텍스트가 커지면 모델 성능이 떨어진다</strong>(context rot).
+        그런데 작업은 점점 길어진다(7개월마다 2배). 둘이 충돌한다.
+      </p>
+      <p>
+        그래서 컨텍스트는 무한 버퍼가 아니라 <em>한계효용이 체감하는 유한 예산</em>으로 다뤄야 한다.
+        8가지 패턴은 전부 이 예산을 아끼는 기법이다.
+      </p>
+      <div class="use-when">
+        <strong>핵심 긴장</strong>
+        <p>작업 길이↑ vs 유효 컨텍스트↓. 이 간극을 메우는 게 컨텍스트 엔지니어링이고, 패턴들은 그 도구함이다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Premise · Context Rot">
+      <div class="d-chain">
+        <div class="box">짧은 컨텍스트<small>정확</small></div>
+        <div class="arrow"><div class="arrow-h"></div></div>
+        <div class="box soft">누적<small>50+ tool calls</small></div>
+        <div class="arrow"><div class="arrow-h"></div></div>
+        <div class="box accent">context rot<small>성능 저하</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 01 8패턴 맵 (SVG) -->
+  <div class="svg-arch" id="s-map">
+    <div class="head">
+      <span class="yr">2026.01</span>
+      <h4>8가지 패턴의 지도</h4>
+      <span class="tag">substrate → manage → improve</span>
+    </div>
+    <div class="canvas-svg">
+      <svg viewBox="0 0 780 360" font-family="IBM Plex Sans KR">
+        <defs>
+          <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="#b85c2e"/>
+          </marker>
+        </defs>
+
+        <!-- group labels -->
+        <text x="20" y="30" font-size="11" font-weight="600" fill="#b85c2e" letter-spacing="2">SUBSTRATE · 기반</text>
+        <text x="300" y="30" font-size="11" font-weight="600" fill="#b85c2e" letter-spacing="2">MANAGE · 컨텍스트 관리</text>
+        <text x="630" y="30" font-size="11" font-weight="600" fill="#b85c2e" letter-spacing="2">IMPROVE · 진화</text>
+
+        <!-- substrate -->
+        <rect x="20" y="48" width="230" height="56" rx="3" fill="#1a1f2e"/>
+        <text x="36" y="72" font-size="13" font-weight="600" fill="#fff">1 · Give Agents a Computer</text>
+        <text x="36" y="91" font-size="10" fill="#d9dbe2">filesystem + shell</text>
+
+        <rect x="20" y="116" width="230" height="56" rx="3" fill="#1a1f2e"/>
+        <text x="36" y="140" font-size="13" font-weight="600" fill="#fff">2 · Multi-Layer Action Space</text>
+        <text x="36" y="159" font-size="10" fill="#d9dbe2">tool layer → bash → OS</text>
+
+        <!-- manage -->
+        <rect x="290" y="48" width="230" height="50" rx="3" fill="#fff" stroke="#1a1f2e" stroke-width="1.5"/>
+        <text x="304" y="69" font-size="12.5" font-weight="600" fill="#1a1f2e">3 · Progressive Disclosure</text>
+        <text x="304" y="86" font-size="9.5" fill="#5a6072">핵심만 먼저, 상세는 on-demand</text>
+
+        <rect x="290" y="110" width="230" height="50" rx="3" fill="#fff" stroke="#1a1f2e" stroke-width="1.5"/>
+        <text x="304" y="131" font-size="12.5" font-weight="600" fill="#1a1f2e">4 · Offload Context</text>
+        <text x="304" y="148" font-size="9.5" fill="#5a6072">파일시스템에 쓰고 선택적 read</text>
+
+        <rect x="290" y="172" width="230" height="50" rx="3" fill="#fff" stroke="#1a1f2e" stroke-width="1.5"/>
+        <text x="304" y="193" font-size="12.5" font-weight="600" fill="#1a1f2e">5 · Cache Context</text>
+        <text x="304" y="210" font-size="9.5" fill="#5a6072">prefix 캐시로 비용·지연↓</text>
+
+        <rect x="290" y="234" width="230" height="50" rx="3" fill="#fff" stroke="#1a1f2e" stroke-width="1.5"/>
+        <text x="304" y="255" font-size="12.5" font-weight="600" fill="#1a1f2e">6 · Isolate Context</text>
+        <text x="304" y="272" font-size="9.5" fill="#5a6072">sub-agent · git로 진행 공유</text>
+
+        <!-- improve -->
+        <rect x="560" y="48" width="200" height="56" rx="3" fill="#f5e7da" stroke="#b85c2e" stroke-width="1.5"/>
+        <text x="576" y="72" font-size="13" font-weight="600" fill="#7a3a1a">7 · Evolve Context</text>
+        <text x="576" y="91" font-size="10" fill="#7a3a1a">반성 → memory/skill 갱신</text>
+
+        <rect x="560" y="116" width="200" height="56" rx="3" fill="#f5e7da" stroke="#b85c2e" stroke-width="1.5"/>
+        <text x="576" y="140" font-size="13" font-weight="600" fill="#7a3a1a">8 · Learned Mgmt</text>
+        <text x="576" y="159" font-size="10" fill="#7a3a1a">모델이 스스로 관리</text>
+
+        <!-- arrows between groups -->
+        <line x1="250" y1="110" x2="286" y2="110" stroke="#b85c2e" stroke-width="1.5" marker-end="url(#ah)"/>
+        <line x1="520" y1="110" x2="556" y2="110" stroke="#b85c2e" stroke-width="1.5" marker-end="url(#ah)"/>
+
+        <!-- bitter lesson direction -->
+        <text x="560" y="210" font-size="10.5" fill="#5a6072">Bitter Lesson →</text>
+        <text x="560" y="228" font-size="10.5" fill="#5a6072">손으로 짠 scaffolding이</text>
+        <text x="560" y="244" font-size="10.5" fill="#5a6072">모델에 흡수되는 방향</text>
+      </svg>
+    </div>
+    <div class="legend">
+      <strong>읽는 법.</strong> 왼쪽 2개는 에이전트가 설 <em>기반</em>(컴퓨터·동작 공간), 가운데 4개는 유한한 컨텍스트를 <em>관리</em>하는 핵심,
+      오른쪽 2개는 시간이 지나며 <em>스스로 나아지는</em> 방향이다. 화살표는 "사람이 짜는 것 → 모델이 흡수"로 가는 Bitter Lesson 궤적.
+    </div>
+  </div>
+
+  <!-- 02 multi-layer action space -->
+  <div class="diagram-block" id="s-layer">
+    <div class="db-text">
+      <h4><span class="num">02 · 핵심</span>Multi-Layer Action Space</h4>
+      <p>
+        도구를 컨텍스트에 직접 정의하면 토큰을 잡아먹고, 기능이 겹쳐 모델을 혼란시킨다.
+        그래서 동작을 <strong>도구 호출 레이어에서 컴퓨터(OS)로 밀어내린다</strong>.
+      </p>
+      <p>
+        100개 도구 대신 <strong>bash 하나</strong>를 주면, 에이전트가 코드를 써서 수많은 동작을 엮는다.
+        CodeAct 논문은 중간 결과를 거치지 않고 코드를 실행할 때 토큰이 절감됨을 보였다.
+      </p>
+      <div class="use-when">
+        <strong>언제 쓰나</strong>
+        <p>도구가 많아져 정의 토큰이 부담될 때(예: MCP 35 tools = 26K). 원자적 도구(bash·파일) 소수로 줄이고 나머지는 코드 실행으로.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Pattern 2 · Action Space">
+      <div class="d-orch">
+        <div class="box hub">LLM<br><small style="color:var(--accent-wash);opacity:.85">atomic tools</small></div>
+        <div class="spokes" style="grid-template-columns:repeat(1,minmax(0,1fr))">
+          <div class="box accent">bash / code</div>
+        </div>
+        <div class="down-arrow"></div>
+        <div class="box synth">OS · CLI · scripts (무한 동작)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 agent loop -->
+  <div class="diagram-block" id="s-loop">
+    <div class="db-text">
+      <h4><span class="num">03 · 종합</span>패턴이 합쳐진 루프</h4>
+      <p>
+        8패턴은 따로 노는 게 아니라 하나의 루프로 합쳐진다 —
+        <strong>초기화 → 반복(파일에 결과 기록) → 캐시 → 검증 → 추적(git) → 반성</strong>,
+        커지면 <strong>조율(sub-agent)</strong>.
+      </p>
+      <p>
+        Martin의 결론 한 문장 — "컴퓨터를 주고 동작을 컴퓨터로 밀어내라. 파일시스템으로 offload·progressive disclosure 하라.
+        sub-agent로 격리하라. 시간이 지나며 진화시키고, 캐시로 비용을 줄여라."
+      </p>
+      <div class="use-when">
+        <strong>언제 쓰나</strong>
+        <p>장기 실행(long-running) 에이전트. 단발성 작업엔 과하다 — 단순 워크플로우·프롬프트로 먼저 시도하고 안 될 때 이 루프로.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Synthesis · Agent Loop">
+      <div class="d-agent">
+        <svg viewBox="0 0 360 360" fill="none" stroke="oklch(0.38 0.022 260)" stroke-width="1.5">
+          <circle cx="180" cy="180" r="120" stroke-dasharray="4 5"/>
+          <path d="M 180 60 L 175 70 L 185 70 Z" fill="oklch(0.38 0.022 260)" stroke="none"/>
+          <path d="M 300 180 L 290 175 L 290 185 Z" fill="oklch(0.38 0.022 260)" stroke="none"/>
+          <path d="M 180 300 L 175 290 L 185 290 Z" fill="oklch(0.38 0.022 260)" stroke="none" transform="rotate(180 180 295)"/>
+          <path d="M 60 180 L 70 175 L 70 185 Z" fill="oklch(0.38 0.022 260)" stroke="none"/>
+        </svg>
+        <div class="node brain" style="top:50%; left:50%;">LLM</div>
+        <div class="node" style="top:8%; left:50%;">Plan / Init</div>
+        <div class="node env" style="top:50%; left:92%;">Act → file</div>
+        <div class="node" style="top:92%; left:50%;">Verify</div>
+        <div class="node" style="top:50%; left:8%;">Reflect</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="margin-note">
+    Manus는 2024년 3월 이후 <strong>5번 재설계</strong>됐다(이후 Meta가 $2B+에 인수). 이게 Martin의 핵심 경고를 뒷받침한다 — <strong>모델이 좋아질수록 harness를 단순하게 깎아내야 한다</strong>. 오늘의 정교한 scaffolding이 내일의 병목이 된다.
+  </p>
+</section>
+
+
+<!-- §3 8가지 패턴 -->
+<section class="section" id="patterns">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Patterns · 도입 전 평가</div>
+      <h2 class="section-title">8가지 설계 패턴</h2>
+    </div>
+  </div>
+
+  <div class="gloss" id="p1">
+    <div class="gloss-head">
+      <span class="gloss-label">01</span>
+      <h5>Give Agents a Computer</h5>
+      <span class="gloss-pron">"the fundamental abstraction is the CLI"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>문제.</strong> LLM은 영속 저장·외부 연산·OS 수준 기본기를 직접 다룰 수단이 없으면 자율적으로 행동할 수 없다.</p>
+      <p><strong>메커니즘.</strong> <b>파일시스템</b>(영속 컨텍스트)과 <b>셸</b>(유틸·CLI·스크립트·자기작성 코드 실행)을 준다. Claude Code는 "네 컴퓨터에 산다", Manus는 <code>e2b</code> 가상 컴퓨터를 쓴다. Rauchg의 표현 — "코딩 에이전트의 근본 추상은 CLI다".</p>
+      <p><strong>평가 관점.</strong> 샌드박스·권한·파일 영속성을 줄 수 있는 환경인가? 이게 안 되면 나머지 7개 패턴(특히 offload·evolve)이 대부분 작동하지 않는다 — 이 패턴이 토대다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p2">
+    <div class="gloss-head">
+      <span class="gloss-label">02</span>
+      <h5>Multi-Layer Action Space</h5>
+      <span class="gloss-pron">"expose bash, not 100 tools"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>문제.</strong> 도구 정의를 컨텍스트에 직접 쌓으면 토큰을 잡아먹고, 기능이 겹쳐 모델이 잘못 고른다. GitHub MCP 서버는 35개 도구가 정의만으로 <b>~26K 토큰</b>.</p>
+      <p><strong>메커니즘.</strong> 동작을 도구 호출 레이어에서 <b>컴퓨터로 밀어내린다</b>. 원자적 도구(bash) 소수만 노출하고, 에이전트가 코드를 써서 동작을 엮는다. Claude Code는 ~12개, Manus는 20개 미만. CodeAct(arXiv 2402.01030)는 중간 결과를 안 거치고 코드 실행 시 토큰 절감을 입증.</p>
+      <p><strong>평가 관점.</strong> 도구 수가 임계(수십 개)를 넘어 정의 토큰이 부담되기 시작하면 이 패턴으로 전환할 신호. LangGraph BigTool처럼 도구를 인덱싱해 retrieval 하는 보강도 있다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p3">
+    <div class="gloss-head">
+      <span class="gloss-label">03</span>
+      <h5>Progressive Disclosure</h5>
+      <span class="gloss-pron">"essential first, details on demand"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>문제.</strong> 에이전트가 모든 도구 정보를 동시에 알 필요는 없다. 전부 미리 로딩하면 컨텍스트 예산을 낭비한다.</p>
+      <p><strong>메커니즘.</strong> 핵심만 먼저 주고 상세는 on-demand로 — <code>--help</code> 플래그, 인덱스 retrieval, 파일에 저장된 설명. Manus는 instruction에 유틸 목록만 주고 필요 시 <code>--help</code> 호출. Cursor는 MCP 설명을 폴더에 동기화해 필요할 때만 전체 스펙을 읽는다. Anthropic <b>skills 표준</b>은 <code>SKILL.md</code>의 YAML frontmatter만 보고 전체 파일을 읽을지 결정한다.</p>
+      <p><strong>평가 관점.</strong> 도구·스킬 설명이 길수록 효과가 크다. "전부 system에 박기"의 대안으로, 메타데이터 → 본문 2단계 로딩을 설계할 수 있는가.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p4">
+    <div class="gloss-head">
+      <span class="gloss-label">04</span>
+      <h5>Offload Context</h5>
+      <span class="gloss-pron">"write to disk, summarize last"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>문제.</strong> 장기 실행 에이전트는 컨텍스트 창을 초과한다. 그런데 무지성 요약은 정보를 잃는다.</p>
+      <p><strong>메커니즘.</strong> 중간 결과·오래된 궤적·보조 데이터를 <b>파일시스템에 쓰고</b> 선택적으로 다시 읽는다. 요약은 오프로딩의 효용이 떨어질 때만 적용 — 정보 손실을 늦춘다. Manus는 오래된 도구 결과를 파일로 빼고 나서야 요약하고, Cursor는 결과·궤적을 파일로 offload해 선택 retrieval. 일부는 계획을 파일에 써두고 주기적으로 다시 읽어 목표를 강화·검증한다.</p>
+      <p><strong>평가 관점.</strong> "요약부터" 가 아니라 "<b>offload 먼저, 요약은 최후</b>"가 핵심 순서. 결과 크기 임계(예: 2KB)에서 자동으로 파일로 빼는 정책을 둘 수 있는가.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p5">
+    <div class="gloss-head">
+      <span class="gloss-label">05</span>
+      <h5>Cache Context</h5>
+      <span class="gloss-pron">"cache hit rate = 가장 중요한 지표"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>문제.</strong> 매 동작마다 컨텍스트를 선형 히스토리에 덧붙이면 토큰 재처리 비용이 폭증한다 — 캐시 없는 코딩 에이전트는 "비용상 성립 불가"(@trq212).</p>
+      <p><strong>메커니즘.</strong> prompt caching으로 <b>prefix에서 재개</b>한다. Manus는 "<b>cache hit rate가 프로덕션 에이전트의 가장 중요한 지표</b>"라 단언하며, 캐시가 있으면 더 고성능 모델이 저비용 모델보다 오히려 싸질 수 있다고 본다.</p>
+      <p><strong>평가 관점.</strong> 프롬프트 prefix를 안정적으로 유지하는 설계인가(캐시는 prefix 일치에 민감). 도구 정의·system을 앞단에 고정 배치하면 hit rate가 오른다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p6">
+    <div class="gloss-head">
+      <span class="gloss-label">06</span>
+      <h5>Isolate Context</h5>
+      <span class="gloss-pron">"sub-agents, git으로 진행 공유"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>문제.</strong> 장기 작업은 한 에이전트 컨텍스트에 안 들어간다. 그런데 병렬 에이전트는 서로의 작업을 못 보면 충돌하는 결정을 내린다.</p>
+      <p><strong>메커니즘.</strong> 격리된 컨텍스트·도구·지시를 가진 <b>sub-agent에 위임</b>하고, 진행은 git 히스토리 등으로 공유한다. Claude Code는 sub-agent가 서로 다른 이슈를 병렬 리뷰. <b>Ralph Wiggum 루프</b>(@GeoffreyHuntley)는 plan 만족까지 반복 — 초기화 에이전트가 환경(plan·tracking 파일)을 세팅하고 sub-agent가 plan의 개별 작업을 처리. <b>Gas Town</b>(@Steve_Yegge)은 "Mayor" 에이전트 + merge queue + 역할 분담으로 수십 개 Claude Code를 git 기반으로 조율한다.</p>
+      <p><strong>평가 관점.</strong> 병렬화 가능한 독립 작업인가. Cognition은 "공유 컨텍스트 가시성 부재 + compaction 손실"을 경고 — 단일 에이전트로 풀리면 멀티에이전트를 피하라.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p7">
+    <div class="gloss-head">
+      <span class="gloss-label">07</span>
+      <h5>Evolve Context</h5>
+      <span class="gloss-pron">"가중치가 아니라 컨텍스트를 학습"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>문제.</strong> 에이전트는 경험에서 배워 나아져야 하는데, 많은 배포가 <b>적응 불능</b>으로 실패한다(arXiv 2512.16301).</p>
+      <p><strong>메커니즘.</strong> 모델 가중치 대신 <b>컨텍스트(prompt·memory·skill)를 시간에 따라 갱신</b>한다 — 과거 궤적을 반성해 학습을 컨텍스트에 반영. <b>GEPA</b>(arXiv 2507.19457)는 궤적을 모아 점수 매기고 실패를 반성해 작업별 프롬프트 변형을 제안. <b>Letta</b>는 "토큰 공간의 지속 학습"과 궤적 반성으로 재사용 스킬을 파일로 저장. Martin 본인은 Claude Code 세션을 일기로 정제·반성해 <code>CLAUDE.md</code>를 갱신하는 실험을 했다.</p>
+      <p><strong>평가 관점.</strong> 궤적을 저장·반성·반영하는 피드백 고리가 있는가. memory가 무한 증식하지 않게 distill하는 정책이 함께 필요하다.</p>
+    </div>
+  </div>
+
+  <div class="gloss" id="p8">
+    <div class="gloss-head">
+      <span class="gloss-label">08</span>
+      <h5>Learned Context Management</h5>
+      <span class="gloss-pron">"scaffolding이 모델에 흡수된다"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>문제.</strong> 압축·sub-agent 생성·offload 시점·학습 갱신을 <b>손으로 프롬프팅</b>하는 건 노동집약적이고 최적도 아니다.</p>
+      <p><strong>메커니즘.</strong> 수작업 scaffolding 대신 <b>모델이 스스로 컨텍스트를 관리</b>하게 한다. <b>Recursive Language Model</b>(RLM, arXiv 2512.24601)은 LLM이 자기 컨텍스트 관리를 학습할 수 있음을 보인다. <b>Sleep-Time Compute</b>(arXiv 2504.13171, Letta)는 에이전트가 오프라인에서 과거 세션을 반성해 memory·skill을 자동 갱신.</p>
+      <p><strong>평가 관점.</strong> 이것이 방향성이다 — <em>The Bitter Lesson</em>대로 컴퓨트·모델 스케일링이 손으로 짠 기법을 추월한다. 지금 쌓는 scaffolding 중 무엇이 곧 불필요해질지를 의식하고 설계하라.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- §4 운영 -->
+<section class="section" id="ops">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Operations · 도입 후 운영</div>
+      <h2 class="section-title">운영 — 가정·처방·미해결</h2>
+    </div>
+  </div>
+
+  <p class="adopt-lead">
+    패턴을 안다고 운영이 되는 게 아니다. 각 패턴이 <strong>암묵적으로 깔고 있는 전제</strong>가 깨지는 지점과,
+    실제로 어떤 순서로 도입할지의 처방, 그리고 아직 아무도 풀지 못한 과제를 정리한다.
+  </p>
+
+  <!-- 숨은 가정 -->
+  <div class="gloss" id="o-assume">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>패턴이 깔고 있는 전제와 붕괴점</h5>
+      <span class="gloss-pron">"이게 깨질 때 패턴이 역효과"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>"파일시스템이 항상 있다"(P1·P4·P7).</strong> Give-computer 계열은 영속 샌드박스를 전제한다. 서버리스·짧은 수명 컨테이너처럼 파일이 휘발되는 환경에서는 offload·evolve가 무력화된다 — 상태가 다음 iteration에 남지 않는다.</p>
+      <p><strong>"prefix가 안정적이다"(P5).</strong> 캐시는 프롬프트 prefix 일치에 의존한다. 도구 정의·system을 동적으로 바꾸면 cache hit rate가 무너져, 캐시를 켜고도 비용이 안 준다. 캐시 효과는 "측정"해야 하지 가정하면 안 된다.</p>
+      <p><strong>"sub-agent가 협력한다"(P6).</strong> 격리는 가시성을 희생한다. Cognition의 경고대로, 서로의 컨텍스트를 못 보는 병렬 에이전트는 <b>충돌하는 결정</b>을 내린다. compaction으로 정보를 잃으면 통합 단계에서 모순이 드러난다.</p>
+      <p><strong>"진화가 수렴한다"(P7·P8).</strong> 궤적 반성이 항상 더 나은 컨텍스트를 만들진 않는다 — 잘못된 교훈이 memory에 쌓이면 오히려 악화된다. distill·검증 없는 evolve는 노이즈를 축적한다.</p>
+    </div>
+  </div>
+
+  <!-- 권장 루프 -->
+  <div class="roadmap" id="o-loop">
+    <div class="roadmap-head">
+      <h3>권장 에이전트 루프</h3>
+      <p>8패턴을 실제 실행 순서로 엮으면 이렇게 된다. "단순부터 시작, 안 되면 추가"가 대원칙.</p>
+    </div>
+
+    <ol class="steps">
+      <li>
+        <div>
+          <h5>Initialize — 환경 세팅</h5>
+          <p>plan 파일·tracking 파일을 만든다(P1). 컨텍스트의 닻을 파일에 박아 둔다.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h5>Iterate — 실행하고 파일에 기록</h5>
+          <p>원자적 도구(bash)로 동작하고(P2), 결과는 파일시스템으로 offload(P4), 상세는 on-demand로(P3).</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h5>Cache — prefix 캐시 유지</h5>
+          <p>도구·system을 앞단에 고정해 <code>cache hit rate</code>를 높인다(P5). 캐시 효과는 측정한다.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h5>Verify & Track — 검증하고 추적</h5>
+          <p>stop hook으로 매 iteration 작업을 검증하고, 진행은 git 히스토리로 추적·공유한다(P6).</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h5>Reflect & Coordinate — 반성하고 조율</h5>
+          <p>궤적을 일기·skill로 distill(P7). 작업이 커지면 sub-agent를 띄우고 Mayor류 오케스트레이터로 정렬(P6).</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+
+  <!-- 미해결 과제 -->
+  <div class="decision" id="o-open">
+    <h3>아직 아무도 풀지 못한 것</h3>
+    <div class="decision-table">
+      <div>
+        <h4>Learned context management</h4>
+        <ul>
+          <li>모델이 scaffolding을 흡수할 수 있는가</li>
+          <li>어디까지 손으로 짜고 어디부터 맡길까</li>
+          <li>Bitter Lesson의 시점 판단</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Multi-agent coordination</h4>
+        <ul>
+          <li>병렬 에이전트의 공유 컨텍스트 가시성</li>
+          <li>충돌 결정 방지를 위한 능동 소통</li>
+          <li>compaction 손실 없는 통합</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Long-running 추상</h4>
+        <ul>
+          <li>관측(observability) 표준 부재</li>
+          <li>디버깅 인터페이스 · HITL 모니터링</li>
+          <li>실패 시 graceful degradation</li>
+        </ul>
+      </div>
+      <div>
+        <h4>대원칙</h4>
+        <ul>
+          <li>프롬프트·단순 워크플로우 먼저</li>
+          <li>안 될 때만 에이전트로</li>
+          <li>모델 개선에 맞춰 harness를 깎아라</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="antipattern">
+    <h3>안티패턴 — 패턴을 오용하는 곳<span class="label">caution</span></h3>
+    <ul>
+      <li><b>단발 작업에 8패턴 풀세트</b> — long-running이 아니면 과설계. 프롬프트·워크플로우로 충분하다.</li>
+      <li><b>측정 없는 캐시 신뢰</b> — prefix가 흔들리면 hit rate 0. 캐시를 켰다고 비용이 주는 게 아니다.</li>
+      <li><b>성급한 sub-agent</b> — 단일 에이전트로 풀리는 걸 격리하면 충돌·통합 비용만 는다(Cognition).</li>
+      <li><b>검증 없는 evolve</b> — 잘못된 교훈이 memory에 쌓여 악화. distill·검증 고리가 없으면 끄는 게 낫다.</li>
+      <li><b>harness 고착</b> — 모델이 좋아져도 구조를 안 깎으면 scaffolding이 병목이 된다.</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- §5 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">05</div>
+    <div class="section-titles">
+      <div class="section-kicker">실전 코드</div>
+      <h2 class="section-title">패턴별 Python 구현</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    Anthropic SDK 기준 최소 구현. 8패턴을 <em>한 루프 안에서</em> 어떻게 엮는지를 보여주는 형태로 정리했다.
+    프레임워크 없이 일반 Python + 파일시스템 + 캐시로 표현 가능하다는 게 글의 핵심.
+  </p>
+
+  <!-- A. computer + multi-layer -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>A · Give a Computer + Multi-Layer Action (P1·P2)</h4>
+      <span class="tag">substrate</span>
+    </div>
+<pre><span class="com"># 100개 도구 대신 bash 하나 — 동작을 OS로 밀어내린다</span>
+TOOLS = [{
+    <span class="str">"name"</span>: <span class="str">"bash"</span>,
+    <span class="str">"description"</span>: <span class="str">"셸 명령 실행. 파일 읽기/쓰기, CLI, 스크립트, 코드 실행 모두 이걸로."</span>,
+    <span class="str">"input_schema"</span>: {
+        <span class="str">"type"</span>: <span class="str">"object"</span>,
+        <span class="str">"properties"</span>: {<span class="str">"cmd"</span>: {<span class="str">"type"</span>: <span class="str">"string"</span>}},
+        <span class="str">"required"</span>: [<span class="str">"cmd"</span>],
+    },
+}]
+
+<span class="kw">import</span> subprocess
+<span class="kw">def</span> <span class="fn">run_bash</span>(cmd: <span class="kw">str</span>) -> <span class="kw">str</span>:
+    <span class="com"># 에이전트가 ls·grep·python -c ... 무엇이든 코드로 엮는다 (CodeAct)</span>
+    out = subprocess.<span class="fn">run</span>(cmd, shell=<span class="kw">True</span>, capture_output=<span class="kw">True</span>, text=<span class="kw">True</span>, timeout=<span class="str">60</span>)
+    <span class="kw">return</span> (out.stdout + out.stderr)[:<span class="str">8000</span>]</pre>
+    <div class="note"><strong>포인트.</strong> 도구 1개(bash)로 무한한 동작을 표현한다. 도구 정의 토큰이 ~26K(MCP 35개)에서 수백 토큰으로 줄고, 모델이 기능 겹침으로 헷갈릴 일도 없다.</div>
+  </article>
+
+  <!-- B. disclosure + offload -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>B · Progressive Disclosure + Offload (P3·P4)</h4>
+      <span class="tag">manage</span>
+    </div>
+<pre><span class="kw">import</span> pathlib, textwrap
+WORK = pathlib.<span class="fn">Path</span>(<span class="str">".agent"</span>); WORK.<span class="fn">mkdir</span>(exist_ok=<span class="kw">True</span>)
+
+<span class="kw">def</span> <span class="fn">handle_result</span>(name: <span class="kw">str</span>, raw: <span class="kw">str</span>) -> <span class="kw">str</span>:
+    <span class="com"># Offload: 큰 결과는 파일로, 컨텍스트엔 경로 + head만</span>
+    <span class="kw">if</span> <span class="fn">len</span>(raw) &gt; <span class="str">2000</span>:
+        p = WORK / <span class="str">f"{name}.txt"</span>; p.<span class="fn">write_text</span>(raw)
+        <span class="kw">return</span> <span class="str">f"[offloaded → {p}] 미리보기:\n{raw[:300]}\n… 전체는 grep/sed로 조회"</span>
+    <span class="kw">return</span> raw
+
+<span class="com"># Progressive disclosure: 도구 목록은 한 줄, 상세는 --help로 그때그때</span>
+SYSTEM = textwrap.<span class="fn">dedent</span>(<span class="str">"""
+    사용 가능 유틸: build, test, lint, deploy.
+    각 유틸의 상세 옵션이 필요하면 `&lt;util&gt; --help`를 먼저 실행하라.
+    계획은 .agent/plan.md에 적고, 필요할 때 다시 읽어 목표를 확인하라.
+"""</span>)</pre>
+    <div class="note"><strong>포인트.</strong> 전부 미리 넣지 않는다 — 목록만 주고 상세는 on-demand(P3), 큰 결과는 파일로 빼고 경로만 남긴다(P4). 요약은 offload로도 안 될 때 최후에.</div>
+  </article>
+
+  <!-- C. cache -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>C · Cache Context (P5)</h4>
+      <span class="tag">manage</span>
+    </div>
+<pre><span class="kw">from</span> anthropic <span class="kw">import</span> Anthropic
+client = Anthropic()
+
+resp = client.messages.create(
+    model=<span class="str">"claude-sonnet-4-6"</span>, max_tokens=<span class="str">2048</span>,
+    <span class="com"># system·tools를 prefix에 고정 → cache_control로 캐시 경계 표시</span>
+    system=[{
+        <span class="str">"type"</span>: <span class="str">"text"</span>, <span class="str">"text"</span>: SYSTEM,
+        <span class="str">"cache_control"</span>: {<span class="str">"type"</span>: <span class="str">"ephemeral"</span>},   <span class="com"># 여기까지 캐시</span>
+    }],
+    tools=TOOLS,
+    messages=messages,
+)
+<span class="com"># prefix(system+tools)가 안정적이면 다음 호출은 cache hit →</span>
+<span class="com"># 입력 토큰 재처리 비용이 급감. Manus: "hit rate가 최우선 지표"</span>
+usage = resp.usage
+<span class="fn">print</span>(usage.cache_read_input_tokens, usage.cache_creation_input_tokens)  <span class="com"># 측정 필수</span></pre>
+    <div class="note"><strong>포인트.</strong> 캐시는 <em>prefix 일치</em>에 민감하다 — system·tools를 앞단에 고정해야 hit rate가 오른다. 켰다고 끝이 아니라 <code>cache_read_input_tokens</code>로 효과를 측정해야 한다.</div>
+  </article>
+
+  <!-- D. isolate -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>D · Isolate Context — sub-agent (P6)</h4>
+      <span class="tag">manage</span>
+    </div>
+<pre><span class="kw">def</span> <span class="fn">sub_agent</span>(task: <span class="kw">str</span>, tools: <span class="kw">list</span>) -> <span class="kw">str</span>:
+    <span class="com"># 격리된 컨텍스트 — 부모 히스토리를 물려주지 않는다</span>
+    msgs = [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: task}]
+    <span class="kw">return</span> <span class="fn">run_loop</span>(msgs, tools)            <span class="com"># 각자 깨끗한 창에서 실행</span>
+
+<span class="kw">def</span> <span class="fn">orchestrate</span>(plan_file: <span class="kw">str</span>):
+    <span class="com"># Initializer가 plan 파일을 만들고, sub-agent가 항목별로 처리 (Ralph 패턴)</span>
+    tasks = pathlib.<span class="fn">Path</span>(plan_file).<span class="fn">read_text</span>().<span class="fn">splitlines</span>()
+    <span class="kw">for</span> t <span class="kw">in</span> tasks:
+        result = <span class="fn">sub_agent</span>(t, TOOLS)
+        <span class="com"># 진행은 git으로 공유 — 충돌 가시성 확보 (Gas Town의 git-backed tracking)</span>
+        <span class="fn">run_bash</span>(<span class="str">f"git add -A &amp;&amp; git commit -m 'subtask: {t[:40]}'"</span>)</pre>
+    <div class="note"><strong>포인트.</strong> sub-agent는 <em>격리된 창</em>에서 돈다 — 부모 컨텍스트 오염을 막는다. 단, 가시성을 잃으므로 git 히스토리로 진행을 공유해 충돌을 줄인다. 단일로 풀리면 쓰지 마라(Cognition).</div>
+  </article>
+
+  <!-- E. evolve -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>E · Evolve Context — reflect → update (P7)</h4>
+      <span class="tag">improve</span>
+    </div>
+<pre><span class="kw">def</span> <span class="fn">reflect_and_evolve</span>(trajectory: <span class="kw">list</span>, memory_file=<span class="str">"CLAUDE.md"</span>):
+    <span class="com"># 과거 궤적을 반성해 가중치가 아니라 '컨텍스트'를 갱신 (GEPA·Letta·diary)</span>
+    lessons = <span class="fn">llm_call</span>(
+        system=(<span class="str">"이 세션 궤적에서 재사용할 교훈만 3개 이내로 distill. "</span>
+                <span class="str">"일반화 가능하고 검증된 것만. 추측은 제외."</span>),
+        prompt=json.<span class="fn">dumps</span>(trajectory, ensure_ascii=<span class="kw">False</span>)[:<span class="str">12000</span>],
+    )
+    <span class="com"># memory에 append (무한 증식 방지: distill된 것만, 중복 병합)</span>
+    mem = pathlib.<span class="fn">Path</span>(memory_file)
+    mem.<span class="fn">write_text</span>(mem.<span class="fn">read_text</span>() + <span class="str">f"\n\n## learned\n{lessons}\n"</span>)
+    <span class="kw">return</span> lessons
+
+<span class="com"># P8(learned mgmt)의 방향: 이 reflect 단계를 사람이 짜는 대신</span>
+<span class="com"># 모델이 sleep-time에 스스로 수행 (RLM·sleep-time compute)</span></pre>
+    <div class="note"><strong>포인트.</strong> 학습을 모델 재훈련이 아니라 <em>컨텍스트 갱신</em>으로 한다. 핵심은 distill·검증 — 잘못된 교훈이 쌓이면 악화된다. 이 단계 자체를 모델이 흡수하는 게 P8(Bitter Lesson)의 종착점.</div>
+  </article>
+
+  <p class="margin-note">
+    이 5개 카드를 하나로 엮으면 §04의 권장 루프(initialize → iterate → cache → verify/track → reflect/coordinate)가 된다. 프로덕션에서는 여기에 <strong>관측·HITL·graceful degradation</strong>이 더 필요하지만, 그건 아직 표준이 없는 <strong>미해결 영역</strong>이다.
+  </p>
+</section>
+
+
+<footer>
+  <div class="lockup">Agent Design Patterns</div>
+  <div>
+    원문 ·
+    <a href="https://rlancemartin.github.io/2026/01/09/agent_design/" target="_blank" rel="noopener">rlancemartin.github.io/2026/01/09/agent_design</a>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    const btn = document.getElementById('menuBtn');
+    const panel = document.getElementById('tocPanel');
+    const backdrop = document.getElementById('tocBackdrop');
+    const body = document.body;
+
+    function setOpen(open) {
+      btn.classList.toggle('open', open);
+      panel.classList.toggle('open', open);
+      backdrop.classList.toggle('open', open);
+      body.classList.toggle('menu-open', open);
+      btn.setAttribute('aria-expanded', String(open));
+      panel.setAttribute('aria-hidden', String(!open));
+      btn.setAttribute('aria-label', open ? '목차 닫기' : '목차 열기');
+    }
+
+    btn.addEventListener('click', () => setOpen(!panel.classList.contains('open')));
+    backdrop.addEventListener('click', () => setOpen(false));
+
+    document.querySelectorAll('[data-close]').forEach(a => {
+      a.addEventListener('click', () => setOpen(false));
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && panel.classList.contains('open')) setOpen(false);
+    });
+  })();
+
+  (function () {
+    document.querySelectorAll('.code-card').forEach(card => {
+      const head = card.querySelector('.code-head');
+      const pre  = card.querySelector('pre');
+      if (!head || !pre) return;
+
+      const tag = head.querySelector('.tag');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy-btn';
+      btn.textContent = 'copy';
+      btn.setAttribute('aria-label', '코드 복사');
+
+      const reset = () => { btn.textContent = 'copy'; btn.classList.remove('copied', 'failed'); };
+
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const code = pre.textContent;
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(code);
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = code;
+            ta.style.position = 'fixed'; ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          btn.textContent = 'copied';
+          btn.classList.add('copied');
+          setTimeout(reset, 1500);
+        } catch (err) {
+          btn.textContent = 'failed';
+          btn.classList.add('failed');
+          setTimeout(reset, 2000);
+        }
+      });
+
+      const caret = document.createElement('span');
+      caret.className = 'expand-indicator';
+      caret.textContent = '▸';
+      caret.setAttribute('aria-hidden', 'true');
+
+      if (tag) {
+        const wrap = document.createElement('div');
+        wrap.className = 'head-right';
+        tag.replaceWith(wrap);
+        wrap.appendChild(tag);
+        wrap.appendChild(btn);
+        wrap.appendChild(caret);
+      } else {
+        head.appendChild(btn);
+        head.appendChild(caret);
+      }
+
+      head.addEventListener('click', () => {
+        card.classList.toggle('expanded');
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

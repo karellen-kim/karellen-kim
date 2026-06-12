@@ -1,0 +1,2124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Fable 5 · Mythos 5 와 에이전트 루프 — 학습 노트</title>
+<link rel="icon" href="./favicon.svg?v=3" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --hl:           oklch(0.94 0.10 95);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --serif: var(--sans);
+    --display: var(--sans);
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ───────── HERO ───────── */
+  .hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem);
+    position: relative;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    top: 2rem;
+    left: clamp(1.5rem, 5vw, 4rem);
+    right: clamp(1.5rem, 5vw, 4rem);
+    height: 1px;
+    background: var(--ink);
+  }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 2.5rem;
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+  .meta-row span:last-child { color: var(--accent-deep); }
+  .hero-title {
+    font-size: clamp(2.6rem, 7vw, 5.8rem);
+    line-height: 0.95;
+    font-weight: 600;
+    margin-top: clamp(2rem, 5vw, 3rem);
+    letter-spacing: -0.035em;
+    color: var(--ink);
+  }
+  .hero-title em {
+    font-style: normal;
+    font-weight: 300;
+    color: var(--accent-deep);
+  }
+  .hero-sub {
+    margin-top: 1.4rem;
+    font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+    color: var(--ink-soft);
+    max-width: 42rem;
+    line-height: 1.5;
+    font-weight: 300;
+  }
+  .hero-grid {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .hero-grid > div {
+    background: var(--paper);
+    padding: 1.25rem 1.5rem;
+  }
+  .hero-grid .k {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  .hero-grid .v {
+    font-size: 1.2rem;
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .hero-grid .v small {
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    margin-left: 0.25rem;
+    font-weight: 400;
+  }
+
+  /* ───────── SECTIONS ───────── */
+  .section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem);
+    position: relative;
+  }
+  .section + .section { border-top: 1px solid var(--rule); }
+
+  .section-head {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: baseline;
+    margin-bottom: clamp(2rem, 5vw, 3.5rem);
+  }
+  .section-num {
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    line-height: 0.85;
+    color: var(--accent);
+    font-weight: 200;
+    letter-spacing: -0.04em;
+  }
+  .section-titles {
+    border-left: 1px solid var(--ink);
+    padding-left: clamp(1rem, 3vw, 2rem);
+    padding-top: 0.5rem;
+  }
+  .section-kicker {
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+  }
+  .section-title {
+    font-size: clamp(1.65rem, 3.2vw, 2.3rem);
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: -0.028em;
+  }
+
+  /* ───────── §1 TL;DR ───────── */
+  .tldr-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  @media (min-width: 720px) {
+    .tldr-grid { grid-template-columns: repeat(12, 1fr); }
+  }
+  .tldr-lead {
+    grid-column: 1 / -1;
+    font-size: clamp(1.2rem, 2.1vw, 1.6rem);
+    line-height: 1.45;
+    color: var(--ink);
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+    letter-spacing: -0.012em;
+  }
+  .tldr-lead em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+  .tldr-lead::first-letter {
+    font-size: 3.4em;
+    float: left;
+    line-height: 0.9;
+    padding-right: 0.12em;
+    padding-top: 0.08em;
+    color: var(--accent-deep);
+    font-weight: 200;
+  }
+  .tldr-lead .hl {
+    background: linear-gradient(180deg, transparent 60%, var(--hl) 60%);
+    padding: 0 0.05em;
+  }
+  @media (min-width: 720px) {
+    .tldr-lead { grid-column: 2 / 12; }
+  }
+
+  .points { display: contents; }
+  .point {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 4ch 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (min-width: 720px) {
+    .point { grid-column: 2 / 12; grid-template-columns: 5ch 1fr; gap: 2rem; }
+  }
+  .point .n {
+    font-size: 1.25rem;
+    color: var(--accent);
+    line-height: 1;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .point h3 {
+    font-weight: 600;
+    font-size: clamp(1.15rem, 1.9vw, 1.35rem);
+    line-height: 1.3;
+    margin-bottom: 0.4rem;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+  }
+  .point p {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .point p strong { color: var(--ink); font-weight: 600; }
+
+  /* ───────── §2 다이어그램 ───────── */
+  .diagram-block {
+    margin-bottom: clamp(3rem, 6vw, 5rem);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  @media (min-width: 880px) {
+    .diagram-block { grid-template-columns: 1.05fr 1.4fr; gap: clamp(2rem, 4vw, 4rem); align-items: start; }
+  }
+  .db-text h4 {
+    font-size: clamp(1.3rem, 2.3vw, 1.75rem);
+    line-height: 1.25;
+    margin-bottom: 0.8rem;
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: -0.022em;
+  }
+  .db-text h4 .num {
+    display: inline-block;
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    color: var(--accent-deep);
+    vertical-align: middle;
+    background: var(--accent-wash);
+    padding: 0.28rem 0.55rem;
+    border-radius: 999px;
+    margin-right: 0.65rem;
+    font-weight: 600;
+    position: relative;
+    top: -0.15em;
+  }
+  .db-text p {
+    color: var(--ink-soft);
+    margin-bottom: 1rem;
+    line-height: 1.65;
+    font-size: 0.95rem;
+  }
+  .db-text .use-when {
+    margin-top: 1.2rem;
+    padding: 1rem 1.1rem;
+    border-left: 3px solid var(--accent);
+    background: var(--paper-deep);
+  }
+  .db-text .use-when strong {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+  }
+  .db-text .use-when p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  /* diagram canvas */
+  .canvas {
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    padding: clamp(1.25rem, 3vw, 2rem);
+    position: relative;
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .canvas::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 0.7rem;
+    left: 0.9rem;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+
+  /* Generic diagram pieces */
+  .box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.6rem 0.85rem;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    font-family: var(--sans);
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.3;
+    min-width: 4rem;
+    max-width: 100%;
+    position: relative;
+    word-break: keep-all;
+    flex-direction: column;
+  }
+  .box.accent { background: var(--accent); color: var(--paper); border-color: var(--accent-deep); }
+  .box.soft { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-deep); }
+  .box.dashed { border-style: dashed; }
+  .box small {
+    display: block;
+    font-size: 0.6rem;
+    font-weight: 400;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.18rem;
+  }
+  .box.accent small { color: var(--accent-wash); opacity: 0.85; }
+
+  .arrow { display: inline-flex; align-items: center; color: var(--ink-soft); font-family: var(--mono); }
+  .arrow-h { width: 1.6rem; height: 1.5px; background: var(--ink-soft); position: relative; }
+  .arrow-h::after {
+    content: ""; position: absolute; right: -1px; top: 50%;
+    border: 4px solid transparent; border-left-color: var(--ink-soft); transform: translateY(-50%);
+  }
+
+  /* Augmented LLM diagram */
+  .d-augmented {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 1rem 1.2rem;
+    align-items: center;
+  }
+  .d-augmented .center {
+    grid-column: 2; grid-row: 2;
+    padding: 1.5rem 1.4rem;
+    background: var(--ink); color: var(--paper);
+    border: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-radius: 2px;
+  }
+  .d-augmented .sat {
+    padding: 0.7rem 1rem;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    font-size: 0.85rem;
+    text-align: center;
+    font-weight: 500;
+  }
+  .d-augmented .sat small {
+    display: block;
+    font-size: 0.64rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 0.15rem;
+    font-weight: 400;
+  }
+  .d-augmented .t { grid-column: 2; grid-row: 1; justify-self: center; }
+  .d-augmented .l { grid-column: 1; grid-row: 2; justify-self: end; }
+  .d-augmented .r { grid-column: 3; grid-row: 2; justify-self: start; }
+  .d-augmented .b { grid-column: 2; grid-row: 3; justify-self: center; }
+  .d-augmented svg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  /* Chaining */
+  .d-chain {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+  .d-chain .gate {
+    width: 0; height: 2.4rem;
+    border-left: 1.5px dashed var(--accent);
+    margin: 0 0.5rem;
+    position: relative;
+  }
+  .d-chain .gate::after {
+    content: "gate"; position: absolute; left: 50%; bottom: -1.2rem;
+    transform: translateX(-50%);
+    font-family: var(--mono); font-size: 0.6rem;
+    color: var(--accent-deep); letter-spacing: 0.08em;
+  }
+
+  /* Routing */
+  .d-route {
+    display: grid;
+    grid-template-columns: auto 1.4rem minmax(0, 1fr);
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    row-gap: 0.55rem;
+  }
+  .d-route .router {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    background: var(--accent);
+    color: var(--paper);
+    border-color: var(--accent-deep);
+    padding: 1rem 0.95rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    align-self: center;
+  }
+  .d-route .connect {
+    grid-column: 2;
+    height: 1.5px;
+    background: var(--ink-soft);
+    position: relative;
+  }
+  .d-route .connect::after {
+    content: "";
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    border: 4px solid transparent;
+    border-left-color: var(--ink-soft);
+    transform: translateY(-50%);
+  }
+  .d-route .leaf {
+    grid-column: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    padding: 0.7rem 0.95rem;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.3;
+    min-width: 0;
+    text-align: center;
+  }
+  .d-route .leaf small {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.22rem;
+  }
+
+  /* Parallel */
+  .d-parallel {
+    display: grid;
+    grid-template-columns: auto 1.4rem minmax(0, 1fr) 1.4rem auto;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    min-width: 0;
+  }
+  .d-parallel .lanes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .d-parallel .lanes .box {
+    width: 100%;
+    min-width: 0;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.74rem;
+  }
+  .d-parallel .fan {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    align-items: stretch;
+    font-family: var(--mono);
+    color: var(--ink-soft);
+    font-size: 0.7rem;
+  }
+  .d-parallel .fan span { padding: 0.3rem 0; text-align: center; border-top: 1px dashed var(--rule); }
+  .d-parallel .fan span:first-child { border-top: none; }
+
+  /* Orchestrator */
+  .d-orch {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+    justify-items: center;
+    width: 100%;
+    min-width: 0;
+  }
+  .d-orch .hub {
+    background: var(--ink); color: var(--paper);
+    padding: 0.85rem 1.1rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    border: none;
+  }
+  .d-orch .spokes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    width: 100%;
+    position: relative;
+  }
+  .d-orch .spokes .box {
+    width: 100%;
+    min-width: 0;
+    padding: 0.55rem 0.5rem;
+    font-size: 0.72rem;
+  }
+  .d-orch .spokes::before {
+    content: "";
+    position: absolute;
+    top: -0.7rem;
+    left: 50%;
+    width: 1.5px;
+    height: 0.7rem;
+    background: var(--ink-soft);
+  }
+  .d-orch .synth {
+    border-style: dashed;
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    background: transparent;
+    padding: 0.7rem 1.2rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+  .d-orch .down-arrow {
+    width: 1.5px; height: 0.8rem; background: var(--ink-soft); position: relative;
+  }
+  .d-orch .down-arrow::after {
+    content: ""; position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%);
+    border: 4px solid transparent; border-top-color: var(--ink-soft);
+  }
+
+  /* Eval-Optimize loop */
+  .d-eval {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.2rem 1rem;
+    align-items: center;
+    position: relative;
+  }
+  .d-eval .gen, .d-eval .judge {
+    padding: 1.2rem 1rem;
+    text-align: center;
+  }
+  .d-eval .gen {
+    background: var(--paper); border: 1.5px solid var(--ink);
+  }
+  .d-eval .judge {
+    background: var(--accent-wash); border: 1.5px solid var(--accent);
+    color: var(--accent-deep);
+  }
+  .d-eval .gen h5, .d-eval .judge h5 {
+    font-size: 0.95rem;
+    font-weight: 600; margin-bottom: 0.2rem;
+    letter-spacing: -0.01em;
+  }
+  .d-eval .gen small, .d-eval .judge small {
+    display: block; font-size: 0.7rem; color: var(--ink-faint);
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .d-eval .loop-label {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--accent-deep);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    position: relative;
+    padding-top: 0.5rem;
+  }
+  .d-eval .loop-label::before, .d-eval .loop-label::after {
+    content: ""; position: absolute; top: 50%; width: 30%; height: 1.5px;
+    background: var(--accent);
+  }
+  .d-eval .loop-label::before { left: 0; }
+  .d-eval .loop-label::after { right: 0; }
+
+  /* Agent loop */
+  .d-agent {
+    width: 100%;
+    max-width: 360px;
+    aspect-ratio: 1;
+    position: relative;
+    margin: 0 auto;
+  }
+  .d-agent svg { width: 100%; height: 100%; }
+  .d-agent .node {
+    position: absolute;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    padding: 0.45rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+  }
+  .d-agent .node.brain {
+    background: var(--ink); color: var(--paper);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.6rem 0.9rem;
+    letter-spacing: 0.02em;
+  }
+  .d-agent .node.env {
+    background: var(--accent); color: var(--paper);
+    border-color: var(--accent-deep);
+  }
+
+  /* Decision table */
+  .decision {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    border-top: 2px solid var(--ink);
+    padding-top: 2.5rem;
+  }
+  .decision h3 {
+    font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    margin-bottom: 1.4rem;
+  }
+  .decision-table {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+  @media (min-width: 760px) {
+    .decision-table { grid-template-columns: 1fr 1fr; }
+  }
+  .decision-table > div {
+    background: var(--paper);
+    padding: 1.5rem;
+  }
+  .decision-table h4 {
+    font-size: 1.1rem;
+    margin-bottom: 0.7rem;
+    color: var(--accent-deep);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .decision-table ul {
+    list-style: none;
+    color: var(--ink-soft);
+  }
+  .decision-table li {
+    padding: 0.35rem 0;
+    padding-left: 1.1rem;
+    position: relative;
+    font-size: 0.92rem;
+  }
+  .decision-table li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-family: var(--mono);
+  }
+
+  /* ───────── §3 코드 ───────── */
+  .code-intro {
+    font-size: clamp(1.05rem, 1.65vw, 1.2rem);
+    color: var(--ink-soft);
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+  }
+  .code-intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .code-card {
+    margin-bottom: 2.5rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    overflow: hidden;
+  }
+  .code-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 1rem 1.4rem;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-deep);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .code-head h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+  }
+  .code-head .tag {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.22rem 0.6rem;
+    background: var(--accent);
+    color: var(--paper);
+    border-radius: 2px;
+  }
+  .code-head .head-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .copy-btn {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.22rem 0.6rem;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    font-weight: 600;
+  }
+  .copy-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .copy-btn.copied { background: var(--accent-deep); color: var(--paper); border-color: var(--accent-deep); }
+  .copy-btn.failed { background: var(--paper-deep); color: var(--accent-deep); border-color: var(--accent); }
+  .code-card pre {
+    margin: 0;
+    padding: 1.35rem 1.5rem;
+    overflow-x: auto;
+    background: oklch(0.18 0.02 260);
+    color: oklch(0.92 0.015 75);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.7;
+  }
+  .code-card pre .kw { color: oklch(0.78 0.13 30); }
+  .code-card pre .str { color: oklch(0.80 0.12 130); }
+  .code-card pre .com { color: oklch(0.55 0.02 260); font-style: italic; }
+  .code-card pre .fn { color: oklch(0.82 0.11 220); }
+  .code-card pre .dec { color: oklch(0.75 0.14 60); }
+  .code-card .note {
+    padding: 1rem 1.4rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    background: var(--paper-deep);
+    line-height: 1.6;
+  }
+  .code-card .note strong { color: var(--accent-deep); }
+
+  /* ───────── §4 ADOPTION ───────── */
+  .adopt-lead {
+    font-size: clamp(1.05rem, 1.7vw, 1.25rem);
+    line-height: 1.55;
+    color: var(--ink-soft);
+    font-weight: 300;
+    margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  }
+  .adopt-lead strong { color: var(--ink); font-weight: 600; }
+
+  .tier {
+    margin-bottom: clamp(2rem, 4vw, 3.5rem);
+  }
+  .tier-head {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: 1.2rem;
+    padding: 0.7rem 0;
+    border-top: 2px solid var(--ink);
+    margin-bottom: 1.5rem;
+  }
+  .tier-rank {
+    font-size: 0.78rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+  .tier-title {
+    font-size: clamp(1.1rem, 1.8vw, 1.35rem);
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+  }
+  .tier-meta {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .tier-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (min-width: 760px) {
+    .tier-grid { grid-template-columns: 1fr 1fr; gap: 1px; background: var(--rule); }
+  }
+
+  .adopt {
+    background: var(--paper);
+    padding: 1.3rem 1.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (min-width: 760px) {
+    .adopt { border-bottom: none; }
+  }
+  .adopt:last-child { border-bottom: none; }
+
+  .adopt-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8rem;
+    margin-bottom: 0.7rem;
+    flex-wrap: wrap;
+  }
+  .adopt-head h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.018em;
+  }
+  .adopt-head .why {
+    font-size: 0.78rem;
+    color: var(--accent-deep);
+    font-weight: 500;
+    padding: 0.15rem 0.55rem;
+    background: var(--accent-wash);
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  .adopt .desc {
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    margin-bottom: 0.9rem;
+  }
+  .adopt ul {
+    list-style: none;
+  }
+  .adopt li {
+    color: var(--ink);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    padding: 0.35rem 0;
+    padding-left: 1.3rem;
+    position: relative;
+    border-top: 1px dashed var(--rule);
+  }
+  .adopt li:first-child { border-top: none; }
+  .adopt li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    top: 0.4rem;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+  }
+  .adopt li b {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  /* Roadmap */
+  .roadmap {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    padding-top: 2.5rem;
+    border-top: 2px solid var(--ink);
+  }
+  .roadmap-head {
+    margin-bottom: 1.8rem;
+  }
+  .roadmap-head h3 {
+    font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.025em;
+    margin-bottom: 0.4rem;
+  }
+  .roadmap-head p {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+  .steps {
+    counter-reset: step;
+    list-style: none;
+  }
+  .steps li {
+    display: grid;
+    grid-template-columns: 3rem 1fr;
+    gap: 1rem;
+    padding: 1.1rem 0;
+    border-bottom: 1px solid var(--rule);
+    align-items: baseline;
+  }
+  .steps li::before {
+    counter-increment: step;
+    content: counter(step, decimal-leading-zero);
+    font-family: var(--mono);
+    color: var(--accent);
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .steps h5 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.012em;
+  }
+  .steps p {
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+  .steps p code {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    padding: 0.05rem 0.35rem;
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    color: var(--accent-deep);
+  }
+
+  /* Antipattern */
+  .antipattern {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    padding: clamp(1.5rem, 3vw, 2rem);
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+  }
+  .antipattern h3 {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.018em;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .antipattern h3 .label {
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    background: var(--paper);
+    padding: 0.25rem 0.55rem;
+    border-radius: 2px;
+  }
+  .antipattern ul { list-style: none; }
+  .antipattern li {
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    padding: 0.45rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+    border-top: 1px dashed var(--rule);
+  }
+  .antipattern li:first-child { border-top: none; }
+  .antipattern li::before {
+    content: "×";
+    position: absolute;
+    left: 0;
+    top: 0.35rem;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-weight: 600;
+  }
+  .antipattern li b { color: var(--ink); font-weight: 600; }
+
+  /* ───────── FOOTER ───────── */
+  footer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+  }
+  footer .lockup {
+    font-size: 1.1rem;
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  footer a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* Marginalia note */
+  .margin-note {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    padding: 1.1rem 1.3rem;
+    background: var(--paper-deep);
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    margin: 2rem 0;
+    font-weight: 300;
+  }
+  .margin-note::before {
+    content: "노트";
+    font-weight: 600;
+    color: var(--accent-deep);
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-right: 0.8rem;
+    display: inline-block;
+    padding-right: 0.7rem;
+    border-right: 1px solid var(--rule);
+  }
+  .margin-note strong { font-weight: 600; color: var(--ink); }
+
+  /* ───────── HOME LINK ───────── */
+  .home-link {
+    position: fixed;
+    top: 1.5rem;
+    left: 1.5rem;
+    z-index: 60;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.95rem;
+    height: 48px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .home-link:hover { background: var(--ink); color: var(--paper); }
+  .home-link .arrow {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .home-link:hover .arrow { transform: translateX(-3px); }
+
+  /* ───────── HAMBURGER + TOC ───────── */
+  .menu-btn {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 60;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s ease;
+  }
+  .menu-btn:hover { background: var(--ink); }
+  .menu-btn:hover span { background: var(--paper); }
+  .menu-btn span {
+    display: block;
+    width: 20px;
+    height: 1.5px;
+    background: var(--ink);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.2s ease,
+                background 0.2s ease;
+    transform-origin: center;
+  }
+  .menu-btn.open { background: var(--ink); }
+  .menu-btn.open span { background: var(--paper); }
+  .menu-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2) { opacity: 0; }
+  .menu-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  .toc-backdrop {
+    position: fixed;
+    inset: 0;
+    background: oklch(0.18 0.015 260 / 0.35);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 50;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .toc-backdrop.open { opacity: 1; pointer-events: auto; }
+
+  .toc-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(380px, 88vw);
+    height: 100vh;
+    background: var(--paper);
+    border-left: 1px solid var(--ink);
+    z-index: 55;
+    transform: translateX(100%);
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    overflow-y: auto;
+    padding: 6rem 2.5rem 3rem;
+  }
+  .toc-panel.open { transform: translateX(0); }
+
+  .toc-kicker {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+  }
+  .toc-title {
+    font-size: 1.85rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    margin-bottom: 2.2rem;
+    padding-bottom: 1.3rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .toc-list {
+    list-style: none;
+    counter-reset: toc;
+  }
+  .toc-list > li {
+    padding: 0.9rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .toc-list > li:last-child { border-bottom: none; }
+  .toc-list > li > a {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    align-items: baseline;
+    text-decoration: none;
+    color: var(--ink);
+    font-weight: 500;
+    font-size: 1.05rem;
+    letter-spacing: -0.012em;
+    transition: color 0.2s ease;
+  }
+  .toc-list > li > a::before {
+    counter-increment: toc;
+    content: counter(toc, decimal-leading-zero);
+    color: var(--accent);
+    font-weight: 300;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+  }
+  .toc-list > li > a:hover { color: var(--accent-deep); }
+  .toc-list > li.no-num > a { grid-template-columns: 1fr; color: var(--ink-soft); font-size: 0.92rem; font-weight: 400; }
+  .toc-list > li.no-num > a::before { content: none; }
+
+  .toc-sub {
+    list-style: none;
+    margin-top: 0.6rem;
+    margin-left: 2.5rem;
+    padding-left: 0.9rem;
+    border-left: 1px solid var(--rule);
+  }
+  .toc-sub li { padding: 0.35rem 0; }
+  .toc-sub a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 400;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+  .toc-sub a span {
+    color: var(--ink-faint);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    min-width: 1.6rem;
+  }
+  .toc-sub a:hover { color: var(--accent-deep); }
+  .toc-sub a:hover span { color: var(--accent); }
+
+  .toc-foot {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    line-height: 1.6;
+  }
+
+  body.menu-open { overflow: hidden; }
+
+  /* Code card collapse — collapsed by default, click head to expand */
+  .code-card pre, .code-card .note { display: none; }
+  .code-card.expanded pre, .code-card.expanded .note { display: block; }
+  .code-card .code-head { cursor: pointer; user-select: none; transition: background 0.15s ease; }
+  .code-card .code-head:hover { background: var(--paper); }
+  .expand-indicator { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-faint); transition: transform 0.2s ease; display: inline-block; line-height: 1; }
+  .code-card.expanded .expand-indicator { transform: rotate(90deg); color: var(--accent-deep); }
+
+  /* Subtle reveal */
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .point, .diagram-block, .code-card {
+      animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+
+  .gloss { margin: clamp(2rem, 4vw, 3rem) 0; border: 1px solid var(--ink); background: var(--paper); overflow: hidden; }
+  .gloss-head { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.95rem 1.3rem; border-bottom: 1px solid var(--rule); background: var(--paper-deep); flex-wrap: wrap; }
+  .gloss-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 0.22rem 0.55rem; font-weight: 600; border-radius: 2px; }
+  .gloss-head h5 { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.018em; }
+  .gloss-pron { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.04em; margin-left: auto; }
+  .gloss-body { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .gloss-body p { font-size: 0.92rem; line-height: 1.65; color: var(--ink-soft); }
+  .gloss-body p strong { color: var(--accent-deep); font-weight: 600; margin-right: 0.35rem; }
+  .gloss-body p b { color: var(--ink); font-weight: 600; }
+  .gloss-body p code { font-family: var(--mono); font-size: 0.82rem; padding: 0.05rem 0.35rem; background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; color: var(--accent-deep); }
+
+  /* ───────── SVG 아키텍처 ───────── */
+  .svg-arch { margin: clamp(2rem, 4vw, 3rem) 0; }
+  .svg-arch .head { display: flex; align-items: baseline; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .svg-arch .head .yr { font-family: var(--mono); font-size: 0.72rem; color: var(--accent-deep); letter-spacing: 0.1em; }
+  .svg-arch .head h4 { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.018em; color: var(--ink); }
+  .svg-arch .head .tag { font-family: var(--mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em; padding: 0.2rem 0.5rem; background: var(--accent-wash); color: var(--accent-deep); border-radius: 2px; margin-left: auto; }
+  .svg-arch .canvas-svg { border: 1px solid var(--rule); background: var(--paper-deep); padding: clamp(0.8rem, 2vw, 1.4rem); overflow-x: auto; }
+  .svg-arch .canvas-svg svg { display: block; width: 100%; height: auto; min-width: 0; }
+  .svg-arch .legend { margin-top: 0.9rem; font-size: 0.9rem; color: var(--ink-soft); line-height: 1.65; }
+  .svg-arch .legend strong { color: var(--ink); font-weight: 600; }
+  .svg-arch .legend em { font-style: normal; color: var(--accent-deep); font-weight: 600; }
+
+  /* 파라미터 참조표 */
+  .param-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.88rem; }
+  .param-table th, .param-table td { text-align: left; padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  .param-table th { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-deep); font-weight: 600; border-bottom: 2px solid var(--ink); }
+  .param-table td code { font-family: var(--mono); font-size: 0.8rem; color: var(--accent-deep); }
+  .param-table tr:hover td { background: var(--paper-deep); }
+  .param-table .num { font-family: var(--mono); color: var(--ink); }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html" aria-label="홈으로 돌아가기">
+  <span class="arrow">←</span><span>notebook</span>
+</a>
+
+<button class="menu-btn" id="menuBtn" aria-label="목차 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+
+<div class="toc-backdrop" id="tocBackdrop"></div>
+
+<aside class="toc-panel" id="tocPanel" aria-hidden="true">
+  <div class="toc-kicker">Contents</div>
+  <div class="toc-title">목차</div>
+
+  <ol class="toc-list">
+    <li class="no-num"><a href="#top" data-close>서문</a></li>
+    <li><a href="#tldr" data-close>한 줄로 이해하기</a></li>
+    <li>
+      <a href="#structure" data-close>그림으로 보는 구조</a>
+      <ul class="toc-sub">
+        <li><a href="#s-relation" data-close><span>00</span>Fable = Mythos</a></li>
+        <li><a href="#s-fallback" data-close><span>01</span>안전 폴백</a></li>
+        <li><a href="#s-loop" data-close><span>02</span>에이전트 루프</a></li>
+        <li><a href="#s-ralph" data-close><span>03</span>Ralph 자기참조</a></li>
+      </ul>
+    </li>
+    <li><a href="#safety" data-close>Fable · Mythos 안전 아키텍처</a></li>
+    <li>
+      <a href="#loop" data-close>Lance Martin의 설계 루프</a>
+      <ul class="toc-sub">
+        <li><a href="#l-strategies" data-close><span>01</span>컨텍스트 4전략</a></li>
+        <li><a href="#l-assumptions" data-close><span>02</span>숨은 가정</a></li>
+        <li><a href="#l-prescription" data-close><span>03</span>운영 처방</a></li>
+      </ul>
+    </li>
+    <li><a href="#code" data-close>실전 코드</a></li>
+  </ol>
+
+  <div class="toc-foot">
+    Claude Fable 5 · Mythos 5 (Anthropic) + Effective Agent Design (Lance Martin, LangChain)<br>학습 노트 · 2026.06.12
+  </div>
+</aside>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="meta-row">
+    <span>Anthropic · Lance Martin · 2026.06</span>
+    <span>학습 노트 · 읽는 시간 18분</span>
+  </div>
+
+  <h1 class="hero-title">Fable · Mythos<br><em>&amp; the Loop</em></h1>
+
+  <p class="hero-sub">
+    "같은 모델, 다른 안전장치." — Fable 5와 Mythos 5는 동일한 기반 모델이고,
+    이 모델을 길게 굴리는 방법은 결국 <strong>LLM이 도구를 루프로 호출하는</strong> 단순한 while 문이다.
+  </p>
+
+  <div class="hero-grid">
+    <div>
+      <span class="k">Fable 5 출시</span>
+      <span class="v">Jun 9<small>· 2026</small></span>
+    </div>
+    <div>
+      <span class="k">티어</span>
+      <span class="v">Mythos-class<small>· Opus 위</small></span>
+    </div>
+    <div>
+      <span class="k">컨텍스트</span>
+      <span class="v">1M<small>· 128k out</small></span>
+    </div>
+    <div>
+      <span class="k">작성</span>
+      <span class="v">2026<small>.06.12</small></span>
+    </div>
+  </div>
+</header>
+
+
+<!-- §1 TL;DR -->
+<section class="section" id="tldr">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <h2 class="section-title">한 줄로 이해하기</h2>
+    </div>
+  </div>
+
+  <div class="tldr-grid">
+    <p class="tldr-lead">
+      Fable 5와 Mythos 5는 <span class="hl">같은 모델</span>이고, 차이는 오직 <em>안전장치</em>다.
+      그리고 이 강한 모델을 실제로 길게 굴리는 방법은 화려한 프레임워크가 아니라 —
+      LLM이 도구를 반복 호출하는 <em>단순한 루프</em>와, 그 루프의 컨텍스트를 관리하는 몇 가지 전략이다.
+    </p>
+
+    <div class="points">
+      <article class="point">
+        <div class="n">i</div>
+        <div>
+          <h3>같은 코어, 두 개의 래퍼</h3>
+          <p>Anthropic 공식 발표 기준 — <strong>Fable 5 = Mythos 5</strong>는 동일한 기반 모델이다. Fable은 안전장치가 적용된 일반 출시판, Mythos는 일부 영역에서 안전장치가 해제된 제한 공개판(Project Glasswing).</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">ii</div>
+        <div>
+          <h3>Mythos-class = Opus 위의 새 티어</h3>
+          <p>"<strong>작업이 길고 복잡할수록 Fable 5의 우위가 커진다</strong>"가 핵심 주장. 1M 토큰 컨텍스트 · 최대 128k 출력. Stripe는 5천만 줄 코드베이스 마이그레이션을 하루에 끝냈다고 보고.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iii</div>
+        <div>
+          <h3>안전은 "차단"이 아니라 "폴백"</h3>
+          <p>Fable 5는 AI 분류기로 위험 요청을 탐지하면 응답을 막는 대신 <strong>Claude Opus 4.8로 폴백</strong>한다. 평균 5% 미만 세션에서만 발동 — <em>95% 이상은 폴백 없이 Fable이 그대로 응답</em>한다.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">iv</div>
+        <div>
+          <h3>에이전트 = LLM이 도구를 루프로 호출</h3>
+          <p>Lance Martin(LangChain)은 Anthropic 정의를 인용한다 — 에이전트는 "LLM이 도구를 루프(loop)로 호출하는 것". Manus 기준 <strong>전형적 작업이 ~50 tool calls</strong>. 문제는 그 결과가 컨텍스트에 쌓여 성능을 떨어뜨린다는 것.</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">v</div>
+        <div>
+          <h3>루프를 지탱하는 컨텍스트 4전략</h3>
+          <p><strong>Offloading</strong>(파일시스템에 저장 후 조회) · <strong>Reduction</strong>(compaction·요약) · <strong>Retrieval</strong>(동적 주입) · <strong>Isolation</strong>(sub-agent 격리). Karpathy의 표현으로 "다음 스텝에 딱 맞는 정보로 컨텍스트 창을 채우는 기술".</p>
+        </div>
+      </article>
+
+      <article class="point">
+        <div class="n">vi</div>
+        <div>
+          <h3>가장 단순한 루프 — Ralph, 그리고 Bitter Lesson</h3>
+          <p>Geoffrey Huntley의 <strong>"Ralph is a Bash loop"</strong> — <code>while true</code>로 같은 프롬프트를 반복 투입한다. Martin의 경고: <em>harness를 과설계하지 마라.</em> 더 강한 모델로 바꿔도 성능이 안 오르면 harness가 병목이다.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- §2 그림으로 보는 구조 -->
+<section class="section" id="structure">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <div class="section-kicker">Structure</div>
+      <h2 class="section-title">그림으로 보는 구조</h2>
+    </div>
+  </div>
+
+  <!-- 00 Fable = Mythos -->
+  <div class="diagram-block" id="s-relation">
+    <div class="db-text">
+      <h4><span class="num">00 · 모델 관계</span>Fable = Mythos</h4>
+      <p>
+        둘은 <strong>같은 가중치</strong>다. 모델 자체가 두 개인 게 아니라,
+        하나의 Mythos-class 코어 위에 <em>두 가지 안전 정책 래퍼</em>가 씌워진 것이다.
+      </p>
+      <p>
+        <strong>Fable 5</strong>는 분류기 + Opus 4.8 폴백이 붙은 일반 출시판,
+        <strong>Mythos 5</strong>는 사이버 방어자·승인된 연구자에게만 일부 안전장치를 해제해 제공하는 제한판.
+      </p>
+      <div class="use-when">
+        <strong>언제 구분하나</strong>
+        <p>일반 개발·제품에는 Fable 5. 사이버보안 방어 연구나 생물의학 가속처럼 안전장치가 오히려 막는 영역에서, 승인을 받은 경우에만 Mythos 5(Glasswing).</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Model · Fable = Mythos">
+      <div class="d-orch">
+        <div class="box hub">Mythos-class core<br><small style="color:var(--accent-wash);opacity:.85">동일 가중치</small></div>
+        <div class="spokes" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+          <div class="box accent">Fable 5<small>safeguards ON</small></div>
+          <div class="box soft">Mythos 5<small>safeguards OFF*</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 01 안전 폴백 -->
+  <div class="diagram-block" id="s-fallback">
+    <div class="db-text">
+      <h4><span class="num">01 · 안전</span>분류기 → 폴백 라우팅</h4>
+      <p>
+        Fable 5의 안전장치는 <strong>응답을 거부하는 게 아니라</strong>,
+        AI 분류기가 위험 요청으로 판정하면 <em>더 보수적인 Claude Opus 4.8이 대신 답하게</em> 라우팅하는 구조다.
+      </p>
+      <p>
+        세 도메인에서 발동한다 — <strong>사이버보안 · 생물/화학 · distillation</strong>.
+        평균 5% 미만 세션에서만 트리거되고, 95% 이상은 Fable이 그대로 응답한다.
+      </p>
+      <div class="use-when">
+        <strong>왜 폴백인가</strong>
+        <p>완전 차단은 정상 사용자까지 막는다. 위험 구간만 약한 모델로 우회시키면 능력은 최대로 열어두되 오용 상한은 Opus 수준으로 묶을 수 있다.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Safety · Fallback Routing">
+      <div class="d-route">
+        <div class="box router">분류기<br>classifier</div>
+        <span class="connect"></span>
+        <div class="leaf">Fable 5 응답<small>safe · 95%+</small></div>
+        <span class="connect"></span>
+        <div class="leaf">Opus 4.8 폴백<small>risky · &lt;5%</small></div>
+        <span class="connect"></span>
+        <div class="leaf">3 domains<small>cyber · bio · distill</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 에이전트 루프 -->
+  <div class="diagram-block" id="s-loop">
+    <div class="db-text">
+      <h4><span class="num">02 · 에이전트</span>도구를 호출하는 루프</h4>
+      <p>
+        Lance Martin이 인용하는 에이전트의 정의는 단순하다 —
+        <strong>LLM이 스스로 판단하고, 도구를 호출하고, 결과를 관찰하고, 다시 판단</strong>하는 것을
+        종료 조건까지 반복한다.
+      </p>
+      <p>
+        Manus 기준 한 작업이 <strong>~50 tool calls</strong>. 매 호출의 결과가 컨텍스트에 쌓이므로,
+        루프가 길어질수록 컨텍스트 창이 차서 성능이 떨어진다 — 이게 다음 절의 4전략이 필요한 이유다.
+      </p>
+      <div class="use-when">
+        <strong>언제 쓰나</strong>
+        <p>단계 수를 미리 예측할 수 없는 개방형 작업, 자동 검증(테스트·린트)이 가능한 작업. 도구는 20개 미만의 원자적(atomic) 함수로 유지.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Agent · Tool-calling Loop">
+      <div class="d-agent">
+        <svg viewBox="0 0 360 360" fill="none" stroke="oklch(0.38 0.022 260)" stroke-width="1.5">
+          <circle cx="180" cy="180" r="120" stroke-dasharray="4 5"/>
+          <path d="M 180 60 L 175 70 L 185 70 Z" fill="oklch(0.38 0.022 260)" stroke="none"/>
+          <path d="M 300 180 L 290 175 L 290 185 Z" fill="oklch(0.38 0.022 260)" stroke="none"/>
+          <path d="M 180 300 L 175 290 L 185 290 Z" fill="oklch(0.38 0.022 260)" stroke="none" transform="rotate(180 180 295)"/>
+          <path d="M 60 180 L 70 175 L 70 185 Z" fill="oklch(0.38 0.022 260)" stroke="none"/>
+        </svg>
+        <div class="node brain" style="top:50%; left:50%;">LLM</div>
+        <div class="node" style="top:8%; left:50%;">Plan</div>
+        <div class="node env" style="top:50%; left:92%;">Call tool</div>
+        <div class="node" style="top:92%; left:50%;">Observe</div>
+        <div class="node" style="top:50%; left:8%;">Decide</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 Ralph 자기참조 -->
+  <div class="diagram-block" id="s-ralph">
+    <div class="db-text">
+      <h4><span class="num">03 · 단순 루프</span>Ralph의 자기참조</h4>
+      <p>
+        Ralph Wiggum 기법(Geoffrey Huntley)의 "자기참조"는 출력을 다시 입력으로 먹이는 게 아니다.
+        <strong>프롬프트는 매 iteration 동일</strong>하고, 변하는 것은 <em>파일과 git 히스토리에 남은 이전 작업</em>이다.
+      </p>
+      <p>
+        Claude Code 구현(<code>ralph-wiggum</code> 플러그인)에서는 <strong>Stop hook이 세션 종료를 가로채</strong>
+        같은 프롬프트를 되먹인다. 외부 bash 루프 없이 세션 안에서 루프가 돈다.
+      </p>
+      <div class="use-when">
+        <strong>언제 쓰나</strong>
+        <p>완료 기준이 자동 검증되는 well-defined 작업(테스트 GREEN까지). 인간 판단·설계 결정·프로덕션 디버깅에는 부적합.</p>
+      </div>
+    </div>
+    <div class="canvas" data-label="Ralph · Self-reference">
+      <div class="d-chain">
+        <div class="box">PROMPT<small>고정</small></div>
+        <div class="arrow"><div class="arrow-h"></div></div>
+        <div class="box accent">work<small>파일 수정</small></div>
+        <div class="arrow"><div class="arrow-h"></div></div>
+        <div class="box soft">Stop hook<small>종료 차단</small></div>
+        <div class="gate"></div>
+        <div class="box">same PROMPT<small>재투입</small></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="margin-note">
+    Ralph의 핵심 통찰은 <strong>"deterministically bad in an undeterministic world"</strong> — 실패가 예측 가능하면, 프롬프트 튜닝으로 체계적으로 개선할 수 있다. 모델이 아니라 <strong>오퍼레이터의 프롬프트 작성 실력</strong>이 성패를 가른다는 게 README의 명시적 주장이다.
+  </p>
+</section>
+
+
+<!-- §3 안전 아키텍처 -->
+<section class="section" id="safety">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <div class="section-kicker">Safety Architecture · 도입 전 평가</div>
+      <h2 class="section-title">Fable · Mythos 안전 아키텍처</h2>
+    </div>
+  </div>
+
+  <p class="adopt-lead">
+    Mythos-class는 "능력을 최대로 열되 오용 상한은 묶는다"는 비대칭 설계다. 그래서 안전장치가
+    <strong>모델을 약하게 만드는 게 아니라, 위험 구간에서만 더 약한 모델로 우회</strong>시킨다.
+    아래는 공식 발표에서 확인된 토폴로지와 수치다.
+  </p>
+
+  <div class="svg-arch">
+    <div class="head">
+      <span class="yr">2026.06</span>
+      <h4>Mythos-class 폴백 토폴로지</h4>
+      <span class="tag">fallback routing</span>
+    </div>
+    <div class="canvas-svg">
+      <svg viewBox="0 0 760 340" font-family="IBM Plex Sans KR">
+        <defs>
+          <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="#1a1f2e"/>
+          </marker>
+          <marker id="aha" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="#b85c2e"/>
+          </marker>
+        </defs>
+
+        <!-- user -->
+        <rect x="20" y="140" width="120" height="56" rx="3" fill="#fff" stroke="#1a1f2e" stroke-width="1.5"/>
+        <text x="80" y="165" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1f2e">사용자 요청</text>
+        <text x="80" y="183" text-anchor="middle" font-size="10" fill="#5a6072">prompt</text>
+
+        <!-- classifier -->
+        <rect x="220" y="120" width="150" height="96" rx="3" fill="#1a1f2e"/>
+        <text x="295" y="152" text-anchor="middle" font-size="14" font-weight="600" fill="#fff">AI 분류기</text>
+        <text x="295" y="172" text-anchor="middle" font-size="10" fill="#d9dbe2">위험 도메인 탐지</text>
+        <text x="295" y="192" text-anchor="middle" font-size="10" fill="#d9dbe2">cyber · bio · distill</text>
+
+        <line x1="140" y1="168" x2="214" y2="168" stroke="#1a1f2e" stroke-width="1.5" marker-end="url(#ah)"/>
+
+        <!-- safe path -> Fable -->
+        <rect x="470" y="48" width="270" height="80" rx="3" fill="#fff" stroke="#1a1f2e" stroke-width="1.5"/>
+        <text x="486" y="76" font-size="13" font-weight="600" fill="#1a1f2e">Claude Fable 5</text>
+        <text x="486" y="96" font-size="10.5" fill="#5a6072">전체 Mythos-class 능력으로 응답</text>
+        <text x="486" y="114" font-size="10.5" fill="#3a7d44" font-weight="600">safe · 세션의 95% 이상</text>
+
+        <line x1="370" y1="150" x2="464" y2="92" stroke="#1a1f2e" stroke-width="1.5" marker-end="url(#ah)"/>
+        <text x="392" y="110" font-size="10" fill="#3a7d44" font-weight="600">SAFE</text>
+
+        <!-- risky path -> Opus -->
+        <rect x="470" y="212" width="270" height="80" rx="3" fill="#f5e7da" stroke="#b85c2e" stroke-width="1.5"/>
+        <text x="486" y="240" font-size="13" font-weight="600" fill="#7a3a1a">Claude Opus 4.8 폴백</text>
+        <text x="486" y="260" font-size="10.5" fill="#7a3a1a">더 보수적인 모델이 대신 응답</text>
+        <text x="486" y="278" font-size="10.5" fill="#b85c2e" font-weight="600">risky · 평균 5% 미만 발동</text>
+
+        <line x1="370" y1="186" x2="464" y2="248" stroke="#b85c2e" stroke-width="1.5" marker-end="url(#aha)"/>
+        <text x="388" y="232" font-size="10" fill="#b85c2e" font-weight="600">RISKY</text>
+
+        <!-- glasswing note -->
+        <rect x="470" y="304" width="270" height="28" rx="3" fill="#fff" stroke="#d9dbe2" stroke-width="1"/>
+        <text x="486" y="322" font-size="10" fill="#5a6072">Mythos 5(Glasswing) = 이 폴백을 일부 해제</text>
+      </svg>
+    </div>
+    <div class="legend">
+      <strong>읽는 법.</strong> 모든 요청은 분류기를 거친다. 안전하면 Fable 5가 <em>전체 능력</em>으로 응답(95%+),
+      위험 판정이면 같은 입력을 <em>Opus 4.8</em>이 대신 처리한다. Mythos 5는 승인된 사용자에게 이 폴백을 일부 해제한 버전 — 모델을 바꾸는 게 아니라 <strong>래퍼를 바꾸는</strong> 것이다.
+    </div>
+  </div>
+
+  <!-- 3 도메인 gloss -->
+  <div class="gloss" id="sf-domains">
+    <div class="gloss-head">
+      <span class="gloss-label">도메인</span>
+      <h5>폴백이 걸리는 세 영역</h5>
+      <span class="gloss-pron">"능력이 클수록 오용 상한도 커진다"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>사이버보안.</strong> Mythos-class는 "취약점 발견·익스플로잇에 탁월"하고 agentic hacking 능력이 강하다고 명시된다. Fable에서는 공격적 사이버 작업을 차단하고 Opus 4.8로 폴백. 외부 레드팀 테스트에서 <b>30종 jailbreak에 걸친 사이버공격 단발성 유해 요청 0건 응답</b>으로 보고됐다.</p>
+      <p><strong>생물 / 화학.</strong> 이 영역의 폴백은 발표문이 <b>"의도적으로 overly broad"</b>하다고 인정한다 — 정상적인 생물학 질문까지 막히는 부작용을 감수하고 넓게 차단한다. (별도 승인 프로그램으로 생물의학 연구자에게는 안전장치를 해제해 제공.)</p>
+      <p><strong>Distillation.</strong> 모델을 무단 복제(추출)하려는 시도를 탐지·차단한다. Mythos-class 트래픽은 <b>30일 보존이 의무</b>이며 안전 목적으로만 사용(모델 학습에는 미사용), 30일 후 삭제.</p>
+    </div>
+  </div>
+
+  <!-- 도입 전 평가: 트레이드오프 -->
+  <div class="gloss" id="sf-tradeoff">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>"안전장치는 능력을 깎지 않는다"</h5>
+      <span class="gloss-pron">도입 전 반드시 검증할 트레이드오프</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>가정.</strong> 폴백 설계의 전제는 "위험 구간은 좁고, 거기서만 Opus로 우회하면 일반 사용은 영향이 없다"이다. 발표 수치(95%+ 무폴백)는 이 전제를 뒷받침한다.</p>
+      <p><strong>깨질 때.</strong> 당신의 워크로드가 <b>생물·화학·보안 인접</b> 영역에 몰려 있으면 이야기가 달라진다. 생물/화학 폴백은 "overly broad"라고 공식 인정됐으므로, 정상적인 도메인 작업이 조용히 Opus 4.8 응답으로 대체될 수 있다 — 품질·일관성이 흔들리는데 <em>에러가 나지 않아 눈치채기 어렵다</em>.</p>
+      <p><strong>처방.</strong> 도입 전, 실제 트래픽 샘플로 <b>폴백 발동률을 측정</b>하라. 발동된 요청이 Opus 4.8 응답이라는 걸 식별할 수 있는 신호(응답 특성·메타데이터)를 로깅하고, 도메인 인접 워크로드라면 별도 승인 프로그램(생물의학·사이버 Trusted Access)을 검토한다.</p>
+    </div>
+  </div>
+
+  <!-- 수치 참조표 -->
+  <table class="param-table">
+    <thead>
+      <tr><th>항목</th><th>Fable 5</th><th>Mythos 5</th><th>근거 / 비고</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>기반 모델</td><td colspan="2" class="num">동일 (same underlying model)</td><td>안전장치만 상이</td></tr>
+      <tr><td>출시</td><td>2026-06-09 일반</td><td>Glasswing 한정</td><td>승인 고객·연구자만</td></tr>
+      <tr><td>컨텍스트 / 출력</td><td colspan="2" class="num">1M 입력 / 128k 출력</td><td>공식 스펙</td></tr>
+      <tr><td>가격</td><td colspan="2" class="num">$10 / M in · $50 / M out</td><td>Mythos Preview의 절반 이하</td></tr>
+      <tr><td>폴백</td><td>Opus 4.8로 우회</td><td>일부 해제</td><td>평균 &lt;5% 발동, 95%+ 무폴백</td></tr>
+      <tr><td>데이터 보존</td><td colspan="2" class="num">30일 (안전 목적만)</td><td>학습 미사용, 이후 삭제</td></tr>
+      <tr><td>정렬(alignment)</td><td colspan="2">Opus 4.8과 유사한 낮은 수준</td><td>자동 정렬 평가 기준</td></tr>
+    </tbody>
+  </table>
+
+  <p class="margin-note">
+    <strong>검증 한계 표기.</strong> 위 수치·동작은 모두 Anthropic 공식 발표/문서에서 확인된 것이다. 다만 <strong>분류기의 내부 구현, 폴백 판정 임계값, Mythos 5에서 정확히 어느 안전장치가 해제되는지는 공개되지 않았다</strong> — 이 노트의 폴백 라우팅 코드(§ 실전 코드 D)는 공개 동작을 바탕으로 한 <em>개념 재구성</em>이며 실제 구현이 아니다.
+  </p>
+</section>
+
+
+<!-- §4 설계 루프 -->
+<section class="section" id="loop">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <div class="section-kicker">Effective Agent Design · 도입 후 운영</div>
+      <h2 class="section-title">Lance Martin의 설계 루프</h2>
+    </div>
+  </div>
+
+  <p class="adopt-lead">
+    강한 모델을 손에 쥐었다고 좋은 에이전트가 되는 게 아니다. Lance Martin(LangChain)이 정리한 핵심은 —
+    에이전트는 <strong>도구를 호출하는 루프</strong>이고, 그 루프가 길어지면 컨텍스트가 차서 무너진다.
+    그래서 진짜 설계는 <em>컨텍스트를 어떻게 관리하느냐</em>에 있다.
+  </p>
+
+  <!-- 4 strategies -->
+  <div class="tier" id="l-strategies">
+    <div class="tier-head">
+      <span class="tier-rank">Core</span>
+      <span class="tier-title">컨텍스트 엔지니어링 4전략</span>
+      <span class="tier-meta">Manus 사례 · ~50 tool calls/task</span>
+    </div>
+
+    <div class="tier-grid">
+      <article class="adopt">
+        <div class="adopt-head">
+          <h4>Offloading</h4>
+          <span class="why">밖으로 빼기</span>
+        </div>
+        <p class="desc">도구 결과를 컨텍스트에 쌓지 않고 파일시스템에 저장 → 필요할 때 <code>glob</code>/<code>grep</code>으로 조회. 샌드박스에서 Bash·파일 도구 몇 개로 수많은 유틸을 실행해 도구 정의 비대화도 방지.</p>
+        <ul>
+          <li><b>raw 결과</b>는 파일로, 컨텍스트엔 경로만</li>
+          <li><b>도구 &lt; 20개</b> 원자적 함수로 유지</li>
+        </ul>
+      </article>
+
+      <article class="adopt">
+        <div class="adopt-head">
+          <h4>Reduction</h4>
+          <span class="why">줄이기</span>
+        </div>
+        <p class="desc"><b>Compaction</b> — 오래된 도구 결과는 "full(원문)"에서 "compact(파일 경로 참조)"로 치환하고 최신 결과만 full 유지. 한계에 도달하면 <b>schema 기반 요약</b>으로 전체 궤적을 압축.</p>
+        <ul>
+          <li>최신은 full → 즉각 판단 근거 유지</li>
+          <li>요약은 일관된 schema 객체로</li>
+        </ul>
+      </article>
+
+      <article class="adopt">
+        <div class="adopt-head">
+          <h4>Retrieval</h4>
+          <span class="why">가져오기</span>
+        </div>
+        <p class="desc">필요한 시점에 정보를 동적으로 주입. Martin은 "agentic search(에이전트가 직접 탐색) vs 사전 retrieval"의 선택을 강조 — 무엇을 미리 넣고 무엇을 그때그때 찾게 할지의 경계 설계.</p>
+        <ul>
+          <li>전부 미리 넣지 않는다</li>
+          <li>탐색을 에이전트에 위임할지 판단</li>
+        </ul>
+      </article>
+
+      <article class="adopt">
+        <div class="adopt-head">
+          <h4>Isolation</h4>
+          <span class="why">격리하기</span>
+        </div>
+        <p class="desc">planner가 sub-agent에 작업 위임 — 각자 <b>격리된 컨텍스트 창</b>. 단순 작업엔 지시만, 파일시스템 접근이 필요한 복잡 작업엔 full 컨텍스트 공유. 단, Cognition의 "don't build multi-agents" 경고도 함께 인용.</p>
+        <ul>
+          <li>병렬화 가능 작업이 명확한 후보</li>
+          <li>남용 금지 — 단일 에이전트 우선</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+
+  <!-- 숨은 가정 -->
+  <div class="gloss" id="l-assumptions">
+    <div class="gloss-head">
+      <span class="gloss-label">가정</span>
+      <h5>루프가 암묵적으로 깔고 있는 전제</h5>
+      <span class="gloss-pron">"이게 깨질 때 루프가 무너진다"</span>
+    </div>
+    <div class="gloss-body">
+      <p><strong>"컨텍스트는 충분하다".</strong> 에이전트 루프는 도구 결과가 컨텍스트에 쌓여도 괜찮다고 가정한다. 깨지는 지점 — Manus 기준 <b>~50 tool calls</b>면 결과 누적으로 성능이 저하된다. 이게 4전략(특히 offloading·compaction)이 없으면 긴 작업이 그냥 안 되는 구조적 이유다.</p>
+      <p><strong>"완료 기준이 검증 가능하다".</strong> Ralph 같은 루프는 "언제 끝났는지"를 모델이 정직하게 판단한다고 가정한다. 깨지는 지점 — 완료 기준이 자동 검증되지 않으면(테스트·린트 없으면) 에이전트가 <b>거짓 완료를 선언</b>하거나 무한 루프에 빠진다. 그래서 Claude Code의 Ralph 구현은 "거짓 promise 금지"를 강하게 주입하고 <code>--max-iterations</code>를 escape hatch로 강제한다.</p>
+      <p><strong>"harness가 클수록 좋다".</strong> 정교한 오케스트레이션이 성능을 올린다는 가정. Martin의 <b>Bitter Lesson</b> 반박 — 더 강한 모델로 바꿔도 성능이 안 오르면, 당신의 harness가 모델 역량을 <em>제한</em>하고 있는 것이다. 모델이 좋아지면 무너질 추상화를 미리 쌓지 마라.</p>
+    </div>
+  </div>
+
+  <!-- 운영 처방 -->
+  <div class="roadmap" id="l-prescription">
+    <div class="roadmap-head">
+      <h3>운영 처방 — 어떤 루프를 언제 쓰나</h3>
+      <p>작업 성격에 따라 루프 형태와 컨텍스트 전략을 고른다. 임계점을 측정으로 잡는 게 핵심.</p>
+    </div>
+
+    <ol class="steps">
+      <li>
+        <div>
+          <h5>먼저 단일 에이전트 + offloading</h5>
+          <p>도구 결과를 파일로 빼고 경로만 컨텍스트에. tool call 수가 <code>~50</code>을 넘기 시작하면 compaction(full→compact) 도입. multi-agent는 이걸로도 안 될 때만.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h5>완료가 자동 검증되면 Ralph 루프</h5>
+          <p>테스트·린트로 GREEN 판정이 되는 작업만. <code>--completion-promise</code>는 검증 가능한 사실로 설정하고, <code>--max-iterations</code>를 반드시 함께 건다.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h5>병렬 가능 작업만 Isolation</h5>
+          <p>독립적으로 쪼개지는 작업(예: 코드리뷰 차원별)에만 sub-agent. 공유 상태·순차 의존이 있으면 단일 에이전트가 낫다.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h5>harness를 모델로 검증</h5>
+          <p>더 강한 모델로 바꿔 성능이 오르는지 측정. 안 오르면 harness가 병목 — 추상화를 <em>걷어내는</em> 방향으로 리팩토링.</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+
+  <!-- 안티패턴 -->
+  <div class="antipattern">
+    <h3>안티패턴 — 루프 설계에서 자빠지는 곳<span class="label">caution</span></h3>
+    <ul>
+      <li><b>escape hatch 없는 Ralph 배포</b> — <code>--max-iterations</code> 없이 돌리면 완료를 못 만나 무한 루프. 비용이 무한히 증가한다.</li>
+      <li><b>검증 불가 작업에 자율 루프</b> — "디자인을 더 좋게"처럼 자동 판정 불가한 목표는 루프가 수렴하지 않는다. 인간 체크포인트로.</li>
+      <li><b>컨텍스트 전략 없이 긴 작업</b> — offloading/compaction 없이 50+ tool calls를 돌리면 컨텍스트가 차서 후반부 판단이 망가진다.</li>
+      <li><b>성급한 multi-agent</b> — Cognition "don't build multi-agents". 단일 에이전트 + 컨텍스트 관리로 풀리는 걸 분산시키면 디버깅만 어려워진다.</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- §5 실전 코드 -->
+<section class="section" id="code">
+  <div class="section-head">
+    <div class="section-num">05</div>
+    <div class="section-titles">
+      <div class="section-kicker">실전 코드</div>
+      <h2 class="section-title">Ralph 루프 해부 + 에이전트 루프</h2>
+    </div>
+  </div>
+
+  <p class="code-intro">
+    A·B는 Claude Code <em>ralph-wiggum</em> 플러그인(작성: Daisy Hollman)의 실제 코드에서 핵심만 발췌·해부한 것이다.
+    C는 컨텍스트 offloading을 적용한 에이전트 루프, D는 Mythos-class 폴백의 <em>개념 재구성</em>(실제 구현 비공개).
+  </p>
+
+  <!-- A. Ralph stop-hook 해부 -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>A · Ralph Stop hook — 루프의 심장</h4>
+      <span class="tag">bash · 발췌 해부</span>
+    </div>
+<pre><span class="com"># stop-hook.sh — Claude가 세션을 끝내려 할 때 호출되는 Stop hook</span>
+HOOK_INPUT=$(<span class="fn">cat</span>)                          <span class="com"># stdin으로 hook 페이로드 수신</span>
+RALPH_STATE_FILE=<span class="str">".claude/ralph-loop.local.md"</span>
+
+<span class="kw">if</span> [[ ! -f <span class="str">"$RALPH_STATE_FILE"</span> ]]; <span class="kw">then</span>
+  <span class="kw">exit</span> 0                              <span class="com"># 상태파일 없음 = 활성 루프 없음 → 정상 종료 허용</span>
+<span class="kw">fi</span>
+
+<span class="com"># 1) frontmatter(YAML)에서 iteration · max · promise 파싱</span>
+ITERATION=$(<span class="fn">echo</span> <span class="str">"$FRONTMATTER"</span> | <span class="fn">grep</span> <span class="str">'^iteration:'</span> | <span class="fn">sed</span> <span class="str">'s/iteration: *//'</span>)
+
+<span class="com"># 2) 종료 조건 ① — 최대 반복 도달</span>
+<span class="kw">if</span> [[ $MAX_ITERATIONS -gt 0 ]] &amp;&amp; [[ $ITERATION -ge $MAX_ITERATIONS ]]; <span class="kw">then</span>
+  <span class="fn">echo</span> <span class="str">"🛑 Max iterations reached."</span>
+  <span class="fn">rm</span> <span class="str">"$RALPH_STATE_FILE"</span>; <span class="kw">exit</span> 0     <span class="com"># 상태파일 삭제 → 루프 종료</span>
+<span class="kw">fi</span>
+
+<span class="com"># 3) transcript에서 마지막 assistant 메시지의 text만 추출</span>
+LAST_OUTPUT=$(<span class="fn">echo</span> <span class="str">"$LAST_LINE"</span> | <span class="fn">jq</span> -r <span class="str">'.message.content
+  | map(select(.type=="text")) | map(.text) | join("\n")'</span>)
+
+<span class="com"># 4) 종료 조건 ② — &lt;promise&gt; 태그가 정확히 완료문구와 일치할 때만</span>
+PROMISE_TEXT=$(<span class="fn">echo</span> <span class="str">"$LAST_OUTPUT"</span> | <span class="fn">perl</span> -0777 -pe \
+  <span class="str">'s/.*?&lt;promise&gt;(.*?)&lt;\/promise&gt;.*/$1/s; s/^\s+|\s+$//g'</span>)
+<span class="kw">if</span> [[ <span class="str">"$PROMISE_TEXT"</span> = <span class="str">"$COMPLETION_PROMISE"</span> ]]; <span class="kw">then</span>   <span class="com"># = 는 리터럴 비교(glob 아님)</span>
+  <span class="fn">rm</span> <span class="str">"$RALPH_STATE_FILE"</span>; <span class="kw">exit</span> 0
+<span class="kw">fi</span>
+
+<span class="com"># 5) 미완료 → iteration++ 하고 "같은 프롬프트"를 block 사유로 되먹임</span>
+NEXT_ITERATION=$((ITERATION + 1))
+PROMPT_TEXT=$(<span class="fn">awk</span> <span class="str">'/^---$/{i++; next} i&gt;=2'</span> <span class="str">"$RALPH_STATE_FILE"</span>)  <span class="com"># 본문 추출</span>
+<span class="fn">jq</span> -n --arg prompt <span class="str">"$PROMPT_TEXT"</span> --arg msg <span class="str">"$SYSTEM_MSG"</span> <span class="str">'{
+  "decision": "block",       # ← 종료를 막는다
+  "reason": $prompt,         # ← 이 프롬프트가 Claude에게 다시 전달됨
+  "systemMessage": $msg
+}'</span></pre>
+    <div class="note"><strong>포인트.</strong> 루프의 정체는 <code>{"decision":"block","reason":$prompt}</code> 한 줄이다 — Stop을 막고 <em>동일 프롬프트</em>를 되먹인다. 출력을 입력으로 잇는 게 아니라, 변한 파일을 다시 보게 하는 <strong>self-reference</strong>. 종료는 오직 max-iterations 또는 정확히 일치하는 <code>&lt;promise&gt;</code> 두 가지뿐.</div>
+  </article>
+
+  <!-- B. Ralph 상태 파일 -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>B · 상태 파일 — 루프의 기억</h4>
+      <span class="tag">markdown + yaml</span>
+    </div>
+<pre><span class="com"># .claude/ralph-loop.local.md  (setup-ralph-loop.sh가 생성)</span>
+<span class="kw">---</span>
+<span class="dec">active</span>: <span class="kw">true</span>
+<span class="dec">iteration</span>: <span class="str">1</span>                 <span class="com"># 매 루프마다 stop-hook이 +1</span>
+<span class="dec">max_iterations</span>: <span class="str">20</span>           <span class="com"># 0 = 무한 (escape hatch 권장: 항상 설정)</span>
+<span class="dec">completion_promise</span>: <span class="str">"FIXED"</span>   <span class="com"># &lt;promise&gt;FIXED&lt;/promise&gt; 정확 일치 시 종료</span>
+<span class="dec">started_at</span>: <span class="str">"2026-06-12T00:00:00Z"</span>
+<span class="kw">---</span>
+
+Fix the token refresh logic in auth.ts.
+Follow TDD: 실패 테스트 작성 → 구현 → 테스트 실행 → 전부 통과까지 반복.
+모든 테스트가 통과하면 정확히 출력: &lt;promise&gt;FIXED&lt;/promise&gt;</pre>
+    <div class="note"><strong>포인트.</strong> 프롬프트는 frontmatter 아래 본문에 <em>한 번만</em> 저장되고 매 iteration 그대로 재사용된다. <code>completion_promise</code>는 <strong>검증 가능한 사실</strong>("모든 테스트 통과")에 묶어야 한다 — 모델이 거짓으로 빠져나오지 못하게.</div>
+  </article>
+
+  <!-- C. agent loop + offloading -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>C · 에이전트 루프 + 컨텍스트 Offloading</h4>
+      <span class="tag">python · autonomous</span>
+    </div>
+<pre><span class="kw">from</span> anthropic <span class="kw">import</span> Anthropic
+<span class="kw">import</span> json, pathlib
+
+client = Anthropic()
+WORK = pathlib.<span class="fn">Path</span>(<span class="str">".agent_work"</span>); WORK.<span class="fn">mkdir</span>(exist_ok=<span class="kw">True</span>)
+
+<span class="kw">def</span> <span class="fn">run_tool</span>(name, args) -> <span class="kw">str</span>:
+    result = _execute(name, args)            <span class="com"># 실제 도구 실행</span>
+    <span class="com"># ── Offloading: 큰 결과는 파일로 빼고, 컨텍스트엔 경로 + 요약만 ──</span>
+    <span class="kw">if</span> <span class="fn">len</span>(result) &gt; <span class="str">2000</span>:
+        path = WORK / <span class="str">f"{name}_{hash(args) &amp; 0xffff}.txt"</span>
+        path.<span class="fn">write_text</span>(result)
+        <span class="kw">return</span> <span class="str">f"[saved to {path}] head: {result[:200]} … (grep/read로 조회)"</span>
+    <span class="kw">return</span> result
+
+<span class="kw">def</span> <span class="fn">agent</span>(goal: <span class="kw">str</span>, max_steps: <span class="kw">int</span> = <span class="str">50</span>):   <span class="com"># Manus 기준 ~50</span>
+    messages = [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: goal}]
+    <span class="kw">for</span> step <span class="kw">in</span> <span class="fn">range</span>(max_steps):
+        resp = client.messages.create(
+            model=<span class="str">"claude-fable-5"</span>,           <span class="com"># Mythos-class</span>
+            max_tokens=<span class="str">2048</span>, tools=TOOLS, messages=messages,
+        )
+        <span class="kw">if</span> resp.stop_reason == <span class="str">"end_turn"</span>:
+            <span class="kw">return</span> resp.content[<span class="str">0</span>].text     <span class="com"># 종료 조건: 모델이 완료 선언</span>
+
+        messages.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: resp.content})
+        results = []
+        <span class="kw">for</span> b <span class="kw">in</span> resp.content:
+            <span class="kw">if</span> b.type == <span class="str">"tool_use"</span>:
+                results.<span class="fn">append</span>({
+                    <span class="str">"type"</span>: <span class="str">"tool_result"</span>, <span class="str">"tool_use_id"</span>: b.id,
+                    <span class="str">"content"</span>: <span class="fn">run_tool</span>(b.name, b.input),   <span class="com"># offloading 적용</span>
+                })
+        messages.<span class="fn">append</span>({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: results})
+
+    <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="str">"max_steps reached"</span>)   <span class="com"># escape hatch</span></pre>
+    <div class="note"><strong>포인트.</strong> 루프 자체는 building-effective-agents의 agent loop와 같다. 차이는 <code>run_tool</code>의 <em>offloading</em> — 2KB 넘는 결과를 파일로 빼고 경로+head만 컨텍스트에 남긴다. 이것만으로 50-step 루프에서 컨텍스트 누적이 극적으로 줄어든다.</div>
+  </article>
+
+  <!-- D. 폴백 라우팅 (개념 재구성) -->
+  <article class="code-card">
+    <div class="code-head">
+      <h4>D · Mythos-class 폴백 라우팅 (개념 재구성)</h4>
+      <span class="tag">python · 비공개 동작 추정</span>
+    </div>
+<pre><span class="com"># ⚠️ 실제 Anthropic 구현이 아니다. 공개된 동작을 코드로 옮긴 개념 모델.</span>
+<span class="com">#    분류기 내부·임계값·해제 범위는 비공개.</span>
+
+RISK_DOMAINS = (<span class="str">"cyber_offense"</span>, <span class="str">"bio_chem"</span>, <span class="str">"distillation"</span>)
+
+<span class="kw">def</span> <span class="fn">respond</span>(request, *, mythos_unlocked: <span class="kw">set</span> = <span class="fn">set</span>()):
+    domain = <span class="fn">classify_risk</span>(request)        <span class="com"># AI 분류기 (비공개)</span>
+
+    <span class="com"># Fable: 위험 도메인이면 더 보수적인 Opus 4.8로 폴백</span>
+    <span class="kw">if</span> domain <span class="kw">in</span> RISK_DOMAINS <span class="kw">and</span> domain <span class="kw">not in</span> mythos_unlocked:
+        <span class="kw">return</span> <span class="fn">call</span>(<span class="str">"claude-opus-4-8"</span>, request)   <span class="com"># &lt;5% 세션</span>
+
+    <span class="com"># 그 외 95%+ → 전체 Mythos-class 능력으로 응답</span>
+    <span class="kw">return</span> <span class="fn">call</span>(<span class="str">"claude-fable-5"</span>, request)
+
+<span class="com"># Mythos 5 = 승인된 도메인의 폴백을 해제한 것과 동형</span>
+<span class="com"># respond(req, mythos_unlocked={"cyber_offense"})  # Glasswing 방어자</span></pre>
+    <div class="note"><strong>포인트.</strong> 발표문의 "같은 모델, 안전장치만 다름"을 코드로 옮기면 이 형태가 된다 — <em>모델 분기가 아니라 폴백 게이트의 on/off</em>. 다시 강조: <strong>실제 구현·임계값은 공개되지 않았고</strong>, 이건 동작을 이해하기 위한 재구성이다.</div>
+  </article>
+
+  <p class="margin-note">
+    프로덕션에서는 여기에 <strong>폴백 발동 로깅 · tool 결과 크기 모니터링 · max-iterations/예산 가드</strong>를 더해야 한다. 특히 Mythos-class 트래픽은 30일 보존 의무가 있으므로, 민감 데이터 처리 정책을 사전에 정렬해야 한다.
+  </p>
+</section>
+
+
+<footer>
+  <div class="lockup">Fable · Mythos &amp; the Loop</div>
+  <div>
+    원문 ·
+    <a href="https://www.anthropic.com/news/claude-fable-5-mythos-5" target="_blank" rel="noopener">anthropic.com/news/claude-fable-5-mythos-5</a> ·
+    <a href="https://rlancemartin.github.io/2025/10/15/manus/" target="_blank" rel="noopener">rlancemartin.github.io (context engineering)</a> ·
+    <a href="https://ghuntley.com/ralph/" target="_blank" rel="noopener">ghuntley.com/ralph</a>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    const btn = document.getElementById('menuBtn');
+    const panel = document.getElementById('tocPanel');
+    const backdrop = document.getElementById('tocBackdrop');
+    const body = document.body;
+
+    function setOpen(open) {
+      btn.classList.toggle('open', open);
+      panel.classList.toggle('open', open);
+      backdrop.classList.toggle('open', open);
+      body.classList.toggle('menu-open', open);
+      btn.setAttribute('aria-expanded', String(open));
+      panel.setAttribute('aria-hidden', String(!open));
+      btn.setAttribute('aria-label', open ? '목차 닫기' : '목차 열기');
+    }
+
+    btn.addEventListener('click', () => setOpen(!panel.classList.contains('open')));
+    backdrop.addEventListener('click', () => setOpen(false));
+
+    document.querySelectorAll('[data-close]').forEach(a => {
+      a.addEventListener('click', () => setOpen(false));
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && panel.classList.contains('open')) setOpen(false);
+    });
+  })();
+
+  // Inject copy buttons + expand toggles into every code card
+  (function () {
+    document.querySelectorAll('.code-card').forEach(card => {
+      const head = card.querySelector('.code-head');
+      const pre  = card.querySelector('pre');
+      if (!head || !pre) return;
+
+      const tag = head.querySelector('.tag');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy-btn';
+      btn.textContent = 'copy';
+      btn.setAttribute('aria-label', '코드 복사');
+
+      const reset = () => { btn.textContent = 'copy'; btn.classList.remove('copied', 'failed'); };
+
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const code = pre.textContent;
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(code);
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = code;
+            ta.style.position = 'fixed'; ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          btn.textContent = 'copied';
+          btn.classList.add('copied');
+          setTimeout(reset, 1500);
+        } catch (err) {
+          btn.textContent = 'failed';
+          btn.classList.add('failed');
+          setTimeout(reset, 2000);
+        }
+      });
+
+      const caret = document.createElement('span');
+      caret.className = 'expand-indicator';
+      caret.textContent = '▸';
+      caret.setAttribute('aria-hidden', 'true');
+
+      if (tag) {
+        const wrap = document.createElement('div');
+        wrap.className = 'head-right';
+        tag.replaceWith(wrap);
+        wrap.appendChild(tag);
+        wrap.appendChild(btn);
+        wrap.appendChild(caret);
+      } else {
+        head.appendChild(btn);
+        head.appendChild(caret);
+      }
+
+      head.addEventListener('click', () => {
+        card.classList.toggle('expanded');
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

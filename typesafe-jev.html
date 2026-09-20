@@ -309,7 +309,6 @@
     overflow: hidden;
   }
   .canvas.stack { flex-direction: column; gap: 1.1rem; }
-  .tldr-grid + .diagram-block { margin-top: clamp(3rem, 6vw, 5rem); }
   .canvas::before {
     content: attr(data-label);
     position: absolute;
@@ -1614,62 +1613,25 @@
     </div>
   </div>
 
-  <div class="tldr-grid" id="o-jag">
-    <div class="db-text" style="grid-column: 1 / -1; margin-bottom: 1.5rem">
-      <h4><span class="num">01 · jaggedness</span>모델이 못 하는 것</h4>
+  <p class="adopt-lead">
+    TypeSafe는 모델이 못 하는 일을 따로 문서화한다 — <em>jaggedness</em> 페이지다.
+    아래는 jev-1.13 기준으로 그 문서가 직접 밝힌 약점이다.
+  </p>
+
+  <div class="gloss" id="o-jag">
+    <div class="gloss-head">
+      <span class="gloss-label">01</span>
+      <h5>모델이 못 하는 것</h5>
+      <span class="gloss-pron">"jaggedness" · jev-1.13</span>
     </div>
-    <p class="tldr-lead">
-      TypeSafe는 <span class="hl">모델이 못 하는 일을 따로 문서화</span>한다.
-      <em>jaggedness</em> 페이지다. 아래는 jev-1.13 기준으로 그 문서가 직접 밝힌 약점이다.
-    </p>
-
-    <article class="point">
-      <div class="n">i</div>
-      <div>
-        <h3>문자 그대로 읽는다</h3>
-        <p>문서 표현으로 "<strong>당신이 쓴 질문에 답하지, 의도한 질문에 답하지 않는다</strong>". 범위를 한정하는 말, 부정, 함축된 조건이 액면 그대로 읽힌다. 이중 부정이나 간접 지시가 들어가면 신뢰도가 떨어진다.</p>
-      </div>
-    </article>
-
-    <article class="point">
-      <div class="n">ii</div>
-      <div>
-        <h3>세지 못한다</h3>
-        <p>"jev-1.13은 안정적으로 세지 못한다" — 단어의 글자 수, 본문에서 어떤 표현의 등장 횟수, 긴 목록의 항목 수 모두 해당한다.</p>
-      </div>
-    </article>
-
-    <article class="point">
-      <div class="n">iii</div>
-      <div>
-        <h3>숫자와 날짜에 약하다</h3>
-        <p>숫자 표현보다 의미 표현에서 더 잘 동작한다. RGB나 16진수 값 두 개가 서로 가까운지 판단하지 못한다. <strong>날짜를 순서가 있는 양이 아니라 텍스트로 읽어서</strong> 어느 쪽이 먼저인지 묻는 건 신뢰할 수 없다.</p>
-      </div>
-    </article>
-
-    <article class="point">
-      <div class="n">iv</div>
-      <div>
-        <h3>관계 없는 내용이 쌓이면 떨어진다</h3>
-        <p>"결정과 무관한 내용으로 state가 커질수록 정확도가 떨어진다". state를 통째로 밀어 넣지 말고 판단에 필요한 필드만 담아야 한다는 뜻이다.</p>
-      </div>
-    </article>
-
-    <article class="point">
-      <div class="n">v</div>
-      <div>
-        <h3>한국어는 2등 시민이다</h3>
-        <p>모델 문서가 "<strong>영어가 주 학습 언어이며 현재 정확도가 가장 좋은 언어</strong>"라고 적는다. CJK를 포함한 다른 언어는 받아들이지만 정확도가 낮다. 비영어 작업은 직접 테스트하고 confidence를 감시하라고 권한다.</p>
-      </div>
-    </article>
-
-    <article class="point">
-      <div class="n">vi</div>
-      <div>
-        <h3>생성은 아예 못 한다</h3>
-        <p>"텍스트를 생성하도록 학습되지 않았다". 채팅·코파일럿·초안 작성에는 쓸 수 없다. 이건 결함이 아니라 교환 조건이다.</p>
-      </div>
-    </article>
+    <div class="gloss-body">
+      <p><strong>문자 그대로 읽는다.</strong> 문서 표현으로 "당신이 쓴 질문에 답하지, 의도한 질문에 답하지 않는다". 범위를 한정하는 말, 부정, 함축된 조건이 액면 그대로 읽힌다. 이중 부정이나 간접 지시가 들어가면 신뢰도가 떨어진다.</p>
+      <p><strong>세지 못한다.</strong> "jev-1.13은 안정적으로 세지 못한다" — 단어의 글자 수, 본문에서 어떤 표현의 등장 횟수, 긴 목록의 항목 수 모두 해당한다.</p>
+      <p><strong>숫자와 날짜에 약하다.</strong> 숫자 표현보다 의미 표현에서 더 잘 동작한다. RGB나 16진수 값 두 개가 서로 가까운지 판단하지 못한다. <b>날짜를 순서가 있는 양이 아니라 텍스트로 읽어서</b> 어느 쪽이 먼저인지 묻는 건 신뢰할 수 없다.</p>
+      <p><strong>관계 없는 내용이 쌓이면 떨어진다.</strong> "결정과 무관한 내용으로 state가 커질수록 정확도가 떨어진다". state를 통째로 밀어 넣지 말고 판단에 필요한 필드만 담아야 한다는 뜻이다.</p>
+      <p><strong>한국어는 2등 시민이다.</strong> 모델 문서가 "<b>영어가 주 학습 언어이며 현재 정확도가 가장 좋은 언어</b>"라고 적는다. CJK를 포함한 다른 언어는 받아들이지만 정확도가 낮다. 비영어 작업은 직접 테스트하고 confidence를 감시하라고 권한다.</p>
+      <p><strong>생성은 아예 못 한다.</strong> "텍스트를 생성하도록 학습되지 않았다". 채팅·코파일럿·초안 작성에는 쓸 수 없다. 이건 결함이 아니라 교환 조건이다.</p>
+    </div>
   </div>
 
   <div class="diagram-block" id="o-assume">

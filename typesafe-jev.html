@@ -309,6 +309,7 @@
     overflow: hidden;
   }
   .canvas.stack { flex-direction: column; gap: 1.1rem; }
+  .tldr-grid + .diagram-block { margin-top: clamp(3rem, 6vw, 5rem); }
   .canvas::before {
     content: attr(data-label);
     position: absolute;
@@ -1614,6 +1615,9 @@
   </div>
 
   <div class="tldr-grid" id="o-jag">
+    <div class="db-text" style="grid-column: 1 / -1; margin-bottom: 1.5rem">
+      <h4><span class="num">01 · jaggedness</span>모델이 못 하는 것</h4>
+    </div>
     <p class="tldr-lead">
       TypeSafe는 <span class="hl">모델이 못 하는 일을 따로 문서화</span>한다.
       <em>jaggedness</em> 페이지다. 아래는 jev-1.13 기준으로 그 문서가 직접 밝힌 약점이다.

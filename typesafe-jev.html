@@ -1613,24 +1613,47 @@
     </div>
   </div>
 
-  <p class="adopt-lead">
-    TypeSafe는 모델이 못 하는 일을 따로 문서화한다 — <em>jaggedness</em> 페이지다.
-    아래는 jev-1.13 기준으로 그 문서가 직접 밝힌 약점이다.
-  </p>
-
-  <div class="gloss" id="o-jag">
-    <div class="gloss-head">
-      <span class="gloss-label">01</span>
-      <h5>모델이 못 하는 것</h5>
-      <span class="gloss-pron">"jaggedness" · jev-1.13</span>
+  <div class="diagram-block" id="o-jag">
+    <div class="db-text">
+      <h4><span class="num">01 · jaggedness</span>모델이 못 하는 것</h4>
+      <p>
+        TypeSafe는 모델이 못 하는 일을 따로 문서화한다 — <em>jaggedness</em> 페이지다.
+        아래는 jev-1.13 기준으로 그 문서가 직접 밝힌 약점이다.
+      </p>
+      <p>
+        <strong>읽기</strong>는 문자 그대로다. 문서 표현으로 "당신이 쓴 질문에 답하지, 의도한 질문에 답하지 않는다".
+        범위를 한정하는 말, 부정, 함축된 조건이 액면 그대로 읽히고, 이중 부정이 들어가면 신뢰도가 떨어진다.
+      </p>
+      <p>
+        <strong>수량</strong>은 약하다. 글자 수·등장 횟수·목록 항목 수를 안정적으로 세지 못하고,
+        RGB나 16진수 두 값이 가까운지도 판단하지 못한다. <em>날짜를 순서가 있는 양이 아니라 텍스트로 읽어</em>
+        어느 쪽이 먼저인지 묻는 것도 신뢰할 수 없다.
+      </p>
+      <p>
+        <strong>언어와 생성</strong>에도 선이 있다. 영어가 주 학습 언어이며 CJK는 정확도가 낮다.
+        텍스트 생성은 아예 학습되지 않았다. 그리고 결정과 무관한 내용으로 state가 커질수록 정확도가 떨어진다.
+      </p>
+      <div class="use-when">
+        <strong>처방</strong>
+        <p>세기·날짜 비교·수치 근접성은 코드로 계산해 state에 담아 준다. 모델에는 판단만 맡긴다. 한국어 입력은 임계값을 더 높게 잡는다.</p>
+      </div>
     </div>
-    <div class="gloss-body">
-      <p><strong>문자 그대로 읽는다.</strong> 문서 표현으로 "당신이 쓴 질문에 답하지, 의도한 질문에 답하지 않는다". 범위를 한정하는 말, 부정, 함축된 조건이 액면 그대로 읽힌다. 이중 부정이나 간접 지시가 들어가면 신뢰도가 떨어진다.</p>
-      <p><strong>세지 못한다.</strong> "jev-1.13은 안정적으로 세지 못한다" — 단어의 글자 수, 본문에서 어떤 표현의 등장 횟수, 긴 목록의 항목 수 모두 해당한다.</p>
-      <p><strong>숫자와 날짜에 약하다.</strong> 숫자 표현보다 의미 표현에서 더 잘 동작한다. RGB나 16진수 값 두 개가 서로 가까운지 판단하지 못한다. <b>날짜를 순서가 있는 양이 아니라 텍스트로 읽어서</b> 어느 쪽이 먼저인지 묻는 건 신뢰할 수 없다.</p>
-      <p><strong>관계 없는 내용이 쌓이면 떨어진다.</strong> "결정과 무관한 내용으로 state가 커질수록 정확도가 떨어진다". state를 통째로 밀어 넣지 말고 판단에 필요한 필드만 담아야 한다는 뜻이다.</p>
-      <p><strong>한국어는 2등 시민이다.</strong> 모델 문서가 "<b>영어가 주 학습 언어이며 현재 정확도가 가장 좋은 언어</b>"라고 적는다. CJK를 포함한 다른 언어는 받아들이지만 정확도가 낮다. 비영어 작업은 직접 테스트하고 confidence를 감시하라고 권한다.</p>
-      <p><strong>생성은 아예 못 한다.</strong> "텍스트를 생성하도록 학습되지 않았다". 채팅·코파일럿·초안 작성에는 쓸 수 없다. 이건 결함이 아니라 교환 조건이다.</p>
+    <div class="canvas stack" data-label="Jagged edges">
+      <div class="d-chain">
+        <div class="box accent">잘하는 것<small>분류 · 채점 · 참거짓</small></div>
+      </div>
+      <div class="d-chain">
+        <div class="box soft">문자 그대로 읽음<small>부정 · 함축 조건</small></div>
+        <div class="box soft">세기<small>글자 · 횟수 · 항목</small></div>
+      </div>
+      <div class="d-chain">
+        <div class="box soft">숫자 근접성<small>RGB · 16진수</small></div>
+        <div class="box soft">날짜 순서<small>텍스트로 읽음</small></div>
+      </div>
+      <div class="d-chain">
+        <div class="box">비영어<small>CJK 정확도 낮음</small></div>
+        <div class="box">텍스트 생성<small>학습되지 않음</small></div>
+      </div>
     </div>
   </div>
 

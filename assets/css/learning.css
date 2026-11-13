@@ -236,4 +236,4 @@ pre {background:var(--color-surface-alt);padding:18px 20px;border:1px solid var(
 .learning-diagram{display:block;width:100%;height:auto;min-width:540px;margin-inline:auto;font-family:var(--font-sans)}
 .learning-figure>figcaption{margin-top:10px}
 
-.sidebar .nav-link,.sidebar .nav-overview,.sidebar .part-label{letter-spacing:-.04em}
+.sidebar .nav-group .nav-link{padding-block:4px;line-height:1.45}

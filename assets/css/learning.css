@@ -149,12 +149,12 @@ pre {background:var(--color-surface-alt);padding:18px 20px;border:1px solid var(
 .review > h3{font-size:22px;margin:0 0 14px}
 .review p,.review li{font-size:15px;line-height:1.75;color:var(--color-text-secondary)}
 .recap ul{padding-left:18px;margin:0}.recap li{margin-bottom:6px}.recap strong{color:var(--color-text-primary)}
-.quiz-item{display:grid;grid-template-columns:24px minmax(0,1fr);gap:12px;padding:13px 0;border:0}
+.quiz-item{display:grid;grid-template-columns:24px minmax(0,1fr);gap:12px;padding:6px 0;border:0}
 .quiz-num{color:var(--color-primary);font-size:13px;font-weight:700;line-height:1.7}
 .quiz-content > p{font-size:15px;line-height:1.65;margin:0 0 5px;max-width:none}
 .quiz-answer{padding:0;margin:0;border:0}.quiz-answer summary{font-size:13px;font-weight:500;color:var(--color-primary);line-height:1.6}
 .quiz-answer[open] summary{margin-bottom:6px}.quiz-answer p{font-size:14px;line-height:1.65;margin:0;padding:2px 0 3px}
-@media(max-width:640px){.quiz-item{gap:8px;padding:12px 0}}
+@media(max-width:640px){.quiz-item{gap:8px;padding:6px 0}}
 .summary,.learning-goal{font-family:var(--font-sans);font-size:16px;line-height:1.85;font-weight:600;color:var(--color-text-primary)}
 .summary .summary-label,.learning-goal > h3{font-family:var(--font-sans);font-size:14px;line-height:1.6;font-weight:700;color:var(--color-primary);margin:0 0 10px}
 .summary > p:not(.summary-label),.learning-goal li,.learning-goal p{font-size:16px;line-height:1.85;font-weight:600;color:var(--color-text-primary)}
@@ -167,7 +167,7 @@ pre {background:var(--color-surface-alt);padding:18px 20px;border:1px solid var(
 .quiz-question{min-width:0}.quiz-question > summary{list-style:none;font-size:15px;font-weight:400;line-height:1.65;color:var(--color-text-primary);cursor:pointer;margin:0}
 .quiz-question > summary::-webkit-details-marker{display:none}
 .quiz-question > summary:hover{color:var(--color-primary)}
-.quiz-question[open] > summary{margin-bottom:8px}
+.quiz-question[open] > summary{margin-bottom:4px}
 .quiz-question > p{font-size:14px;line-height:1.65;color:var(--color-text-secondary);margin:0;padding:0 0 3px}
 
 .study-visual{margin:20px 0;padding:18px 0;border-block:1px solid var(--color-border);font-size:14px;line-height:1.65}

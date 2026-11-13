@@ -1,0 +1,13 @@
+/* Shared reference-style teaching diagrams. Blue is emphasis; grey is structure. */
+.diagram-art{width:100%;max-width:720px;margin:8px 0;padding:8px 0 4px;border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border);color:var(--color-text-primary)}
+.diagram-art>h4{font:600 15px/1.6 var(--font-sans);margin:0 0 4px;color:var(--color-text-primary)}
+.diagram-art>figcaption{display:block;font:400 12px/1.65 var(--font-sans);color:var(--color-text-tertiary);margin:4px 0 0}
+.ref-canvas{width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
+.ref-svg{display:block;width:100%;max-width:720px;min-width:620px;height:auto;margin-inline:auto;font-family:var(--font-sans)}
+.diagram-art .ref-compare{margin:0;font-family:var(--font-sans);overflow-x:auto}
+.ref-chart{width:100%;min-width:0}
+.ref-span-question{font:500 15px/1.6 var(--font-sans);margin:0 0 4px}
+.ref-span-context{font:400 17px/2.2 var(--font-sans);padding:16px 0;border-block:1px solid var(--color-border)}
+.ref-span-context mark{color:var(--color-text-brand,var(--color-primary));background:var(--color-primary-soft);padding:4px 6px;border-radius:4px;border-bottom:2px solid var(--color-primary)}
+.ref-span-meta{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:12px;font:400 13px/1.6 var(--font-sans);color:var(--color-text-tertiary)}
+@media(max-width:760px){.diagram-art{margin-block:8px}.ref-svg{min-width:620px}}

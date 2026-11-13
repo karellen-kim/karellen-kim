@@ -186,17 +186,8 @@
     padding-right: 1rem;
     background: var(--paper-deep);
   }
-  .note::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: -1px;
-    height: 1px;
-    width: 0;
-    background: var(--accent);
-    transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .note:hover::after { width: 100%; }
+
+
 
   .note .n {
     font-size: 0.82rem;
@@ -382,6 +373,7 @@
       to { opacity: 1; transform: translateY(0); }
     }
   }
+a:hover{text-decoration:none}.meta-row{gap:16px;flex-wrap:wrap}.meta-row>a{color:var(--accent-deep)}
 </style>
 </head>
 <body>
@@ -389,8 +381,8 @@
 <!-- HERO -->
 <header class="hero" id="top">
   <div class="meta-row">
-    <span>karellen-kim · notebook</span>
-    <span>last updated · 2026.09.20</span>
+    <span>karellen-kim · notebook</span><a href="./learning-notes.html">책·논문 학습</a>
+    <span>last updated · 2026.11.14</span>
   </div>
 
   <h1 class="hero-title">karellen's<br><em>notes</em></h1>
@@ -398,7 +390,7 @@
   <div class="hero-grid">
     <div>
       <span class="k">노트</span>
-      <span class="v">10<small>· 게재됨</small></span>
+      <span class="v">11<small>· 게재됨</small></span>
     </div>
     <div>
       <span class="k">분야</span>
@@ -427,6 +419,11 @@
   </div>
 
   <div class="notes">
+
+    <a class="note" href="./ai-powered-search.html">
+      <div class="n">011</div><div class="body"><h3>AI-Powered Search</h3><p>Trey Grainger · Doug Turnbull · Max Irwin. 질의 해석·행동 학습·벡터 검색·RAG를 연결하는 15장 학습 노트. 장별 목표·핵심 개념·복습·Quiz.</p></div><div class="meta"><span class="tag">Manning · 2024</span><span>책 · 15장</span><span class="arrow">→</span></div>
+    </a>
+
 
     <a class="note" href="./typesafe-jev.html">
       <div class="n">010</div>

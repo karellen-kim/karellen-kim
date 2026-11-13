@@ -1,0 +1,407 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="책과 논문을 학습 목표·핵심 개념·복습·Quiz로 정리한 학습 노트"><title>책·논문 학습 · karellen-kim</title><link href="./favicon.svg?v=3" rel="icon" type="image/svg+xml"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/><style>
+  :root {
+    --paper:        oklch(1 0 0);
+    --paper-deep:   oklch(0.985 0 0);
+    --ink:          oklch(0.18 0.015 260);
+    --ink-soft:     oklch(0.38 0.012 260);
+    --ink-faint:    oklch(0.58 0.008 260);
+    --rule:         oklch(0.90 0.005 260);
+    --accent:       oklch(0.55 0.16 38);
+    --accent-deep:  oklch(0.40 0.14 38);
+    --accent-wash:  oklch(0.96 0.025 50);
+    --sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* ───────── HERO ───────── */
+  .hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(2rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem);
+    position: relative;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    top: 2rem;
+    left: clamp(1.5rem, 5vw, 4rem);
+    right: clamp(1.5rem, 5vw, 4rem);
+    height: 1px;
+    background: var(--ink);
+  }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 2.5rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+  .meta-row span:last-child { color: var(--accent-deep); }
+
+  .hero-title {
+    font-size: clamp(2.6rem, 7vw, 5.8rem);
+    line-height: 0.95;
+    font-weight: 600;
+    margin-top: clamp(2rem, 5vw, 3rem);
+    letter-spacing: -0.035em;
+    color: var(--ink);
+  }
+  .hero-title em {
+    font-style: normal;
+    font-weight: 300;
+    color: var(--accent-deep);
+  }
+  .hero-sub {
+    margin-top: 1.4rem;
+    font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+    color: var(--ink-soft);
+    max-width: 44rem;
+    line-height: 1.5;
+    font-weight: 300;
+  }
+  .hero-sub strong { color: var(--ink); font-weight: 600; }
+
+  .hero-grid {
+    margin-top: clamp(3rem, 6vw, 5rem);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .hero-grid > div {
+    background: var(--paper);
+    padding: 1.25rem 1.5rem;
+  }
+  .hero-grid .k {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  .hero-grid .v {
+    font-size: 1.2rem;
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .hero-grid .v small {
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    margin-left: 0.25rem;
+    font-weight: 400;
+  }
+
+  /* ───────── SECTION ───────── */
+  .section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem);
+    border-top: 1px solid var(--rule);
+  }
+
+  .section-head {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: baseline;
+    margin-bottom: clamp(2rem, 5vw, 3.5rem);
+  }
+  .section-num {
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    line-height: 0.85;
+    color: var(--accent);
+    font-weight: 200;
+    letter-spacing: -0.04em;
+  }
+  .section-titles {
+    border-left: 1px solid var(--ink);
+    padding-left: clamp(1rem, 3vw, 2rem);
+    padding-top: 0.5rem;
+  }
+  .section-kicker {
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+  }
+  .section-title {
+    font-size: clamp(1.65rem, 3.2vw, 2.3rem);
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: -0.028em;
+  }
+
+  /* ───────── NOTE LIST ───────── */
+  .notes {
+    border-top: 2px solid var(--ink);
+  }
+  .note {
+    display: grid;
+    grid-template-columns: 4rem 1fr auto;
+    gap: clamp(1rem, 3vw, 2.5rem);
+    align-items: center;
+    padding: clamp(1.5rem, 3.5vw, 2.25rem) 0;
+    border-bottom: 1px solid var(--rule);
+    transition: padding 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+                background 0.2s ease;
+    position: relative;
+  }
+  .note:hover {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    background: var(--paper-deep);
+  }
+  
+  
+
+  .note .n {
+    font-size: 0.82rem;
+    color: var(--accent);
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    font-family: var(--mono);
+  }
+  .note .body { min-width: 0; }
+  .note .body h3 {
+    font-size: clamp(1.3rem, 2.2vw, 1.55rem);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.022em;
+    color: var(--ink);
+    margin-bottom: 0.45rem;
+  }
+  .note .body h3 em {
+    font-style: normal;
+    color: var(--accent-deep);
+    font-weight: 400;
+  }
+  .note .body p {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+  .note .meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.45rem;
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .note .meta .tag {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    padding: 0.22rem 0.55rem;
+    border: 1px solid var(--accent);
+    background: var(--accent-wash);
+  }
+  .note .arrow {
+    font-family: var(--mono);
+    color: var(--ink);
+    font-weight: 500;
+    font-size: 1.05rem;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .note:hover .arrow { transform: translateX(6px); color: var(--accent-deep); }
+
+  /* Trend variant — external live tracker */
+  .note.trend .body .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.9rem;
+  }
+  .note.trend .chip {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    padding: 0.22rem 0.6rem;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+    background: var(--paper);
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+  }
+  .note.trend:hover .chip {
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    background: var(--accent-wash);
+  }
+  .note.trend .n { font-family: var(--mono); color: var(--accent-deep); }
+
+  /* Coming soon variant */
+  .note.upcoming {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .note.upcoming:hover {
+    padding-left: 0;
+    padding-right: 0;
+    background: transparent;
+  }
+  .note.upcoming:hover::after { width: 0; }
+  .note.upcoming .meta .tag {
+    color: var(--ink-faint);
+    border-color: var(--rule);
+    background: var(--paper-deep);
+  }
+  .note.upcoming .arrow { color: var(--ink-faint); }
+
+  @media (max-width: 640px) {
+    .note { grid-template-columns: 3rem 1fr; gap: 1rem; }
+    .note .meta { grid-column: 1 / -1; align-items: flex-start; flex-direction: row; gap: 0.8rem; flex-wrap: wrap; }
+    .note .arrow { display: none; }
+  }
+
+  /* ───────── ABOUT ───────── */
+  .about {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+  @media (min-width: 760px) {
+    .about { grid-template-columns: 1fr 1.4fr; gap: clamp(2rem, 5vw, 4rem); }
+  }
+  .about .lead {
+    font-size: clamp(1.2rem, 2.1vw, 1.55rem);
+    line-height: 1.45;
+    color: var(--ink);
+    font-weight: 300;
+    letter-spacing: -0.015em;
+  }
+  .about .lead em {
+    font-style: normal;
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+  .about .deck {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .about .item {
+    padding: 1.2rem 0;
+    border-top: 1px solid var(--rule);
+  }
+  .about .item:first-child { border-top: 2px solid var(--ink); padding-top: 1.4rem; }
+  .about .item h4 {
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    margin-bottom: 0.45rem;
+  }
+  .about .item p {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+  .about .item a {
+    color: var(--ink);
+    border-bottom: 1px solid var(--rule);
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  .about .item a:hover { color: var(--accent-deep); border-color: var(--accent); }
+
+  /* ───────── FOOTER ───────── */
+  footer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 5vw, 4rem) 4rem;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+  }
+  footer a {
+    color: var(--accent-deep);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* reveal */
+  @media (prefers-reduced-motion: no-preference) {
+    .section, .note {
+      animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+
+
+.library{max-width:1200px;margin:auto;padding:32px clamp(20px,5vw,64px) 64px}
+.library-header{padding:22px 0 32px;border-top:1px solid var(--ink)}
+.library-top{display:flex;align-items:center;justify-content:space-between;gap:20px;font-size:14px;color:var(--ink-soft)}
+.library h1{font-size:clamp(32px,5vw,52px);line-height:1.25;letter-spacing:-.04em;font-weight:600;margin:40px 0 14px}
+.library-intro{color:var(--ink-soft);font-size:16px;line-height:1.8}
+.library-tools{display:flex;justify-content:space-between;gap:24px;align-items:center;padding:24px 0;border-top:1px solid var(--rule)}
+.filters{display:flex;gap:6px}.filters button{font:inherit;border:1px solid transparent;background:transparent;color:var(--ink-faint);padding:7px 13px;border-radius:5px;cursor:pointer}
+.filters button[aria-pressed=true]{background:var(--paper-deep);color:var(--ink);border-color:var(--rule)}
+.filters button:hover{color:var(--accent-deep)}
+.search-label{display:flex;align-items:center;gap:12px;color:var(--ink-faint);font-size:13px}
+.search-label input{width:250px;padding:9px 12px;font:inherit;border:1px solid var(--rule);border-radius:5px;background:var(--paper);color:var(--ink)}
+.catalog-head,.catalog-item{display:grid;grid-template-columns:minmax(0,1fr) 76px 68px;gap:20px}
+.catalog-head{border-top:2px solid var(--ink);padding:13px 0;font-size:12px;color:var(--ink-faint)}
+.catalog-item{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:25px 0;align-items:baseline;transition:background .15s}
+.catalog-item:hover{background:var(--paper-deep)}
+.catalog-item h2{font-size:23px;letter-spacing:-.02em;line-height:1.4;font-weight:600;margin:0 0 9px}
+.catalog-item:hover h2{color:var(--accent-deep)}
+.authors{font-size:14px;line-height:1.7;color:var(--ink-soft);margin-bottom:10px}
+.catalog-description{font-size:14px;color:var(--ink-faint);line-height:1.8;max-width:700px}
+.catalog-year,.catalog-type{font-size:14px;color:var(--ink-soft)}
+.catalog-foot{font-size:12px;color:var(--ink-faint);margin-top:12px}
+.empty{padding:32px 0;color:var(--ink-soft);border-top:1px solid var(--rule)}
+[hidden]{display:none!important}
+.library footer{margin-top:80px;padding:20px 0;font-size:12px}
+.library footer a{ text-decoration:none }a,a:hover,a:focus{text-decoration:none}a:hover{color:var(--accent-deep)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+@media(max-width:640px){.library-tools{align-items:stretch;flex-direction:column;gap:15px}.search-label input{flex:1;width:100%;min-width:0}.catalog-head,.catalog-item{grid-template-columns:minmax(0,1fr) 46px 30px;gap:10px}.catalog-item h2{font-size:20px}.authors{font-size:13px}.library h1{margin-top:30px}.library footer{margin-top:50px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style></head><body><main class="library">
+<header class="library-header"><div class="library-top"><a href="./index.html">← karellen's notes</a><a href="./list.html">전체 기술 노트</a></div><h1>책·논문 학습</h1><p class="library-intro">학습 목표를 잡고 핵심 개념을 연결한다.<br>한눈에 정리와 Quiz로 이해를 확인한다.</p></header>
+<div class="library-tools"><div class="filters" role="group" aria-label="자료 종류"><button type="button" data-type="all" aria-pressed="true">전체</button><button type="button" data-type="book" aria-pressed="false">책</button><button type="button" data-type="paper" aria-pressed="false">논문</button></div><label class="search-label" for="library-search">검색<input id="library-search" type="search" placeholder="제목·저자·연도" autocomplete="off"></label></div>
+<section aria-label="학습자료 목록"><div class="catalog-head" aria-hidden="true"><span>제목 · 저자</span><span>출판연도</span><span>종류</span></div>
+<a class="catalog-item" data-type="book" data-search="AI-Powered Search Trey Grainger Doug Turnbull Max Irwin 2024" href="./ai-powered-search.html"><div><h2>AI-Powered Search</h2><p class="authors">Trey Grainger · Doug Turnbull · Max Irwin</p><p class="catalog-description">질의 해석부터 행동 학습·벡터 검색·RAG까지, 검색 품질을 이해하는 15장 학습 노트.</p></div><span class="catalog-year">2024</span><span class="catalog-type">책</span></a>
+<p class="empty" role="status" hidden>조건에 맞는 학습자료가 없다.</p><p class="catalog-foot" aria-live="polite">학습자료 1개</p></section>
+<footer><span>karellen-kim · learning notes</span><a href="https://github.com/karellen-kim/karellen-kim">GitHub</a></footer></main>
+<script>
+let selected='all';const input=document.querySelector('#library-search'),items=[...document.querySelectorAll('.catalog-item')],buttons=[...document.querySelectorAll('.filters button')];
+function filter(){const q=input.value.trim().toLowerCase();let visible=0;for(const item of items){const on=(selected==='all'||selected===item.dataset.type)&&item.dataset.search.toLowerCase().includes(q);item.hidden=!on;if(on)visible++}document.querySelector('.empty').hidden=visible>0;document.querySelector('.empty').textContent=selected==='paper'&&!q?'아직 등록한 논문이 없다.':'조건에 맞는 학습자료가 없다.';document.querySelector('.catalog-foot').textContent='학습자료 '+visible+'개';}
+for(const button of buttons)button.addEventListener('click',()=>{selected=button.dataset.type;for(const b of buttons)b.setAttribute('aria-pressed',String(b===button));filter()});input.addEventListener('input',filter);
+</script></body></html>

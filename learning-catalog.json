@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "id": "ai-powered-search",
+      "type": "book",
+      "title": "AI-Powered Search",
+      "authors": [
+        "Trey Grainger",
+        "Doug Turnbull",
+        "Max Irwin"
+      ],
+      "year": 2024,
+      "publisher": "Manning",
+      "publication_basis": "Publisher page: December 2024",
+      "metadata_source": "https://www.manning.com/books/ai-powered-search",
+      "href": "./ai-powered-search.html",
+      "description": "질의 해석부터 행동 학습·벡터 검색·RAG까지, 검색 품질을 이해하는 15장 학습 노트.",
+      "chapters": 15,
+      "updated": "2026-11-14"
+    }
+  ]
+}

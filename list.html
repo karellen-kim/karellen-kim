@@ -116,15 +116,8 @@
     position: relative;
   }
   .note:hover { padding-left: 0.8rem; background: var(--paper-deep); }
-  .note::after {
-    content: "";
-    position: absolute;
-    left: 0; bottom: -1px;
-    height: 1px; width: 0;
-    background: var(--accent);
-    transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .note:hover::after { width: 100%; }
+
+
 
   .note-body {
     display: flex;
@@ -201,6 +194,14 @@
     <div class="note-body">
       <span class="note-title">Agent <em>Design Patterns</em></span>
       <span class="note-desc">Lance Martin 8패턴 — 컴퓨터 부여·multi-layer action·disclosure·offload·cache·isolate·evolve·learned</span>
+    </div>
+    <span class="note-arrow">→</span>
+  </a>
+
+  <a class="note" href="./ai-powered-search.html">
+    <div class="note-body">
+      <span class="note-title">AI-Powered Search</span>
+      <span class="note-desc">Trey Grainger · Doug Turnbull · Max Irwin · 2024 — 검색 관련성부터 RAG까지의 15장 학습 노트</span>
     </div>
     <span class="note-arrow">→</span>
   </a>

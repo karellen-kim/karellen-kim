@@ -1,0 +1,365 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Software Architecture Metrics의 10장 학습 노트. 품질 목표·지표·측정·개선의 연결을 정리한다."><title>Software Architecture Metrics · 책 학습 노트</title><link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./assets/css/learning.css"></head><body><a class="skip" href="#overview">본문으로 이동</a><aside class="sidebar" aria-label="장별 목차"><div class="brand"><a href="./learning-notes.html">Software Architecture Metrics</a></div><p class="date">학습 자료 · 2026.11.14</p><nav aria-label="목차"><a class="nav-overview" href="./learning-notes.html">← 책·논문 목록</a><a class="nav-overview" href="#overview">00　개요</a><a class="nav-link" href="#chapter-01"><span>01</span>전달 성과의 네 지표</a><a class="nav-link" href="#chapter-02"><span>02</span>피트니스 함수 설계</a><a class="nav-link" href="#chapter-03"><span>03</span>테스트·배포 경계</a><a class="nav-link" href="#chapter-04"><span>04</span>MMI와 구조적 부채</a><a class="nav-link" href="#chapter-05"><span>05</span>공유 전 검증</a><a class="nav-link" href="#chapter-06"><span>06</span>조직 목표와 기술 지표</a><a class="nav-link" href="#chapter-07"><span>07</span>품질 관측과 의사결정</a><a class="nav-link" href="#chapter-08"><span>08</span>자동 아키텍처 검증</a><a class="nav-link" href="#chapter-09"><span>09</span>유지보수성 지표</a><a class="nav-link" href="#chapter-10"><span>10</span>GQM과 필요한 관측</a></nav></aside><main><section id="overview" aria-labelledby="page-title"><p class="eyebrow">책 학습 노트</p><h1 id="page-title">Software Architecture Metrics</h1><p class="book-meta">Christian Ciceri · Dave Farley · Neal Ford · Andrew Harmel-Law · Michael Keeling · Carola Lilienthal · João Rosa · Alexander von Zitzewitz · Rene Weiss · Eoin Woods<br>2022 · O’Reilly Media · <a href="https://www.oreilly.com/library/view/software-architecture-metrics/9781098112226/">출판사 정보</a></p><p class="overview-lead">아키텍처 목표를 측정 가능한 질문으로 바꾸고,<br>관측 결과를 구조와 개발 흐름의 개선에 연결한다.</p><p class="read-note">장별 목표와 핵심 개념을 읽고, 한눈에 정리와 Quiz로 이해를 확인한다.</p><div class="map"><div><span class="num">01–03</span><a href="#chapter-01">목표와 검증</a><p>전달 지표·피트니스 함수·변경 능력</p></div><div><span class="num">04–06</span><a href="#chapter-04">구조와 조직</a><p>구조 부채·검증 책임·업무 경계</p></div><div><span class="num">07–08</span><a href="#chapter-07">관측과 자동화</a><p>품질 측정·반복 검증·교체 실험</p></div><div><span class="num">09–10</span><a href="#chapter-09">지표와 판단</a><p>유지보수성·개선 우선순위·GQM</p></div></div></section><section class="chapter" id="chapter-01" aria-labelledby="chapter-01-title"><header class="chapter-head"><span class="chapter-num">01</span><div><p class="original">Chapter 1. Four Key Metrics Unleashed</p><h2 id="chapter-01-title">전달 성과의 네 지표와 팀의 개선</h2></div></header><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>전달 속도와 안정성은 함께 봐야 한다.</li><li>같은 범위의 변경·배포·장애를 측정하고, 팀이 수치의 원인을 설명하며 구조를 개선하도록 사용한다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>네 전달 지표의 측정 경계와 집계 방식을 구별하고, 수치에서 아키텍처 개선의 질문을 찾는다.</li>
+</ul></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-01-concept-1"><span class="concept-num">01</span><h3>네 지표의 역할과 측정 경계</h3><div class="explanation"><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>관점</th>
+<th>지표</th>
+<th>확인할 것</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>전달 속도</td>
+<td>배포 빈도</td>
+<td>일정 기간 사용자에게 변경을 전달한 성공 배포 수</td>
+</tr>
+<tr>
+<td>전달 속도</td>
+<td>변경 리드 타임</td>
+<td>완료한 변경의 커밋부터 운영 반영까지 걸린 시간</td>
+</tr>
+<tr>
+<td>안정성</td>
+<td>변경 실패율</td>
+<td>배포 중 서비스 장애를 일으킨 변경의 비율</td>
+</tr>
+<tr>
+<td>안정성</td>
+<td>서비스 복구 시간</td>
+<td>장애 인지부터 서비스가 돌아올 때까지의 시간</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>속도가 좋아져도 안정성이 나빠질 수 있다.</strong> 빠른 배포만 보상하면 장애를 가릴 수 있다. 네 지표는 같은 서비스·변경 범위로 측정해야 함께 해석할 수 있다.</li>
+<li><strong>전체 제품 개발 시간과 구별한다.</strong> 리드 타임은 아이디어가 나온 때부터가 아니라 완료한 변경의 전달을 본다. main 병합을 시작점으로 대신 쓰면 병합 전 대기가 빠진 대리값이라는 점을 알아야 한다.</li>
+</ul></div></div><div class="concept" id="chapter-01-concept-2"><span class="concept-num">02</span><h3>배포와 장애의 계측</h3><div class="explanation"><ul>
+<li><strong>파이프라인 전체에서 같은 변경을 추적한다.</strong> 빌드가 끝나도 승인·환경 간 인계가 남아 있다면 전달은 끝나지 않았다. 여러 저장소의 변경을 한 번에 배포할 때는 각 변경의 시작을 최종 배포와 연결해야 한다.</li>
+</ul>
+<figure class="study-visual"><h4>하나의 배포와 여러 변경의 연결</h4><div class="branch-diagram"><div class="branch-inputs"><span>변경 A · 커밋 시각</span><span>변경 B · 커밋 시각</span><span>변경 C · 커밋 시각</span></div><span class="visual-arrow">→</span><div>공통 검증·승인</div><span class="visual-arrow">→</span><div>운영 배포 · 완료 시각</div></div><figcaption>최종 배포 시각이 같아도 변경별 리드 타임은 다를 수 있다. 배포 횟수와 변경 개수는 일대일이 아니다.</figcaption></figure>
+<ul>
+<li><strong>사용자에게 변경을 전달한 실행을 센다.</strong> 컴파일에서 끝난 실패나 변경 없는 정기 작업을 섞으면 실제 전달이 빨라지지 않아도 수치가 좋아 보일 수 있다.</li>
+<li><strong>복구와 근본 원인 수정을 구별한다.</strong> 롤백으로 서비스를 되살렸다면 복구는 끝날 수 있다. 티켓을 늦게 열면 그 이전의 장애 시간이 빠지므로 기록 시점과 실제 영향의 차이도 확인해야 한다.</li>
+</ul></div></div><div class="concept" id="chapter-01-concept-3"><span class="concept-num">03</span><h3>집계의 해석과 개선 대화</h3><div class="explanation"><ul>
+<li><strong>개별 측정값에서 기간 전체를 계산한다.</strong> 배포가 없던 날도 포함하고, 일평균을 다시 단순 평균하지 않는다. 보충 예시로 하루 1건이 10시간, 다음 날 9건이 각각 1시간이면 전체 평균은 19÷10=1.9시간이다. 일평균 둘의 평균인 5.5시간과 다르다.</li>
+<li><strong>안정성 지표의 단순화도 알아야 한다.</strong> 사례는 복구된 장애 수를 배포 수로 나누지만 장애와 배포가 일대일이라는 근사를 쓴다. 미복구 장애는 별도 건수로 드러내야 한다. 복구 시간의 평균은 긴 장애에 민감하고 중앙값은 덜 민감하다.</li>
+<li><strong>지표의 주 독자는 개선을 실행할 팀이다.</strong> 원시 기록·정의·기간을 공개해 수치 변화를 설명하게 한다. 승인 대기, 테스트 부족, 공동 배포 같은 병목을 논의하면서 자동화·테스트 용이성·독립 배포의 필요성을 찾는다. 지표가 해결책을 자동으로 정하지는 않는다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-01-recap"><h3>한눈에 정리</h3><ul>
+<li><strong>측정 경계:</strong> 완료한 변경부터 운영 반영까지의 전달과 사용자 영향의 복구를 본다.</li>
+<li><strong>집계:</strong> 같은 범위·분모를 사용하고 대리값과 근사의 한계를 구별한다.</li>
+<li><strong>개선:</strong> 속도와 안정성을 함께 보고 팀이 병목을 설명하게 한다.</li>
+</ul></section><section class="review quiz" id="chapter-01-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>빌드가 끝났지만 운영 승인에 이틀을 기다렸다. 그 대기를 리드 타임에 넣는가?</summary><p>넣는다. 변경이 사용자에게 전달되기 전의 대기이므로 파이프라인 전체 시간에 포함된다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>롤백으로 서비스가 정상화됐지만 원인 수정은 남았다. 복구 시간은 계속 늘어나는가?</summary><p>사용자 서비스가 돌아온 시점에서 복구는 끝날 수 있다. 근본 원인 수정 기간과 구별한다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>배포 빈도는 늘었지만 실패율도 높아졌다. 전달 성과가 개선됐다고 단정할 수 있는가?</summary><p>없다. 속도와 안정성을 같은 범위에서 함께 해석해야 한다.</p></details></div></section><a class="back-top" href="#overview">목차 위로 ↑</a></section><section class="chapter" id="chapter-02" aria-labelledby="chapter-02-title"><header class="chapter-head"><span class="chapter-num">02</span><div><p class="original">Chapter 2. The Fitness Function Testing Pyramid: An Analogy for Architectural Tests and Metrics</p><h2 id="chapter-02-title">품질 목표와 피트니스 함수의 설계</h2></div></header><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>기능 테스트 통과만으로 성능·복구성·변경 용이성을 알 수는 없다.</li><li>목표와 평가 조건을 먼저 정하고 그에 맞는 검사로 측정해야 한다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>피트니스 함수와 측정값을 구별하고, 검사 범위·실행 조건·유지 비용에 맞는 검사 구성을 판단한다.</li>
+</ul></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-02-concept-1"><span class="concept-num">01</span><h3>목표 정의와 검사 구현</h3><div class="explanation"><ul>
+<li><strong>피트니스 함수는 무엇을 좋다고 볼지 정한다.</strong> 목표값뿐 아니라 실행 환경과 조건까지 포함한다. 실제 검사에서 얻은 값이 지표다. 함수를 정하는 일과 검사 코드를 만드는 일은 구별해야 한다.</li>
+<li><strong>정상 동작 외의 조건도 검사한다.</strong> 외부 API에 10초 지연을 넣고 오류 없이 완료하는지 볼 수 있다. 다만 무한히 기다려도 오류율은 0%일 수 있으므로 전체 수행 시간의 상한도 함께 정해야 한다. 지연 주입값과 완료 시간 제한은 다른 조건이다.</li>
+<li><strong>품질 목표에서 시작한다.</strong> 커버리지를 쉽게 모을 수 있다는 이유로 목표를 대신하지 않는다. 누가 어떤 품질을 필요로 하는지 합의하고, 조건과 허용 범위를 먼저 정한다. 예제의 목표값은 모든 시스템의 기준이 아니다.</li>
+</ul></div></div><div class="concept" id="chapter-02-concept-2"><span class="concept-num">02</span><h3>검사 범위와 실행 조건</h3><div class="explanation"><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>판단 축</th>
+<th>정할 것</th>
+<th>중요한 구별</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>범위</td>
+<td>제한된 특성 또는 넓은 시스템 흐름</td>
+<td>통합 테스트라는 이름만으로 전체적 검사가 되지는 않는다</td>
+</tr>
+<tr>
+<td>계기·위치</td>
+<td>변경·예약·지속 실행, 테스트·운영 환경</td>
+<td>CI가 시작해도 실제 실행 환경은 따로일 수 있다</td>
+</tr>
+<tr>
+<td>값·목표</td>
+<td>통과 여부·수치·추세, 고정 또는 상황별 목표</td>
+<td>시간대가 다른 정상 상태에 같은 하한을 적용하면 오탐이 생길 수 있다</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>부분 검사의 성공은 전체 성공의 보장이 아니다.</strong> 커버리지나 복잡도는 제한된 특성을 본다. 여러 구성요소가 함께 작동하는 검사는 넓은 확신을 주지만 실패 원인을 격리하기 어렵고 유지 비용도 크다.</li>
+<li><strong>자동화와 수명도 선택이다.</strong> 수동 평가가 필요한 목표도 있고 특정 리팩터링 동안만 필요한 검사도 있다. 영구 검사라도 효용을 잃으면 수정하거나 폐기할 수 있다.</li>
+</ul></div></div><div class="concept" id="chapter-02-concept-3"><span class="concept-num">03</span><h3>피트니스 함수 피라미드와 선택</h3><div class="explanation"><figure class="study-visual"><h4>검사 범위와 유지 부담의 관계</h4><div class="fitness-layers"><div><strong>전체적 · 지속 평가</strong><span>넓은 상태를 계속 관찰 · 높은 유지 부담</span></div><div><strong>전체적 · 이벤트 / 부분적 · 지속</strong><span>범위와 실행 주기를 조절</span></div><div><strong>부분적 · 이벤트 검사</strong><span>제한된 특성을 빠르게 확인</span></div></div><figcaption>분류를 위한 재구성 도식. 검사 수나 비율을 고정하는 규칙은 아니다.</figcaption></figure>
+<ul>
+<li><strong>피라미드는 빠진 목표와 편중을 보는 도구다.</strong> 아래층의 작은 검사에서 시작해 필요한 넓은 검사를 보탠다. 단계 이름보다 실제 범위와 목적을 보고 분류한다.</li>
+<li><strong>검사 수보다 유용성을 판단한다.</strong> 목표·범위·계기·환경을 백로그에 기록하고 중요성과 구현 가능성으로 선택한다. 결과가 불안정하거나 의미를 잃으면 유지 비용을 검토해 바꾸거나 없앤다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-02-recap"><h3>한눈에 정리</h3><ul>
+<li><strong>정의:</strong> 품질 목표·목표값·평가 조건을 정한 뒤 검사를 구현한다.</li>
+<li><strong>구성:</strong> 범위·계기·환경에 따라 얻는 확신과 유지 부담이 달라진다.</li>
+<li><strong>선택:</strong> 피라미드 모양이나 검사 수보다 실제 품질 목표의 관찰 가능성을 본다.</li>
+</ul></section><section class="review quiz" id="chapter-02-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>오류율 0% 검사만으로 외부 API 지연에 잘 대응한다고 볼 수 있는가?</summary><p>없다. 무한히 기다려도 오류가 없을 수 있다. 완료 시간 같은 조건을 함께 정해야 한다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>운영에서 지속 수집하면 모두 전체적 검사인가?</summary><p>아니다. 제한된 특성 하나를 계속 관찰하는 부분적 검사도 있다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>검사 유지 비용은 큰데 더 이상 개선 판단에 쓰이지 않는다. 계속 늘려야 하는가?</summary><p>아니다. 효용과 목표를 검토해 수정·폐기할 수 있다.</p></details></div></section><a class="back-top" href="#overview">목차 위로 ↑</a></section><section class="chapter" id="chapter-03" aria-labelledby="chapter-03-title"><header class="chapter-head"><span class="chapter-num">03</span><div><p class="original">Chapter 3. Evolutionary Architecture: Guiding Architecture with Testability and Deployability</p><h2 id="chapter-03-title">변경 능력을 지키는 테스트와 배포 경계</h2></div></header><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>미래 요구를 모두 예측하기는 어렵다.</li><li>학습한 뒤 안전하게 구조를 바꿀 수 있도록 테스트 용이성과 배포 용이성을 지켜야 한다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>테스트와 배포의 어려움에서 결합과 경계 문제를 발견하고, 실제 출시 가능성을 평가하는 범위를 판단한다.</li>
+</ul></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-03-concept-1"><span class="concept-num">01</span><h3>지속적인 변경을 위한 구조</h3><div class="explanation"><ul>
+<li><strong>아키텍처는 미래를 고정하는 도면보다 변화의 선택지를 남기는 구조다.</strong> 예상하지 않은 수요에 대응할 수 있어야 하지만 오지 않을 미래를 과도하게 대비하면 현재의 복잡성만 늘어난다.</li>
+<li><strong>변경을 한정할 경계가 필요하다.</strong> 모듈성은 수정 범위를 줄이고, 응집도는 함께 바뀌는 것을 모으며, 관심사 분리는 무관한 판단을 분리한다. 추상화와 정보 은닉은 구현 변경이 밖으로 퍼지는 것을 막는다.</li>
+<li><strong>저장소 교체는 경계의 효과를 보여준다.</strong> 핵심 규칙이 저장 방식과 분리돼 있으면 교체 범위를 한정할 수 있다. 모든 교체가 공짜라는 뜻이 아니라 관심사가 섞일수록 변경이 퍼진다는 뜻이다.</li>
+</ul></div></div><div class="concept" id="chapter-03-concept-2"><span class="concept-num">02</span><h3>테스트 용이성과 설계 피드백</h3><div class="explanation"><ul>
+<li><strong>테스트에는 상태 준비·행위 실행·결과 관찰이 필요하다.</strong> 작은 행위 하나를 보려고 많은 외부 상태와 의존성을 조립해야 한다면 결합 문제일 수 있다. 테스트를 만들기 어려운 이유가 설계 개선의 단서가 된다.</li>
+<li><strong>내부 구현보다 공개한 행위를 검증한다.</strong> 내부 필드와 호출 순서를 고정하면 리팩터링마다 테스트도 바뀐다. 행위의 경계에서 기대를 확인하면 구현을 바꿔도 검증 목적을 유지하기 쉽다.</li>
+<li><strong>반복 가능한 검증이 변경 비용을 낮춘다.</strong> 자동 테스트는 같은 조건에서 변경 전후를 비교하게 한다. 설계가 끝난 뒤 확인하는 일뿐 아니라 설계 자체를 이끄는 제약으로 사용할 수 있다.</li>
+</ul></div></div><div class="concept" id="chapter-03-concept-3"><span class="concept-num">03</span><h3>실제 배포 단위와 파이프라인</h3><div class="explanation"><ul>
+<li><strong>통과한 후보는 추가 작업 없이 출시 가능해야 한다.</strong> 파이프라인 뒤에 다른 부분과 결합해 광범위한 테스트가 더 필요하면 그 통과는 부분 검증이다. 코드 저장소나 팀의 편의보다 실제 독립 배포 단위가 평가 범위를 정한다.</li>
+<li><strong>운영에 갈 바로 그 산출물을 평가한다.</strong> 검사 뒤 다른 변경과 섞거나 새 산출물을 만들면 앞선 결과가 최종 후보를 보장하지 못한다. 같은 후보에 같은 검사를 반복할 때 결과가 일관돼야 판단도 신뢰할 수 있다.</li>
+<li><strong>배포의 어려움은 큰 구조의 결합을 드러낸다.</strong> 작은 수정마다 공동 배포가 필요하다면 경계 밖으로 조정 비용이 퍼지고 있을 수 있다. 테스트와 배포의 용이성을 지키는 것이 미래 요구에 대응할 여지를 만든다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-03-recap"><h3>한눈에 정리</h3><ul>
+<li><strong>설계 목적:</strong> 현재 구조를 고정하기보다 나중에 바꿀 수 있는 능력을 지킨다.</li>
+<li><strong>테스트:</strong> 상태 준비와 결과 관찰의 어려움에서 결합을 찾는다.</li>
+<li><strong>배포:</strong> 실제 출시 단위와 검증 범위를 맞춘다.</li>
+</ul></section><section class="review quiz" id="chapter-03-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>단위 테스트 하나에 전체 외부 환경이 필요하다. 무엇을 살펴야 하는가?</summary><p>검증 대상의 경계와 의존성 결합을 살펴야 한다. 관련 변수만 통제할 수 있는지 확인한다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>검사한 산출물에 다른 변경을 합친 뒤 배포한다. 앞선 통과가 최종 후보를 검증하는가?</summary><p>그대로 보장하지 않는다. 운영에 갈 바로 그 후보를 평가해야 한다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>파이프라인 뒤에 별도 통합 승인이 필수다. 이미 독립 출시 가능성을 판단한 것인가?</summary><p>아니다. 추가 평가가 필요하다면 부분 검증이다. 실제 배포 경계와 검사 범위를 맞춰야 한다.</p></details></div></section><a class="back-top" href="#overview">목차 위로 ↑</a></section><section class="chapter" id="chapter-04" aria-labelledby="chapter-04-title"><header class="chapter-head"><span class="chapter-num">04</span><div><p class="original">Chapter 4. Improve Your Architecture with the Modularity Maturity Index</p><h2 id="chapter-04-title">MMI를 이용한 구조적 부채 평가</h2></div></header><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>코드량이나 결함 수만으로 구조적 부채를 판단할 수는 없다.</li><li>모듈의 책임·의존 방향·패턴 일관성을 실제 코드와 설계 의도에 비춰 평가해야 한다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>MMI의 평가 축과 가중 계산을 이해하고, 점수와 구조 검토를 리팩터링·교체 판단에 연결한다.</li>
+</ul></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-04-concept-1"><span class="concept-num">01</span><h3>구조적 부채와 세 평가 축</h3><div class="explanation"><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>축</th>
+<th>비중</th>
+<th>살펴볼 관계</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>모듈화</td>
+<td>45%</td>
+<td>책임과 경계, 인터페이스, 단위 크기의 균형</td>
+</tr>
+<tr>
+<td>위계</td>
+<td>30%</td>
+<td>계층 방향 위반, 클래스·패키지의 순환</td>
+</tr>
+<tr>
+<td>패턴 일관성</td>
+<td>25%</td>
+<td>팀이 사용하는 패턴과 실제 코드 역할의 대응</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>모듈 개수만으로 모듈화를 판단하지 않는다.</strong> 이름만 나눈 폴더보다 변경을 한정하는 책임과 내부·외부 의존 관계가 중요하다. 한 단위에 대부분의 코드가 몰렸다면 여러 단위가 있다는 사실만으로 균형을 보장하지 못한다.</li>
+<li><strong>포함 관계와 사용 관계를 구별한다.</strong> 패키지가 계층적으로 정리돼도 서로 되돌아가는 참조가 있으면 변경이 얽힌다. 작은 순환과 많은 클래스에 걸친 순환은 수정 범위가 다르다.</li>
+<li><strong>패턴은 실제 역할로 평가한다.</strong> 디렉터리가 달라도 같은 패턴의 역할을 이룰 수 있다. 이름과 구조가 일관돼야 익숙한 패턴이 이해 비용을 줄인다. 도구의 숫자만으로 의미상 응집도까지 확정할 수는 없다.</li>
+</ul></div></div><div class="concept" id="chapter-04-concept-2"><span class="concept-num">02</span><h3>MMI 점수와 해석</h3><div class="explanation"><ul>
+<li><strong>하위 평가를 0~10점으로 바꿔 가중 합산한다.</strong> 모듈화는 도메인·기술 모듈화 25%, 인터페이스 10%, 단위 크기 10%로 나뉜다. 위계는 계층 15%, 순환 15%이며 패턴은 25%다. 각 범주 안의 기준을 먼저 평가한 뒤 결합한다.</li>
+<li><strong>점수는 조사 방향을 정하는 지침이다.</strong> 저자는 8~10을 부채가 낮은 구간, 4~8을 리팩터링 검토 구간으로 본다. 4 미만은 리팩터링과 교체의 타당성을 신중히 비교한다. 낮은 점수가 자동 폐기 명령은 아니다.</li>
+<li><strong>정확한 재현에는 평가 기준이 필요하다.</strong> 크기·순환의 측정뿐 아니라 책임 명확성 같은 질적 판단도 포함된다. 도구별 계산 정의와 팀 맥락을 맞춰야 시스템 간 비교가 의미를 가진다.</li>
+</ul></div></div><div class="concept" id="chapter-04-concept-3"><span class="concept-num">03</span><h3>실제 구조와 목표 구조의 비교</h3><div class="explanation"><ul>
+<li><strong>문서의 설계와 실제 의존 관계를 비교한다.</strong> 분석 도구로 추출한 구조에 팀의 목표 모듈·계층·패턴을 대응시킨다. 계획이 존재한다는 사실은 구현이 따랐다는 증거가 아니다.</li>
+<li><strong>차이를 무조건 구현 오류로 취급하지 않는다.</strong> 구현이 더 낫다면 목표를 바꾸고, 계획이 유효하면 코드를 개선한다. 둘 다 부족하다면 새 목표를 정한다. 평가자와 팀이 판단해야 할 지점이다.</li>
+<li><strong>총점보다 부채의 위치를 개선한다.</strong> 문제 범주와 변경 범위를 찾아 우선순위를 정하고 일상 변경에 리팩터링을 포함한다. 이후 다시 관찰해야 부채 관리가 이어진다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-04-recap"><h3>한눈에 정리</h3><ul>
+<li><strong>평가 축:</strong> 모듈화·위계·패턴 일관성으로 구조를 나눠 본다.</li>
+<li><strong>점수:</strong> 가중 평가를 의사결정의 단서로 사용하며 자동 처방으로 삼지 않는다.</li>
+<li><strong>검토:</strong> 실제 코드와 목표 설계를 비교해 둘 중 무엇을 바꿀지 판단한다.</li>
+</ul></section><section class="review quiz" id="chapter-04-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>디렉터리를 여러 개로 나누면 모듈화가 성숙했다고 볼 수 있는가?</summary><p>없다. 책임과 실제 의존 관계가 경계에 맞는지 확인해야 한다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>MMI가 4 미만이면 즉시 시스템을 버려야 하는가?</summary><p>아니다. 저자의 판단 지침이며 리팩터링과 교체의 타당성을 신중히 비교해야 한다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>실제 코드가 설계와 다르면 코드를 항상 설계에 맞춰야 하는가?</summary><p>아니다. 실제 구현이 더 적절할 수도 있다. 팀과 함께 목표 자체를 바꿀지 판단해야 한다.</p></details></div></section><a class="back-top" href="#overview">목차 위로 ↑</a></section><section class="chapter" id="chapter-05" aria-labelledby="chapter-05-title"><header class="chapter-head"><span class="chapter-num">05</span><div><p class="original">Chapter 5. Private Builds and Metrics: Tools for Surviving DevOps Transitions</p><h2 id="chapter-05-title">공유 전 검증과 개발 흐름의 지표</h2></div></header><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>자동화가 있어도 개발자가 검증 환경을 통제하지 못하면 피드백과 수정이 막힐 수 있다.</li><li>공유 전 검증과 세 흐름 지표로 문제의 발견 위치와 숨은 복구 비용을 살펴야 한다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>private build의 목적을 설명하고, 피드백 지연·통합 문제·복구 비용을 함께 해석한다.</li>
+</ul></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-05-concept-1"><span class="concept-num">01</span><h3>검증 책임과 private build</h3><div class="explanation"><ul>
+<li><strong>CI 도구의 도입과 공동 책임은 다르다.</strong> 별도 자동화 팀에 모든 수정 권한이 몰리면 개발자는 빌드가 깨져도 기다려야 한다. 깨진 빌드를 즉시 고치려면 진단 지식과 수정 권한이 함께 있어야 한다.</li>
+<li><strong>private build는 공유 전에 최신 변경과 함께 검증하는 절차다.</strong> 개발자가 통제하는 전용 환경에서 자기 변경과 다른 팀원의 최신 코드를 결합해 확인한다. 로컬은 반드시 개인 노트북을 뜻하지 않는다.</li>
+<li><strong>완전한 자동화가 없어도 작은 검증부터 할 수 있다.</strong> API 계약과 중요한 사용 경로를 자동 또는 임시 수동 검사로 확인한다. 수동 목록을 끝없이 늘리는 대신 반복 작업을 자동화할 실제 문제로 삼는다.</li>
+</ul></div></div><div class="concept" id="chapter-05-concept-2"><span class="concept-num">02</span><h3>세 지표의 역할</h3><div class="explanation"><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>지표</th>
+<th>보여주는 문제</th>
+<th>혼동하지 않을 것</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>피드백까지의 시간·노력</td>
+<td>통합·QA 등의 유효한 반응을 받기까지의 지연</td>
+<td>느리다는 사실만으로 어느 조직이나 도구가 원인인지 알 수 없다</td>
+</tr>
+<tr>
+<td>반복당 피할 수 있었던 통합 문제</td>
+<td>공유 전 검사로 잡을 수 있었지만 뒤에서 발견한 결함</td>
+<td>QA가 찾은 모든 결함 수와 다르다</td>
+</tr>
+<tr>
+<td>반복당 trunk 안정성 복구 시간</td>
+<td>공통 코드 파손을 디버깅·수정하는 비용</td>
+<td>뒤로 결함이 안 넘어갔다고 이 노동이 사라지지는 않는다</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>지표를 함께 봐야 문제가 이동했는지 알 수 있다.</strong> QA의 결함이 적어도 누군가 trunk를 계속 고치고 있다면 복구 비용이 기능 개발을 잠식할 수 있다.</li>
+<li><strong>조합은 원인 가설이다.</strong> 피드백이 느리고 통합 문제가 많으면 검증이 뒤로 밀렸을 수 있다. 세 값이 모두 작아도 미탐지인지 안정성인지 더 확인해야 한다. 수치만으로 원인을 확정하지 않는다.</li>
+</ul></div></div><div class="concept" id="chapter-05-concept-3"><span class="concept-num">03</span><h3>빠른 검증과 전체 비용</h3><div class="explanation"><ul>
+<li><strong>최신 구성요소를 함께 검증한다.</strong> 사례에서는 프런트엔드가 안정된 옛 API만 쓰다가 최신 데이터와의 불일치를 놓쳤다. 다른 직군의 환경도 실행할 수 있게 하고 계약·데이터 변경을 함께 확인해 공유 전 발견을 늘렸다.</li>
+<li><strong>통제할 수 없는 의존성을 분리한다.</strong> 불안정한 외부 서비스의 가짜 구현으로 막힌 자동화를 기다리지 않고 검증할 수 있다. 다만 가짜 구현이 실제 운영 통합까지 보장하는 것은 아니다.</li>
+<li><strong>추가 검사 비용을 뒤늦은 비용과 비교한다.</strong> private build는 준비와 검사 시간이 든다. 비교 대상은 검증하지 않는 0의 비용이 아니라 QA 왕복·티켓·복구 비용이다. 안정된 공통 코드가 있어야 아키텍처 특성의 측정도 신뢰하기 쉽다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-05-recap"><h3>한눈에 정리</h3><ul>
+<li><strong>검증 위치:</strong> 최신 공통 변경과 자기 작업을 공유 전에 확인한다.</li>
+<li><strong>관찰:</strong> 피드백 지연·통합 결함·복구 노동을 함께 본다.</li>
+<li><strong>비용:</strong> 사전 검사의 부담을 뒤늦은 조정·복구 비용과 비교한다.</li>
+</ul></section><section class="review quiz" id="chapter-05-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>자동화 담당 팀을 만들면 DevOps의 공동 책임도 생기는가?</summary><p>자동으로 생기지 않는다. 개발자가 환경을 이해하고 진단·수정할 수 있는 권한과 협업이 필요하다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>QA가 찾은 통합 문제가 적으면 공유 코드가 건강하다고 볼 수 있는가?</summary><p>단정할 수 없다. 누군가 계속 복구하고 있을 수 있으므로 trunk 복구 시간도 봐야 한다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>private build가 있으면 운영 통합 검사를 없애도 되는가?</summary><p>아니다. 공유 전 피할 수 있는 문제를 줄이는 절차이며 최종 운영 검증을 완전히 대체하지 않는다.</p></details></div></section><a class="back-top" href="#overview">목차 위로 ↑</a></section><section class="chapter" id="chapter-06" aria-labelledby="chapter-06-title"><header class="chapter-head"><span class="chapter-num">06</span><div><p class="original">Chapter 6. Scaling an Organization: The Central Role of Software Architecture</p><h2 id="chapter-06-title">조직 목표·업무 경계·기술 지표의 연결</h2></div></header><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>서비스 수를 늘려도 공동 배포와 소유권 혼란이 남으면 전달은 빨라지지 않는다.</li><li>조직 목표에서 업무 흐름과 기술 관측으로 내려가 바꿀 경계를 찾아야 한다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>사업 목표와 기술 지표를 연결하고, 경계 변경의 효과를 단계적인 실험으로 판단한다.</li>
+</ul></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-06-concept-1"><span class="concept-num">01</span><h3>서비스 분할과 조직 경계</h3><div class="explanation"><ul>
+<li><strong>분산 여부와 구조의 건강성은 별개다.</strong> 모놀리스도 잘 나눌 수 있고 마이크로서비스도 얽힐 수 있다. 기능 하나를 내보내기 위해 여러 팀과 서비스를 함께 조정한다면 분산 통신 비용만 더해졌을 수 있다.</li>
+<li><strong>업무 흐름 위에 코드와 소유권을 겹쳐 본다.</strong> EventStorming 같은 공동 워크숍으로 사건·책임 영역을 정리하고 현재 서비스와 담당 팀을 대응시킨다. 서비스가 작아도 한 팀이 무관한 여러 영역을 맡으면 이해 부담이 커진다.</li>
+<li><strong>지표의 정의도 공동으로 맞춘다.</strong> 같은 KPI 이름을 다르게 이해하면 개선 방향과 전후 비교가 어긋난다. 업무 전문가와 개발자가 함께 의미와 기술 제약을 드러내야 한다.</li>
+</ul></div></div><div class="concept" id="chapter-06-concept-2"><span class="concept-num">02</span><h3>KPI 가치 트리와 연결 가설</h3><div class="explanation"><figure class="study-visual"><h4>조직의 결과와 기술 관측의 연결</h4><div class="value-tree"><div><strong>조직 목표·KPI</strong><span>고객 가치·조직 성과</span></div><span class="visual-down">↓</span><div><strong>도메인 목표·KPI</strong><span>완료 비율·요청부터 완료까지 시간</span></div><span class="visual-down">↓</span><div class="tree-leaves"><span>업무 관측<br/>처리 시간·수동 정정</span><span>기술 관측<br/>배포 빈도·변경 실패율</span></div></div><figcaption>하위 관측이 좋아지면 상위 목표에 기여할 것이라는 가설을 드러낸다. 기술 지표의 개선만으로 사업 성과를 확정하지 않는다.</figcaption></figure>
+<ul>
+<li><strong>큰 목표를 바꿀 수 있는 흐름으로 구체화한다.</strong> 회사의 성과를 바로 서버 지표로 바꾸는 대신, 어떤 업무의 완료 비율과 시간을 개선할지 정하고 그 아래 관측을 고른다.</li>
+<li><strong>관측과 강제 목표를 구별한다.</strong> 지표를 팀 순위의 점수로 쓰면 서로 다른 배포 경로·기술·지식 부담을 잃는다. 배포할 능력과 사용자에게 실제 노출하는 빈도도 같지 않다.</li>
+</ul></div></div><div class="concept" id="chapter-06-concept-3"><span class="concept-num">03</span><h3>경계 변경의 실험과 갱신</h3><div class="explanation"><ul>
+<li><strong>새 경계가 책임을 맡을 수 있는지 단계적으로 확인한다.</strong> 가상 사례에서는 중앙 서비스에 얽힌 도메인 정보를 새 서비스에서도 관리해 본 뒤 책임을 옮긴다. 서비스 수보다 공동 릴리스 조정과 실패가 줄었는지를 관찰한다.</li>
+<li><strong>변경 비용과 기대 학습을 먼저 설명한다.</strong> 실험 중 기능 전달은 줄 수 있다. 단기 비용을 숨기지 않고 조직 목표와의 연결을 이해관계자에게 알려야 지지를 얻고 배움을 공유할 수 있다.</li>
+<li><strong>병목이 달라지면 관측도 바꾼다.</strong> 목표가 유지돼도 그 목표에 기여할 하위 지표는 달라질 수 있다. 기술 경계·도메인 경계·팀 소유권 중 무엇이 맞지 않는지 반복해서 판단한다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-06-recap"><h3>한눈에 정리</h3><ul>
+<li><strong>경계:</strong> 서비스 크기보다 업무 흐름·책임·독립 변경 가능성을 본다.</li>
+<li><strong>연결:</strong> 조직 KPI에서 도메인 목표와 업무·기술 관측으로 내려간다.</li>
+<li><strong>실험:</strong> 경계 변경의 비용과 기대 효과를 밝히고 병목에 따라 지표를 갱신한다.</li>
+</ul></section><section class="review quiz" id="chapter-06-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>마이크로서비스가 많아졌지만 모든 릴리스가 여러 팀의 공동 배포다. 무엇을 봐야 하는가?</summary><p>서비스 수보다 책임 경계와 실제 변경 의존 관계를 봐야 한다. 독립 배포라는 기대가 실현됐는지 확인한다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>배포 빈도가 늘면 조직 KPI도 개선됐다고 확정할 수 있는가?</summary><p>없다. 가치 트리는 연결 가설이며 실제 도메인과 조직의 결과도 관찰해야 한다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>기존 병목을 해결했는데 같은 하위 지표를 계속 고정해야 하는가?</summary><p>아니다. 목표는 유지해도 다음 병목과 개선 가설에 맞춰 하위 관측을 바꿀 수 있다.</p></details></div></section><a class="back-top" href="#overview">목차 위로 ↑</a></section><section class="chapter" id="chapter-07" aria-labelledby="chapter-07-title"><header class="chapter-head"><span class="chapter-num">07</span><div><p class="original">Chapter 7. The Role of Measurement in Software Architecture</p><h2 id="chapter-07-title">품질 관측과 아키텍처 의사결정</h2></div></header><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>측정은 보고서의 끝이 아니라 다음 결정을 고르는 입력이다.</li><li>성숙도에 맞는 관측을 선택하고, 변경 뒤 같은 조건으로 효과를 다시 봐야 한다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>품질별 측정 조건과 대리값의 한계를 구별하고, 설계 추정에서 운영 관측으로 이어지는 개선 순환을 설명한다.</li>
+</ul></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-07-concept-1"><span class="concept-num">01</span><h3>측정 방법과 시스템의 성숙도</h3><div class="explanation"><ul>
+<li><strong>직접 실행하기 전에는 산출물과 모델을 사용한다.</strong> 설계 분석·코드 복잡도·용량 추정은 일찍 판단할 근거를 준다. 다만 운영 품질의 대리 신호이므로 실제 실행이 가능해지면 측정으로 보정해야 한다.</li>
+<li><strong>운영에서는 서로 다른 관측을 연결한다.</strong> 로그는 사건을 기록하고 트레이스는 요청의 사건을 구성요소에 걸쳐 잇는다. 메트릭은 일정 기간의 특성을 수치화한다. 인프라 값만 쉽게 모으기보다 사용자에게 중요한 애플리케이션 흐름을 계측해야 한다.</li>
+<li><strong>피트니스 함수는 측정값을 판단 기준에 연결한다.</strong> 허용 값과 확인 조건을 정하는 일이며 실제 요청 시간 등을 얻는 도구를 대신하지는 않는다.</li>
+</ul></div></div><div class="concept" id="chapter-07-concept-2"><span class="concept-num">02</span><h3>품질마다 다른 측정 조건</h3><div class="explanation"><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>품질</th>
+<th>볼 것</th>
+<th>해석 조건</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>성능</td>
+<td>한 작업의 지연 시간, 일정 시간의 처리량</td>
+<td>요청·데이터·부하를 맞추고 분포로 본다</td>
+</tr>
+<tr>
+<td>확장성</td>
+<td>자원 증가에 따른 수용 능력 변화</td>
+<td>허용 응답 시간을 지킨 처리량과 비용을 비교한다</td>
+</tr>
+<tr>
+<td>가용성</td>
+<td>실패 사이 시간, 서비스 복구 시간</td>
+<td>구성요소별 실패가 실제 사용자 기능에 미치는 영향을 본다</td>
+</tr>
+<tr>
+<td>데이터 복구</td>
+<td>허용할 손실 범위(RPO), 다시 이용할 때까지 허용 시간(RTO)</td>
+<td>일부 서비스의 선복구와 전체 데이터 복구를 구별한다</td>
+</tr>
+<tr>
+<td>보안</td>
+<td>분석·침투 검사 등의 발견 사항</td>
+<td>오탐과 심각도를 고려한다. 발견 건수가 보안 전체의 직접 측정은 아니다</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>성능과 확장성은 다르다.</strong> 현재 빨리 처리해도 자원을 더했을 때 같은 비율로 처리량이 늘지는 않는다. 응답 시간이 무너진 채 처리 건수만 늘어난 것은 확장 성공으로 볼 수 없다.</li>
+<li><strong>복구 목표는 실패 시나리오별로 정한다.</strong> 장애가 얼마나 자주 생기는지와 돌아오는 데 걸리는 시간은 다르다. 운영 이력이 부족해도 복구 경로는 먼저 시험할 수 있다. 데이터 복구 완료와 서비스의 복구 시점도 다를 수 있다.</li>
+<li><strong>대리 지표를 품질 자체로 읽지 않는다.</strong> 취약점이 발견되지 않았다는 사실은 안전의 증명이 아니다. 같은 방법·좋은 데이터·전문가 판단을 함께 사용해야 한다.</li>
+</ul></div></div><div class="concept" id="chapter-07-concept-3"><span class="concept-num">03</span><h3>측정과 개선의 순환</h3><div class="explanation"><ul>
+<li><strong>결정을 바꿀 몇 가지부터 고른다.</strong> 설계 추정 → 코드 분석 → 실행 검사 → 운영 관찰로 학습을 확장한다. 측정 도입과 자동 빌드 차단 정책의 도입도 따로 판단할 수 있다.</li>
+<li><strong>변경 뒤 효과를 다시 본다.</strong> 수치로 우선순위를 정하고 구조를 바꾼 뒤 재측정한다. 정밀도를 높여도 다음 선택이 달라지지 않는다면 다른 문제에 투자하는 편이 낫다. 더 이상 쓰이지 않는 관측도 정리한다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-07-recap"><h3>한눈에 정리</h3><ul>
+<li><strong>시점:</strong> 초기 추정을 구현·운영 관측으로 보정한다.</li>
+<li><strong>조건:</strong> 품질별 작업·부하·실패 시나리오와 대리값의 한계를 정한다.</li>
+<li><strong>활용:</strong> 우선순위 결정 → 변경 → 재측정으로 이어져야 가치가 생긴다.</li>
+</ul></section><section class="review quiz" id="chapter-07-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>응답 시간이 크게 나빠졌지만 처리량이 늘었다. 확장성이 좋아졌다고 볼 수 있는가?</summary><p>허용 성능을 지켰는지 함께 봐야 한다. 처리량 증가만으로 확장 성공을 판단할 수 없다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>정적 보안 검사에서 발견이 0건이다. 시스템 보안이 완전함을 뜻하는가?</summary><p>아니다. 해당 검사에서 발견한 결과를 측정한 것이며 보안 전체의 직접 측정이 아니다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>더 정확한 측정을 해도 다음 결정이 바뀌지 않는다. 계속 정밀화해야 하는가?</summary><p>그 비용의 효용을 다시 판단해야 한다. 의사결정에 필요한 정확도까지 확보하고 다른 문제에 투자할 수 있다.</p></details></div></section><a class="back-top" href="#overview">목차 위로 ↑</a></section><section class="chapter" id="chapter-08" aria-labelledby="chapter-08-title"><header class="chapter-head"><span class="chapter-num">08</span><div><p class="original">Chapter 8. Progressing from Metrics to Engineering</p><h2 id="chapter-08-title">지표를 반복 가능한 아키텍처 검증으로 전환</h2></div></header><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>지표를 사후 보고에만 쓰면 위반이 쌓인 뒤 발견한다.</li><li>기준·반복 검사·결과에 따른 조치를 연결해 구조와 실행 품질의 변화를 일찍 알아야 한다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>구조 규칙과 운영 관측을 실행 가능한 검증으로 연결하고, 교체 후보를 실제 요청으로 평가하는 원리를 설명한다.</li>
+</ul></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-08-concept-1"><span class="concept-num">01</span><h3>지표와 반복 검사의 연결</h3><div class="explanation"><ul>
+<li><strong>수치에 판단 기준과 실행을 붙인다.</strong> 순환 의존을 대시보드에서 가끔 보는 대신 변경마다 검사하면 위반이 작을 때 발견할 수 있다. 사람의 기억과 모든 변경을 읽는 아키텍트의 능력에만 의존하지 않는다.</li>
+<li><strong>넓은 품질을 관찰 가능한 특성으로 나눈다.</strong> 신뢰성처럼 합성된 목표를 하나의 숫자로 고집하기보다 가용성·무결성 등 구체적으로 확인할 대상으로 분해한다. 피트니스 함수는 특정 검사 프레임워크 하나로 한정되지 않는다.</li>
+</ul></div></div><div class="concept" id="chapter-08-concept-2"><span class="concept-num">02</span><h3>코드·운영 관계의 정책 검증</h3><div class="explanation"><ul>
+<li><strong>설계의 허용 관계를 코드와 대응시킨다.</strong> 계층을 그려 둔 것만으로 구현이 지키지는 않는다. 패키지의 순환과 계층 우회를 검사해 명세를 실행 가능하게 유지한다.</li>
+<li><strong>실행 중 관계는 관측에서 얻는다.</strong> 서비스 로그의 출발지·목적지를 허용 호출 관계와 비교할 수 있다. 정적 코드 검사만으로 분산 호출 전체를 알 수는 없다. 정상 오케스트레이션과 금지한 서비스 간 호출을 구별해야 한다.</li>
+<li><strong>검사 자체의 변경도 실행 계기다.</strong> 애플리케이션 변경이 없는 프로젝트도 새 보안 검사를 적용해 평가할 수 있어야 한다. 다만 규칙을 과도하게 늘리면 개발을 방해하므로 중요한 원칙에 집중한다.</li>
+</ul></div></div><div class="concept" id="chapter-08-concept-3"><span class="concept-num">03</span><h3>실제 요청을 이용한 교체 검증</h3><div class="explanation"><ul>
+<li><strong>기존 결과를 유지하며 후보를 관찰한다.</strong> 기존 구현은 항상 실행하고, 일부 요청에서 후보도 실행해 결과·예외·시간을 비교한다. 사용자에게는 기존 결과를 반환하므로 후보의 불일치를 고치면서 전환을 준비할 수 있다.</li>
+</ul>
+<figure class="study-visual"><h4>교체 후보의 비교와 사용자 응답 분리</h4><div class="shadow-paths"><div><strong>모든 요청 → 기존 구현</strong><span>기존 결과 → 사용자 응답</span></div><div><strong>일부 표본 → 후보 구현</strong><span>후보 결과·예외·시간 → 비교 기록</span></div></div><figcaption>같은 표본에서 기존·후보를 비교한다. 두 구현을 실행하는 비용과 부작용의 안전성은 별도로 고려해야 한다.</figcaption></figure>
+<ul>
+<li><strong>일치와 성능을 함께 확인한다.</strong> 전체 실행량에 묻힌 작은 오류는 따로 보고, 평균뿐 아니라 높은 백분위의 실행 시간도 비교한다. 예제의 요청 비율·관측 기간을 모든 교체의 고정 기준으로 쓰지는 않는다.</li>
+<li><strong>동시 검증의 위험도 남는다.</strong> 후보 예외가 응답에 전달되지 않아도 실행 비용은 든다. 데이터 변경 같은 부작용이 있는 함수를 그대로 두 번 실행해도 안전하다는 보장은 아니다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-08-recap"><h3>한눈에 정리</h3><ul>
+<li><strong>전환:</strong> 관측값에 허용 기준·반복 실행·조치를 연결한다.</li>
+<li><strong>범위:</strong> 코드 규칙은 정적 관계로, 서비스 정책은 실제 호출 관측으로 검증한다.</li>
+<li><strong>교체:</strong> 기존 응답을 유지하며 후보의 결과와 성능을 비교한다.</li>
+</ul></section><section class="review quiz" id="chapter-08-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>계층 설계 문서가 있으면 실제 코드도 지킨다고 볼 수 있는가?</summary><p>없다. 의도한 역할을 패키지와 연결하고 실제 의존 관계를 검사해야 한다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>기존·후보 비교에서 후보가 틀리면 사용자에게도 그 답을 주는가?</summary><p>이 방식은 기존 결과만 반환한다. 후보 결과와 오류는 비교 기록으로 사용한다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>응답에 후보 결과를 쓰지 않으므로 후보 실행은 아무 위험이 없는가?</summary><p>아니다. 실행 비용과 부작용은 남는다. 실제 입력을 두 구현에 적용해도 안전한지 검토해야 한다.</p></details></div></section><a class="back-top" href="#overview">목차 위로 ↑</a></section><section class="chapter" id="chapter-09" aria-labelledby="chapter-09-title"><header class="chapter-head"><span class="chapter-num">09</span><div><p class="original">Chapter 9. Using Software Metrics to Ensure Maintainability</p><h2 id="chapter-09-title">유지보수성 지표와 리팩터링 우선순위</h2></div></header><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>외부 기능이 정상이어도 의존 관계가 얽히면 변경 비용이 커진다.</li><li>결합 범위·순환 구조·복잡도·변경 이력을 함께 보고 작을 때 개선해야 한다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>지표별로 드러내는 구조적 부담을 구별하고, 자동 검사와 변경 이력으로 개선 대상을 선택한다.</li>
+</ul></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-09-concept-1"><span class="concept-num">01</span><h3>의존 범위와 전파 비용</h3><div class="explanation"><ul>
+<li><strong>직접·간접 의존을 함께 센다.</strong> 노드가 무엇인지 먼저 정하고 자기 자신도 포함해 도달 가능한 요소를 센다. 모든 노드의 의존 수 합이 CCD, 그 평균이 ACD다.</li>
+<li><strong>시스템 크기와 함께 읽는다.</strong> 전파 비용 PC는 <code>ACD ÷ 전체 노드 수</code>다. 예제의 노드 6개에서 의존 수 합이 18이면 ACD는 3, PC는 50%다. 평균적으로 전체의 절반에 도달한다는 구조적 의미이며 실제로 그 절반을 수정한다는 예측은 아니다.</li>
+<li><strong>정규화해도 크기 효과는 남는다.</strong> 같은 PC라도 큰 시스템에서는 영향 범위가 크다. 코드가 늘며 PC가 낮아졌다는 이유만으로 의존 구조가 개선됐다고 단정하지 않는다.</li>
+</ul></div></div><div class="concept" id="chapter-09-concept-2"><span class="concept-num">02</span><h3>순환의 집중과 해체 부담</h3><div class="explanation"><ul>
+<li><strong>순환 참여 비율만으로는 부족하다.</strong> 상대 순환도는 각 순환 그룹 크기를 제곱해 큰 덩어리에 더 큰 무게를 준다. 모든 요소가 순환에 있어도 큰 한 덩어리와 작은 여러 덩어리는 다르게 평가한다.</li>
+</ul>
+<pre tabindex="0"><code class="language-text">상대 순환도 = 100 × √(그룹별 크기²의 합) / 전체 요소 수
+</code></pre>
+<figure class="study-visual"><h4>같은 참여 수, 다른 순환의 집중</h4><div class="cycle-compare"><div><div class="cycle-mass">100개가 하나의 순환 그룹</div><strong>상대 순환도 100%</strong></div><div><div class="cycle-pairs"><span>2개</span><span>2개</span><span>… × 50그룹</span></div><strong>상대 순환도 약 14.14%</strong></div></div><figcaption>모두 100개 요소가 순환에 참여한다. 큰 그룹의 집중도를 구별하기 위해 그룹 크기를 제곱한다.</figcaption></figure>
+<ul>
+<li><strong>같은 순환 크기도 해체 작업은 다르다.</strong> 고리 하나는 한 간선으로 풀 수 있지만 촘촘한 상호 참조는 더 많은 변경이 필요하다. SDI는 <code>10 × 끊을 간선 수 + 그 간선들의 사용 관계 가중치 합</code>으로 해체 부담을 근사한다. 실제 인시의 정확한 예측은 아니다.</li>
+<li><strong>이름이나 인터페이스 추가만으로 해결됐다고 보지 않는다.</strong> 의존 방향을 뒤집거나 책임·조정을 옮긴 뒤 실제 경로를 다시 확인해야 한다.</li>
+</ul></div></div><div class="concept" id="chapter-09-concept-3"><span class="concept-num">03</span><h3>복잡도와 실제 변경 활동</h3><div class="explanation"><ul>
+<li><strong>크기와 복잡도는 다른 부담이다.</strong> LOC는 코드량, 순환 복잡도는 분기 구조, 중첩 깊이는 이해 부담의 단서다. 계산 변형과 도구 정의를 맞춰야 비교할 수 있다. 작은 메서드가 많아 복잡한 큰 메서드가 평균에 묻히지 않게 본다.</li>
+<li><strong>변경 이력으로 우선순위를 보완한다.</strong> 복잡하고 자주 바뀌는 파일은 리팩터링 후 효과가 클 후보다. 추가·삭제 줄 수인 churn과 작성자 수도 활동·지식 편중의 단서지만, 실제 재작성 횟수나 사람의 지식을 직접 측정한 것은 아니다.</li>
+</ul></div></div><div class="concept" id="chapter-09-concept-4"><span class="concept-num">04</span><h3>종합 지표와 지속적인 개선</h3><div class="explanation"><ul>
+<li><strong>ML은 설계 가정이 들어간 실험적 지표다.</strong> 영향 범위에 따른 기여를 합치고 큰 순환·작은 시스템·패키지 구조를 보정하려 한다. 높은 클래스 수준 점수가 패키지의 건강성까지 보장하지는 않는다. 단일값만으로 구조를 판단하지 않는다.</li>
+<li><strong>한도와 추세는 역할이 다르다.</strong> 한도는 현재 위반을 알리고, 추세는 한도 안에서도 악화되는 방향을 보여준다. 경고와 빌드 중단도 구별해 적용한다.</li>
+<li><strong>기존 시스템은 더 나빠지지 않는 기준에서 시작할 수 있다.</strong> 달성 가능한 한도로 추가 침식을 막고 이후 위반을 줄인다. 예제의 파일 크기·순환 수·ML 목표를 고정 표준으로 복사하지 말고, 실제 개선에 쓰는 소수 규칙을 유지한다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-09-recap"><h3>한눈에 정리</h3><ul>
+<li><strong>의존 범위:</strong> ACD와 PC를 시스템 크기와 함께 읽는다.</li>
+<li><strong>구조 부담:</strong> 상대 순환도는 큰 그룹의 집중, SDI는 해체 부담을 근사한다.</li>
+<li><strong>개선 대상:</strong> 복잡도·변경 이력·추세를 연결해 지속적으로 줄일 문제를 고른다.</li>
+</ul></section><section class="review quiz" id="chapter-09-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>PC가 50%이면 다음 변경에서 반드시 코드 절반을 수정하는가?</summary><p>아니다. 의존 그래프의 평균 도달 범위이지 실제 변경량의 확정 예측은 아니다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>모든 요소가 순환에 참여하면 한 큰 그룹과 여러 작은 그룹의 부담이 같은가?</summary><p>같지 않다. 상대 순환도는 그룹 크기를 제곱해 큰 순환의 집중을 구별한다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>복잡한 파일 두 개 중 하나만 자주 바뀐다. 변경 이력은 어떤 판단을 돕는가?</summary><p>현재 실제 변경 비용이 발생하는 리팩터링 후보를 고르는 데 도움을 준다. 정적 복잡도만으로 우선순위를 고정하지 않게 한다.</p></details></div></section><a class="back-top" href="#overview">목차 위로 ↑</a></section><section class="chapter" id="chapter-10" aria-labelledby="chapter-10-title"><header class="chapter-head"><span class="chapter-num">10</span><div><p class="original">Chapter 10. Measure the Unknown with the Goal-Question-Metric Approach</p><h2 id="chapter-10-title">GQM으로 목표와 필요한 관측을 연결</h2></div></header><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>지표부터 고르면 수집하기 쉬운 값에 목적을 맞추기 쉽다.</li><li>목표에서 질문·지표·데이터로 내려가면 무엇을 왜 모으고 어떻게 행동할지 설명할 수 있다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>GQM의 연결을 구성하고, 측정 정의에서 발견한 관측·책임의 빈틈을 개선으로 옮긴다.</li>
+</ul></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-10-concept-1"><span class="concept-num">01</span><h3>목표–질문–지표–데이터</h3><div class="explanation"><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>단계</th>
+<th>정할 것</th>
+<th>외부 서비스 문제의 예</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>목표</td>
+<td>누구의 관점에서 무엇을 개선할 것인가</td>
+<td>사용자 영향 전에 외부 서비스 문제를 발견·완화한다</td>
+</tr>
+<tr>
+<td>질문</td>
+<td>진전을 판단하려면 무엇을 알아야 하는가</td>
+<td>한도 여유가 있는가, 외부 장애인가, 밀린 작업을 따라잡는가</td>
+</tr>
+<tr>
+<td>지표</td>
+<td>질문에 답할 값과 계산은 무엇인가</td>
+<td>남은 할당량, 오류율, 큐 깊이·처리 시간·완료량</td>
+</tr>
+<tr>
+<td>데이터</td>
+<td>그 값을 만들 원시 기록은 무엇인가</td>
+<td>사용량·총한도, 호출 결과, 작업 생성·완료 시각</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>좋은 목표는 대상·문제·관점을 밝힌다.</strong> 사용자 관점의 가용성 개선과 개발자 관점의 부채 감소는 같은 시스템에서도 다른 질문을 만든다. 목표도 질문을 만드는 과정에서 다듬을 수 있다.</li>
+<li><strong>연결은 일대일이 아니다.</strong> 한 질문에 여러 지표가 필요하거나 한 지표가 여러 질문에 답할 수 있다. 각 데이터에서 목표까지 거슬러 수집 이유를 설명할 수 있어야 한다.</li>
+</ul></div></div><div class="concept" id="chapter-10-concept-2"><span class="concept-num">02</span><h3>지표의 선택과 공동 정의</h3><div class="explanation"><ul>
+<li><strong>먼저 필요한 질문을 넓게 찾는다.</strong> 당장 수집법을 모른다고 중요한 질문을 버리지 않는다. 그다음 강한 신호를 주고 여러 질문에 답하며 비용이 낮은 관측부터 고른다.</li>
+<li><strong>이름과 계산식을 맞춘다.</strong> <code>사용량 ÷ 총한도</code>는 사용 비율이다. 남은 비율은 <code>1 − 사용량 ÷ 총한도</code>다. 명칭만 합의하면 반대 의미의 값을 같은 것으로 읽을 수 있다.</li>
+<li><strong>워크숍의 결과는 공동 이해와 실행 계획이다.</strong> 목표·질문·우선 지표·정의·데이터 출처를 합의한다. 모든 수치를 당일 계산해야 끝나는 것은 아니다. 선택한 일부부터 수집하고 확장할 수 있다.</li>
+</ul></div></div><div class="concept" id="chapter-10-concept-3"><span class="concept-num">03</span><h3>관측에서 구조와 대응의 개선</h3><div class="explanation"><ul>
+<li><strong>정의하다 보면 없는 데이터가 드러난다.</strong> 실제 호출이 있을 때만 로그가 남으면 무트래픽 중 외부 장애를 알 수 없다. 별도 heartbeat로 도달성과 한도를 관찰하면 사용자 요청 전에도 상태를 알 수 있다.</li>
+<li><strong>재시도 책임의 중복을 바로잡는다.</strong> 한 작업이 5번 호출하고 큐가 그 작업을 10번 재시도하면 50번의 실패 호출이 생길 수 있다. 예제는 작업을 빠르게 실패시키고 큐가 통제된 재시도를 맡도록 책임을 정리했다.</li>
+<li><strong>알림을 행동에 연결한다.</strong> 진단·오탐 확인·대응 절차를 정해 사용자에게 영향이 가기 전에 알리고 완화한다. 외부 장애 자체를 없앤 것이 아니라 관찰과 통제 가능한 대응을 개선한 것이다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-10-recap"><h3>한눈에 정리</h3><ul>
+<li><strong>순서:</strong> 목표 → 질문 → 지표 → 필요한 데이터로 연결한다.</li>
+<li><strong>선택:</strong> 판단 가치와 수집 비용으로 우선순위를 정한다.</li>
+<li><strong>활용:</strong> 빠진 계측과 모호한 책임을 찾아 대응 가능한 구조로 바꾼다.</li>
+</ul></section><section class="review quiz" id="chapter-10-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>쉬운 지표를 먼저 모은 뒤 활용 목적을 붙이면 GQM의 순서와 같은가?</summary><p>다르다. 목표의 진전을 판단할 질문을 먼저 정하고 그 질문에 답할 지표를 고른다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>작업이 5번, 큐가 그 작업을 10번 재시도한다. 왜 책임 분리가 필요한가?</summary><p>두 층의 재시도가 곱해져 50번의 실패 호출이 생기고 공유 한도를 소진할 수 있다. 재시도 정책과 책임을 통제해야 한다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>GQM 워크숍 당일 모든 지표를 계산하지 못하면 실패인가?</summary><p>아니다. 목표·질문·정의·우선순위·필요 데이터와 수집 계획에 대한 공동 이해가 핵심 결과다.</p></details></div></section><a class="back-top" href="#overview">목차 위로 ↑</a></section><footer class="end">2026.11.14 · Software Architecture Metrics 학습 정리</footer></main><script src="./assets/js/learning.js" defer></script></body></html>

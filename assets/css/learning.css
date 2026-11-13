@@ -230,3 +230,10 @@ pre {background:var(--color-surface-alt);padding:18px 20px;border:1px solid var(
 .cycle-compare{display:grid;grid-template-columns:1fr 1fr;gap:20px;text-align:center;font-size:13px}.cycle-compare>div{display:grid;gap:10px;align-content:center}.cycle-mass{border:2px solid var(--color-primary);border-radius:4px;padding:24px 8px}.cycle-pairs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;padding:10px 0}.cycle-pairs span{padding:8px;border:1px solid var(--color-primary);border-radius:3px}
 .book-meta{font-size:13px;line-height:1.8;color:var(--color-text-secondary);max-width:1000px}
 @media(max-width:640px){.branch-diagram{grid-template-columns:1fr}.branch-diagram>.visual-arrow{text-align:center;transform:rotate(90deg)}.fitness-layers>div:nth-child(1){width:80%}.fitness-layers>div:nth-child(2){width:90%}.fitness-layers span{font-size:11px}.cycle-compare{grid-template-columns:1fr}.tree-leaves{gap:8px}}
+
+/* Learning figures retain readable labels at narrow widths. */
+.learning-figure .diagram-scroll{overflow-x:auto;padding:4px 0}
+.learning-diagram{display:block;width:100%;height:auto;min-width:540px;margin-inline:auto;font-family:var(--font-sans)}
+.learning-figure>figcaption{margin-top:10px}
+
+.sidebar .nav-link,.sidebar .nav-overview,.sidebar .part-label{letter-spacing:-.04em}

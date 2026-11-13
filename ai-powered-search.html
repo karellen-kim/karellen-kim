@@ -1,7 +1,6 @@
 <!DOCTYPE html>
-
-<html lang="ko"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>AI-Powered Search · 책 학습 노트</title><link href="./favicon.svg" rel="icon" type="image/svg+xml"/><link href="./assets/css/learning.css" rel="stylesheet"/></head><body>
-<a class="skip" href="#overview">본문으로 이동</a><aside aria-label="장별 목차" class="sidebar"><div class="brand"><a href="./learning-notes.html">AI-Powered Search</a></div><p class="date">학습 자료 · 2026.11.14</p><nav aria-label="목차"><a class="nav-overview" href="./learning-notes.html">← 책·논문 목록</a><a class="nav-overview" href="#overview">00　개요</a><p class="part-label"><span>1부</span>검색 관련성의 기본기</p><div class="nav-group"><a class="nav-link" href="#chapter-01"><span>01</span>AI 검색의 전체 구조</a><a class="nav-link" href="#chapter-02"><span>02</span>자연어와 문맥</a><a class="nav-link" href="#chapter-03"><span>03</span>매칭과 관련성 점수</a><a class="nav-link" href="#chapter-04"><span>04</span>행동 수집과 모델</a></div><p class="part-label"><span>2부</span>도메인 의도 학습</p><div class="nav-group"><a class="nav-link" href="#chapter-05"><span>05</span>지식 그래프 학습</a><a class="nav-link" href="#chapter-06"><span>06</span>도메인 언어 학습</a><a class="nav-link" href="#chapter-07"><span>07</span>질의 해석 파이프라인</a></div><p class="part-label"><span>3부</span>행동을 반영하는 학습</p><div class="nav-group"><a class="nav-link" href="#chapter-08"><span>08</span>신호 가중치와 배포</a><a class="nav-link" href="#chapter-09"><span>09</span>개인화 검색</a><a class="nav-link" href="#chapter-10"><span>10</span>Learning to rank</a><a class="nav-link" href="#chapter-11"><span>11</span>클릭 모델과 판단</a><a class="nav-link" href="#chapter-12"><span>12</span>능동 학습과 탐색</a></div><p class="part-label"><span>4부</span>벡터·답변·검색의 결합</p><div class="nav-group"><a class="nav-link" href="#chapter-13"><span>13</span>밀집 벡터와 최적화</a><a class="nav-link" href="#chapter-14"><span>14</span>추출형 질문 답변</a><a class="nav-link" href="#chapter-15"><span>15</span>RAG·멀티모달·융합</a></div><a class="nav-link" href="#supplement">서문·부록·실습</a></nav><div class="nav-foot">학습 목표 · 핵심 설명 · 복습<br/>15장 + 서문·부록</div></aside>
+<html lang="ko"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>AI-Powered Search · 장별 학습 정리</title><link href="./assets/css/learning.css" rel="stylesheet"/></head><body>
+<a class="skip" href="#overview">본문으로 이동</a><aside aria-label="장별 목차" class="sidebar"><div class="brand"><a href="#overview">AI-Powered Search</a></div><p class="date">학습 자료 · 2026.11.14</p><nav aria-label="목차"><a class="nav-overview" href="./learning-notes.html">← 책·논문 목록</a><a class="nav-overview" href="#overview">00　개요</a><p class="part-label"><span>1부</span>검색 관련성의 기본기</p><div class="nav-group"><a class="nav-link" href="#chapter-01"><span>01</span>AI 검색의 전체 구조</a><a class="nav-link" href="#chapter-02"><span>02</span>자연어와 문맥</a><a class="nav-link" href="#chapter-03"><span>03</span>매칭과 관련성 점수</a><a class="nav-link" href="#chapter-04"><span>04</span>행동 수집과 모델</a></div><p class="part-label"><span>2부</span>도메인 의도 학습</p><div class="nav-group"><a class="nav-link" href="#chapter-05"><span>05</span>지식 그래프 학습</a><a class="nav-link" href="#chapter-06"><span>06</span>도메인 언어 학습</a><a class="nav-link" href="#chapter-07"><span>07</span>질의 해석 파이프라인</a></div><p class="part-label"><span>3부</span>행동을 반영하는 학습</p><div class="nav-group"><a class="nav-link" href="#chapter-08"><span>08</span>신호 가중치와 배포</a><a class="nav-link" href="#chapter-09"><span>09</span>개인화 검색</a><a class="nav-link" href="#chapter-10"><span>10</span>Learning to rank</a><a class="nav-link" href="#chapter-11"><span>11</span>클릭 모델과 판단</a><a class="nav-link" href="#chapter-12"><span>12</span>능동 학습과 탐색</a></div><p class="part-label"><span>4부</span>벡터·답변·검색의 결합</p><div class="nav-group"><a class="nav-link" href="#chapter-13"><span>13</span>밀집 벡터와 최적화</a><a class="nav-link" href="#chapter-14"><span>14</span>추출형 질문 답변</a><a class="nav-link" href="#chapter-15"><span>15</span>RAG·멀티모달·융합</a></div><a class="nav-link" href="#supplement">서문·부록·실습</a></nav><div class="nav-foot">학습 목표 · 핵심 설명 · 복습<br/>15장 + 서문·부록</div></aside>
 <main><section aria-labelledby="page-title" id="overview">
 <p class="eyebrow">책 학습 노트</p><h1 id="page-title">AI-Powered Search</h1>
 <p class="book-meta">Trey Grainger · Doug Turnbull · Max Irwin<br/>2024 · Manning · <a href="https://www.manning.com/books/ai-powered-search">출판사 정보</a></p>
@@ -19,7 +18,10 @@
 <li><strong>질의 해석은 무엇을 찾는지 정한다.</strong> <code>senior software engineer at google</code>에는 직급·직무·회사가 들어 있다. 이를 구별해야 각 조건을 적절한 문서 필드와 연결할 수 있다.</li>
 <li><strong>매칭은 후보를 모으고 랭킹은 순서를 정한다.</strong> 좋은 문서가 후보에 없으면 해석과 매칭을 살펴야 한다. 후보에 있지만 낮게 나온다면 점수 계산을 살펴야 한다. 후보에서 빠진 문서는 재정렬만으로 되찾을 수 없다.</li>
 </ul>
-<figure aria-label="처리 흐름" class="flow"><ol><li><span>질의의 뜻 해석</span></li><li><span>후보 문서 매칭</span></li><li><span>관련성 점수 계산</span></li><li><span>결과 반환</span></li></ol></figure></div></div><div class="concept" id="chapter-01-concept-2"><span class="concept-num">02</span><h3>의도 이해의 세 가지 근거</h3><div class="explanation"><ul>
+<figure aria-label="처리 흐름" class="flow"><ol><li><span>질의의 뜻 해석</span></li><li><span>후보 문서 매칭</span></li><li><span>관련성 점수 계산</span></li><li><span>결과 반환</span></li></ol></figure>
+<figure class="study-visual learning-figure"><h4>준비·요청·학습 경로의 연결</h4><div aria-label="준비·요청·학습 경로의 연결" class="diagram-scroll" role="region" tabindex="0"><svg aria-labelledby="search-system-title" class="learning-diagram" role="img" style="max-width:720px" viewbox="0 0 720 195"><title id="search-system-title">준비·요청·학습 경로의 연결</title><defs><marker id="arrow-search-system" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="70" rx="5" stroke="var(--color-grey-600)" width="161.25" x="0.0" y="30"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="80.625" y="70.0">문서 → 인덱스</text><path d="M161.25,65 L182.25,65" fill="none" marker-end="url(#arrow-search-system)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="70" rx="5" stroke="var(--color-grey-600)" width="161.25" x="186.25" y="30"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="266.875" y="70.0">질의 → 해석</text><path d="M347.5,65 L368.5,65" fill="none" marker-end="url(#arrow-search-system)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="70" rx="5" stroke="var(--color-grey-600)" width="161.25" x="372.5" y="30"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="453.125" y="70.0">후보 → 순위</text><path d="M533.75,65 L554.75,65" fill="none" marker-end="url(#arrow-search-system)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="70" rx="5" stroke="var(--color-grey-600)" width="161.25" x="558.75" y="30"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="639.375" y="70.0">노출·행동 기록</text><path d="M640,110 L250,170" fill="none" marker-end="url(#arrow-search-system)" stroke="var(--color-grey-600)" stroke-dasharray="5 4" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="12" text-anchor="middle" x="445.0" y="131.0">행동 집계·모델 갱신 후 다음 검색에 사용</text></svg></div><figcaption>검색은 준비된 표현과 모델을 사용한다. 사용자 반응은 이후 모델 갱신의 입력이다.</figcaption></figure>
+<p><strong>요구에서 검색 연산까지</strong></p>
+<p><code>senior software engineer at google</code>을 하나의 문자열로만 찾으면 회사 이름이 본문에 언급된 문서와 실제 소속이 Google인 문서를 구별하기 어렵다. 직급·직무·회사를 분리하면 직무를 후보 조건으로, 회사를 구조화된 필드 조건으로 옮길 수 있다. 그 후보 안에서 어떤 문서가 더 적절한지 점수로 비교한다. 후보가 비어 있는 문제와 후보의 순서가 틀린 문제는 그래서 다른 단계에서 고쳐야 한다.</p></div></div><div class="concept" id="chapter-01-concept-2"><span class="concept-num">02</span><h3>의도 이해의 세 가지 근거</h3><div class="explanation"><ul>
 <li><strong>콘텐츠는 문서가 무엇인지 알려준다.</strong> 제목·본문·속성으로 질의와 문서의 관계를 비교한다. <strong>도메인 지식</strong>은 직무와 회사처럼 분야의 용어와 관계를 연결해 표현의 뜻을 보충한다.</li>
 <li><strong>사용자 문맥은 개인에게 적절한 결과를 고르는 근거다.</strong> 현재 질의와 과거 관심을 함께 쓰는 것이 개인화 검색이다. 과거 관심으로 현재 명시한 조건을 덮어쓰면 요구와 어긋날 수 있다.</li>
 <li><strong>검색과 추천은 판단의 출발점이 다르다.</strong> 검색은 지금 입력한 요구에서, 추천은 과거 관심에서 출발한다. 둘을 연결하면 질의를 중심으로 선호를 보충하거나, 추천에 사용자의 조건을 반영할 수 있다.</li>
@@ -37,11 +39,14 @@
 <li><strong>같은 글자가 같은 뜻은 아니다.</strong> <code>driver</code>는 운전자·골프채·장치 소프트웨어 등을 뜻한다. <code>install</code> 같은 주변 표현이나 분야 문맥이 있어야 해석을 좁힐 수 있다.</li>
 <li><strong>다른 표현이 같은 대상을 가리키기도 한다.</strong> <code>CTO</code>와 <code>Chief Technology Officer</code>를 연결하면 이름이 다른 문서도 찾을 수 있다. 문서 안의 이름·대명사가 같은 대상을 가리키는지 연결하는 처리는 <strong>개체 해소(entity resolution)</strong>다.</li>
 <li><strong>검색 단위도 의미를 바꾼다.</strong> <code>chief executive officer</code>를 한 직함으로 볼지 세 단어로 나눌지에 따라 후보가 달라진다. 텍스트 분석기는 입력을 검색 단위인 <strong>term</strong>으로 바꾸며, 필드는 그 표현이 제목인지 본문인지 보존한다.</li>
-</ul></div></div><div class="concept" id="chapter-02-concept-2"><span class="concept-num">02</span><h3>문맥에서 얻는 의미와 벡터</h3><div class="explanation"><ul>
+</ul>
+<figure class="study-visual learning-figure"><h4>주변 표현에 따라 달라지는 해석</h4><div aria-label="주변 표현에 따라 달라지는 해석" class="diagram-scroll" role="region" tabindex="0"><svg aria-labelledby="search-sense-title" class="learning-diagram" role="img" style="max-width:720px" viewbox="0 0 720 235"><title id="search-sense-title">주변 표현에 따라 달라지는 해석</title><defs><marker id="arrow-search-sense" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="60" rx="5" stroke="var(--color-grey-600)" width="150" x="10" y="80"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="85.0" y="115.0">driver</text><path d="M160,100 L310,45" fill="none" marker-end="url(#arrow-search-sense)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="12" text-anchor="middle" x="235.0" y="63.5">install</text><path d="M160,120 L310,175" fill="none" marker-end="url(#arrow-search-sense)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="12" text-anchor="middle" x="235.0" y="138.5">taxi</text><rect fill="var(--color-bg)" height="65" rx="5" stroke="var(--color-grey-600)" width="385" x="315" y="15"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="507.5" y="42.5">장치 소프트웨어 문맥</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="507.5" y="62.5">설치·장치 관련 문서</text><rect fill="var(--color-bg)" height="65" rx="5" stroke="var(--color-grey-600)" width="385" x="315" y="145"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="507.5" y="172.5">운전자 문맥</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="507.5" y="192.5">택시·운전 관련 문서</text></svg></div><figcaption>관계어를 모두 섞어 확장하기 전에 지금 질의의 의미 범위를 좁힌다.</figcaption></figure></div></div><div class="concept" id="chapter-02-concept-2"><span class="concept-num">02</span><h3>문맥에서 얻는 의미와 벡터</h3><div class="explanation"><ul>
 <li><strong>비슷한 문맥에 나타나는 표현은 의미 관계를 가질 수 있다.</strong> 이것이 <strong>분포 가설</strong>이다. 주변 단어뿐 아니라 같은 문서 집합, 같은 사용자의 질의와 선택도 관계를 찾는 문맥이 된다.</li>
 <li><strong>임베딩은 내용을 비교 가능한 숫자 표현으로 바꾼다.</strong> 같은 단어의 존재만 비교하면 <code>caffeine</code>과 <code>green tea</code>의 관계를 놓칠 수 있다. 학습한 특징으로 표현하면 공유 단어가 없어도 관련성을 비교할 수 있다.</li>
 <li><strong>숫자 형식보다 담긴 관계가 중요하다.</strong> 벡터의 방향을 비교하는 <strong>코사인 유사도</strong>도 모델이 어떤 특징을 학습했는지에 따라 의미가 달라진다. 비슷하다는 계산 결과만으로 두 표현이 완전한 동의어가 되지는 않는다.</li>
-</ul></div></div><div class="concept" id="chapter-02-concept-3"><span class="concept-num">03</span><h3>의미 관계의 검색 활용</h3><div class="explanation"><ul>
+</ul>
+<p><strong>보충 계산: 같은 방향과 다른 크기</strong></p>
+<p>벡터 <code>[1,1]</code>과 <code>[2,2]</code>는 값은 다르지만 같은 방향이다. 내적은 <code>1×2+1×2=4</code>다. 코사인은 이 값을 두 길이의 곱 <code>√2×√8=4</code>로 나눠 1이다. 반면 <code>[1,0]</code>과 <code>[0,1]</code>의 내적은 0이라 코사인도 0이다. 이렇게 계산한 방향의 가까움이 의미 관계를 나타내려면 벡터 자체가 그 관계를 담도록 학습돼 있어야 한다.</p></div></div><div class="concept" id="chapter-02-concept-3"><span class="concept-num">03</span><h3>의미 관계의 검색 활용</h3><div class="explanation"><ul>
 <li><strong>같은 대상의 이름은 정규화하고 관련 표현은 확장에 쓴다.</strong> 대체 이름을 통일하는 것과 다른 관련어를 더하는 것은 목적이 다르다. 운전자를 찾는 질의에 소프트웨어 관련어를 더하면 후보만 늘고 의도에서는 멀어진다.</li>
 <li><strong>범주와 관계는 해석의 범위를 정한다.</strong> 상하 범주의 연결은 분류 체계, 관계 유형의 정의는 온톨로지, 실제 개체의 연결은 지식 그래프로 표현할 수 있다. 이 구조가 분야에 맞는 필터와 탐색의 근거가 된다.</li>
 <li><strong>의도는 응답 형태까지 결정한다.</strong> 사실 질문에는 짧은 답이, 문제 해결에는 안내가, <code>pay my bill</code> 같은 요청에는 수행 경로가 필요할 수 있다. 단어의 뜻을 아는 것에서 사용자가 끝내려는 일의 이해로 이어져야 한다.</li>
@@ -60,7 +65,37 @@ f: 해당 단어의 반복 수 / k: 반복 포화 조절 / b: 길이 보정 강�
 </code></pre>
 <ul>
 <li><strong>유사도 함수가 무엇을 보상하는지도 다르다.</strong> 보충 계산으로 질의 <code>[1,1]</code>과 문서 <code>[1,1]</code>, <code>[3,4]</code>의 내적은 2와 7이다. 코사인은 1과 약 0.99다. 내적은 크기의 영향을 받고 코사인은 방향을 비교하므로 반복이 많다고 모든 점수가 높아지는 것은 아니다.</li>
-</ul></div></div><div class="concept" id="chapter-03-concept-2"><span class="concept-num">02</span><h3>필수 조건과 순위 보상</h3><div class="explanation"><ul>
+</ul>
+<figure class="study-visual learning-figure"><h4>반복 횟수와 포화하는 점수 기여</h4><div aria-label="반복 횟수와 포화하는 점수 기여" class="diagram-scroll" role="region" tabindex="0"><svg aria-labelledby="search-saturation-title" class="learning-diagram" role="img" style="max-width:720px" viewbox="0 0 720 255"><title id="search-saturation-title">반복 횟수와 포화하는 점수 기여</title><defs><marker id="arrow-search-saturation" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="var(--color-grey-600)"></path></marker></defs><path d="M45,220 L700,220" fill="none" marker-end="url(#arrow-search-saturation)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="12" text-anchor="middle" x="372.5" y="211.0">단어 반복 수 f</text><path d="M45,220 L45,15" fill="none" marker-end="url(#arrow-search-saturation)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path d="M45,220 L145,120 L245,87 L345,70 L445,60 L545,53 L645,48" fill="none" stroke="var(--color-primary)" stroke-width="3"></path><text fill="var(--color-text-primary)" font-size="14" x="330" y="35">반복이 늘수록 추가 보상은 감소</text></svg></div><figcaption>보충 도식. IDF=1, k=1, 길이 보정항=1일 때 f/(f+1)의 관계다.</figcaption></figure>
+<p><strong>보충 계산: BM25 반복 보상의 포화</strong></p>
+<p>문서 길이를 평균과 같게 두고 IDF=1, k=1로 단순화하면 기여는 <code>f/(f+1)</code>이다. 아래 값은 같은 문서 길이에서 반복만 늘린 경우다.</p>
+<div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>반복 f</th>
+<th>계산</th>
+<th style="text-align: right;">기여</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1÷2</td>
+<td style="text-align: right;">0.50</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2÷3</td>
+<td style="text-align: right;">약 0.67</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4÷5</td>
+<td style="text-align: right;">0.80</td>
+</tr>
+</tbody>
+</table></div>
+<p>처음 한 번의 일치가 가장 크게 기여한다. 반복이 두 배가 돼도 보상은 두 배가 되지 않는다. 문서 길이를 바꾸면 분모의 길이 보정도 달라지므로 같은 횟수를 무조건 같은 점수로 읽지 않는다.</p></div></div><div class="concept" id="chapter-03-concept-2"><span class="concept-num">02</span><h3>필수 조건과 순위 보상</h3><div class="explanation"><ul>
 <li><strong>필터는 후보 자격을 정한다.</strong> AND·OR·정확한 구·최소 일치 개수는 어떤 문서를 찾을지 바꾼다. 반드시 만족해야 하는 조건을 표현하는 데 사용한다.</li>
 <li><strong>부스팅은 후보 안의 우선순위를 바꾼다.</strong> 구가 일치하면 점수를 높이는 것과 구 일치를 필수로 요구하는 것은 다르다. 순위만 바꾸려다가 필수 조건을 더하면 적절한 문서가 사라질 수 있다.</li>
 </ul>
@@ -78,14 +113,38 @@ f: 해당 단어의 반복 수 / k: 반복 포화 조절 / b: 길이 보정 강�
 <li><strong>콘텐츠와 행동은 다른 근거다.</strong> 문서는 대상이 어떻게 설명되는지 보여준다. 행동은 사용자가 무엇을 선택했는지 보여준다. 모델은 이 관계를 다음 검색의 판단에 재사용하는 표현이다.</li>
 <li><strong>검색 실행마다 query_id를 남긴다.</strong> 같은 검색어라도 시점과 결과 순서가 다르다. 클릭을 query_id로 연결해야 어느 결과에서 선택이 일어났는지 추적할 수 있다. 질의 문자열만 저장하면 이 연결이 사라진다.</li>
 <li><strong>노출 순서와 사용자 식별 범위를 보존한다.</strong> 결과 목록·클릭 문서·시각을 함께 남겨야 클릭 기회를 해석할 수 있다. 세션 ID만 있다면 세션을 넘는 장기 선호까지 알 수 있다고 가정하지 않는다.</li>
-</ul></div></div><div class="concept" id="chapter-04-concept-2"><span class="concept-num">02</span><h3>원시 로그와 조회용 모델</h3><div class="explanation"><ul>
+</ul>
+<figure class="study-visual learning-figure"><h4>검색 실행과 클릭의 귀속 연결</h4><div aria-label="검색 실행과 클릭의 귀속 연결" class="diagram-scroll" role="region" tabindex="0"><svg aria-labelledby="search-events-title" class="learning-diagram" role="img" style="max-width:720px" viewbox="0 0 720 220"><title id="search-events-title">검색 실행과 클릭의 귀속 연결</title><defs><marker id="arrow-search-events" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="70" rx="5" stroke="var(--color-grey-600)" width="300" x="0" y="5"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="150.0" y="35.0">검색 실행 q1</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="150.0" y="55.0">문서 d1·d2 노출</text><rect fill="var(--color-bg)" height="70" rx="5" stroke="var(--color-grey-600)" width="300" x="0" y="125"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="150.0" y="155.0">클릭 기록</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="150.0" y="175.0">query_id=q1 / 문서 d2</text><path d="M300,40 L425,90" fill="none" marker-end="url(#arrow-search-events)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path d="M300,160 L425,110" fill="none" marker-end="url(#arrow-search-events)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="75" rx="5" stroke="var(--color-grey-600)" width="285" x="430" y="65"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="572.5" y="97.5">q1로 연결</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="572.5" y="117.5">어떤 질의·순위의 선택인지 확인</text></svg></div><figcaption>같은 검색어라도 실행은 별개다. 실행 ID가 노출 목록과 행동을 연결한다.</figcaption></figure></div></div><div class="concept" id="chapter-04-concept-2"><span class="concept-num">02</span><h3>원시 로그와 조회용 모델</h3><div class="explanation"><ul>
 <li><strong>무거운 연결과 집계는 미리 수행한다.</strong> 검색 요청마다 원시 로그를 모두 읽는 대신, 질의와 클릭을 연결해 질의·문서별 점수로 저장한다. 검색 대상 옆의 별도 조회용 저장소를 <strong>sidecar</strong>로 둘 수 있다.</li>
 </ul>
 <figure aria-label="처리 흐름" class="flow"><ol><li><span>질의·노출·클릭 기록</span></li><li><span>query_id로 연결</span></li><li><span>질의·문서별 집계</span></li><li><span>조회용 모델</span></li><li><span>검색 점수 보정</span></li></ol></figure>
 <ul>
 <li><strong>입력과 집계 결과를 구별한다.</strong> 보충 예제로 두 검색 실행이 모두 <code>alpha</code>이고 각각 문서 d2를 클릭했다면, 실행별 기록을 연결한 뒤 <code>alpha → d2: 2회</code>로 합친다. 다음 검색은 이 모델을 읽어 d2의 점수를 보정한다.</li>
 <li><strong>클릭 수는 클릭률과 다르다.</strong> 10번 노출 중 2번 클릭과 100번 노출 중 2번 클릭은 클릭 수가 같지만 클릭률은 20%와 2%다. 순위와 노출 기회까지 해석하는 문제는 11장으로 이어진다.</li>
-</ul></div></div><div class="concept" id="chapter-04-concept-3"><span class="concept-num">03</span><h3>행동에서 배우는 세 모델</h3><div class="explanation"><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table>
+</ul>
+<p><strong>보충 예시: 실행 기록에서 조회 모델까지</strong></p>
+<div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>원시 기록</th>
+<th>연결한 의미</th>
+<th>집계 결과</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>q1: alpha 검색, d1·d2 노출 / q1에서 d2 클릭</td>
+<td>첫 실행의 d2 선택</td>
+<td>alpha·d2에 1회</td>
+</tr>
+<tr>
+<td>q2: alpha 검색, d2·d3 노출 / q2에서 d2 클릭</td>
+<td>두 번째 실행의 d2 선택</td>
+<td>alpha·d2에 추가 1회</td>
+</tr>
+</tbody>
+</table></div>
+<p>먼저 q1·q2로 클릭의 질의와 노출을 복원한 뒤 같은 질의·문서를 합친다. 다음 검색은 원시 기록 두 묶음을 다시 연결하지 않고 <code>alpha → d2:2</code>라는 모델을 읽는다. 반복 사용자 제거와 노출 기회 보정은 이 단순 집계에 추가할 별도 처리다.</p></div></div><div class="concept" id="chapter-04-concept-3"><span class="concept-num">03</span><h3>행동에서 배우는 세 모델</h3><div class="explanation"><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table>
 <thead>
 <tr>
 <th>모델</th>
@@ -131,7 +190,10 @@ f: 해당 단어의 반복 수 / k: 반복 포화 조절 / b: 길이 보정 강�
 <ul>
 <li><strong>자주 나온 단어보다 문맥에 특별한 단어를 찾는다.</strong> 질의로 모은 집합이 <strong>전경</strong>, 비교 기준이 <strong>배경</strong>이다. 전경 출현을 배경 비율로 예상한 출현과 비교하면 어디에나 흔한 표현의 영향을 줄일 수 있다.</li>
 <li><strong>비교 범위가 관련성의 의미를 정한다.</strong> 보충 예제로 배경 1,000문서 중 100문서에 있는 표현은 50문서의 전경에서 약 5문서에 나타날 것으로 예상한다. 실제로 20문서에 나타났다면 그 문맥과의 연결이 강하다는 근거다. 배경을 바꾸면 같은 수치도 의미가 달라진다.</li>
-</ul></div></div><div class="concept" id="chapter-05-concept-3"><span class="concept-num">03</span><h3>관계의 검색·추천 활용</h3><div class="explanation"><ul>
+</ul>
+<figure class="study-visual learning-figure"><h4>문맥의 연결과 단순 빈도의 비교</h4><div aria-label="문맥의 연결과 단순 빈도의 비교" class="diagram-scroll" role="region" tabindex="0"><svg aria-labelledby="search-background-title" class="learning-diagram" role="img" style="max-width:720px" viewbox="0 0 720 220"><title id="search-background-title">문맥의 연결과 단순 빈도의 비교</title><defs><marker id="arrow-search-background" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="85" rx="5" stroke="var(--color-grey-600)" width="320" x="10" y="10"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="170.0" y="47.5">배경: 1,000문서 중 100</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="170.0" y="67.5">후보 표현 비율 10%</text><rect fill="var(--color-bg)" height="85" rx="5" stroke="var(--color-grey-600)" width="320" x="390" y="10"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="550.0" y="47.5">전경: 50문서</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="550.0" y="67.5">같은 비율이면 기대 5문서</text><path d="M330,52 L385,52" fill="none" marker-end="url(#arrow-search-background)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="60" rx="5" stroke="var(--color-grey-600)" width="440" x="140" y="135"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="360.0" y="170.0">실제 20문서 → 기대 5문서보다 많이 연결</text></svg></div><figcaption>기존 보충 예시를 시각화했다. 전경의 큰 횟수가 아니라 배경 대비 초과를 읽는다.</figcaption></figure>
+<p><strong>기대 출현의 계산</strong></p>
+<p>배경 비율은 <code>100÷1,000=0.1</code>이다. 전경이 50문서라면 우연한 배경 수준의 기대 출현은 <code>50×0.1=5</code>다. 실제 20문서는 기대보다 15문서 많다. 이 차이를 관측 규모와 함께 표준화하면 서로 다른 빈도의 표현을 비교하는 근거가 된다. 전경의 20이라는 숫자만으로는 어디에나 흔한 단어인지 판단할 수 없다.</p></div></div><div class="concept" id="chapter-05-concept-3"><span class="concept-num">03</span><h3>관계의 검색·추천 활용</h3><div class="explanation"><ul>
 <li><strong>후보 확장과 점수 보정을 구별한다.</strong> 관련어를 OR로 더하면 원래 단어가 없는 문서까지 찾는다. 원래 후보를 유지한 채 관련어에 보상만 주면 순서만 바뀐다. 넓은 탐색과 잡음 위험 중 무엇을 감수할지 결정해야 한다.</li>
 <li><strong>콘텐츠만으로도 비슷한 문서를 제안할 수 있다.</strong> 문서의 주요 표현에서 가중 질의를 만들면 행동이 없는 새 문서에도 추천 근거가 생긴다. 다만 문서 집합의 편향이나 잘못된 범주는 결과에도 반영된다.</li>
 </ul></div></div></div><section class="review recap" id="chapter-05-recap"><h3>한눈에 정리</h3><ul>
@@ -147,7 +209,10 @@ f: 해당 단어의 반복 수 / k: 반복 포화 조절 / b: 길이 보정 강�
 <li><strong>같은 사용자의 질의나 같은 클릭 문서를 연결한다.</strong> 여러 사용자가 <code>iphond</code>에서 <code>iphone</code>으로 표현을 바꾸거나, 서로 다른 질의로 같은 문서에 도달하면 관계를 배울 단서가 된다. 같은 사람이 썼다는 기록만으로 바로 이어 검색했다고 단정하지는 않는다.</li>
 <li><strong>동시 출현에서 단순 인기를 걷어낸다.</strong> 인기 질의는 특별한 관계가 없어도 함께 사용되기 쉽다. <strong>PMI 계열 점수</strong>는 함께 등장한 정도를 각각의 빈도와 비교한다. 드문 쌍은 우연에 민감하므로 최소 관측량도 필요하다.</li>
 <li><strong>관계가 곧 동의어는 아니다.</strong> <code>laptops/laptop</code>은 어형, <code>headphones/head phones</code>는 표기, <code>tablet/ipad</code>는 범주와 제품 관계일 수 있다. 같은 문서를 클릭했다는 이유만으로 모두 같은 이름이나 오타로 처리해서는 안 된다.</li>
-</ul></div></div><div class="concept" id="chapter-06-concept-3"><span class="concept-num">03</span><h3>구 탐지·교정·확장의 역할</h3><div class="explanation"><ul>
+</ul>
+<figure class="study-visual learning-figure"><h4>행동의 겹침으로 배우는 표현 관계</h4><div aria-label="행동의 겹침으로 배우는 표현 관계" class="diagram-scroll" role="region" tabindex="0"><svg aria-labelledby="search-language-title" class="learning-diagram" role="img" style="max-width:720px" viewbox="0 0 720 225"><title id="search-language-title">행동의 겹침으로 배우는 표현 관계</title><defs><marker id="arrow-search-language" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="65" rx="5" stroke="var(--color-grey-600)" width="220" x="0" y="20"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="110.0" y="57.5">질의 A·사용자 집합</text><rect fill="var(--color-bg)" height="65" rx="5" stroke="var(--color-grey-600)" width="220" x="0" y="130"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="110.0" y="167.5">질의 B·사용자 집합</text><path d="M220,52 L340,110" fill="none" marker-end="url(#arrow-search-language)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path d="M220,162 L340,125" fill="none" marker-end="url(#arrow-search-language)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="85" rx="5" stroke="var(--color-grey-600)" width="365" x="345" y="75"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="527.5" y="112.5">공유 사용자·클릭 문서</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="527.5" y="132.5">각 질의의 기본 빈도와 비교</text></svg></div><figcaption>인기 질의는 우연히도 자주 겹친다. 겹침을 각각의 빈도와 함께 해석한다.</figcaption></figure>
+<p><strong>보충 계산: 함께 등장한 횟수의 해석</strong></p>
+<p>1,000개의 사용자 집합에서 A와 B가 각각 100번 나타났다면 독립적으로 겹칠 기대는 <code>1,000×0.1×0.1=10</code>번이다. 실제 겹침이 30번이면 기대의 3배다. C와 D가 각각 500번이고 겹침이 250번이면 기대도 <code>1,000×0.5×0.5=250</code>번이다. 두 번째 쌍의 겹침 수가 더 커도 특별한 연결은 첫 번째 쌍에서 강하다. PMI 계열은 이런 관측과 기대의 비율을 이용한다. 이 숫자는 원리를 위한 보충 예시다.</p></div></div><div class="concept" id="chapter-06-concept-3"><span class="concept-num">03</span><h3>구 탐지·교정·확장의 역할</h3><div class="explanation"><ul>
 <li><strong>자주 쓰는 대상 이름을 구로 보존한다.</strong> <code>new york city</code>처럼 여러 단어가 한 대상을 이룬다. 자주 검색되고 문서에도 있는 표현을 알려진 구로 등록하면 다음 장의 파서가 활용할 수 있다. 긴 조건 질의 전체를 대상 이름으로 등록하는 것과는 다르다.</li>
 <li><strong>오타 교정은 철자와 사용 근거를 함께 본다.</strong> 덜 흔하고 편집 거리가 가까운 표현을 정규형 후보로 삼을 수 있다. 드물다는 사실만으로 오타는 아니다. <code>HP touchpad 32</code>를 더 흔한 <code>HP touchpad</code>로 바꾸면 중요한 숫자 조건을 지울 수 있다.</li>
 <li><strong>처리 목적에 맞게 연결을 사용한다.</strong> 교정은 잘못된 표기를 고치고, 정규화는 같은 대상의 이름을 통일하며, 확장은 관련 표현으로 범위를 넓힌다. 더 흔한 표현으로 바뀌었다는 사실만으로 의도를 더 정확히 해석한 것은 아니다.</li>
@@ -165,7 +230,9 @@ f: 해당 단어의 반복 수 / k: 반복 포화 조절 / b: 길이 보정 강�
 <li><strong>주변 요소에 따라 기능을 적용한다.</strong> top을 무조건 평점으로 바꾸면 <code>mountain top</code>을 오해한다. 위치 함수도 뒤에 도시가 있는지 확인해야 한다. 의미 처리는 문자열 치환이 아니라 조건에 따른 해석이다.</li>
 <li><strong>보강한 의미를 검색 연산으로 옮긴다.</strong> 예제에서는 top을 평점 기반 점수로, Charlotte 근처를 좌표 중심 50km 필터로 바꾼다. kimchi에는 Korean·banchan 같은 관련 표현과 범주를 보탠다. 반경 조건과 도시 행정 경계는 다르다.</li>
 <li><strong>의미 검색이 반드시 밀집 벡터 검색은 아니다.</strong> SKG의 관련어를 가중 term으로 쓰는 방식도 의미를 반영한다. 모델이 만든 부분 토큰을 쓰는 희소 확장이라면 문서 인덱스도 호환되는 표현을 사용해야 한다.</li>
-</ul></div></div><div class="concept" id="chapter-07-concept-3"><span class="concept-num">03</span><h3>해석 실패와 기본 검색 경로</h3><div class="explanation"><ul>
+</ul>
+<p><strong>중간 표현을 확인하는 순서</strong></p>
+<p>원래 질의를 보존한 채 각 요소의 역할을 기록한다. 다음으로 Charlotte의 개체와 좌표를 선택하고, 그 좌표를 실제 거리 필터에 넣는다. 결과가 사라졌다면 도시를 잘못 골랐는지와 반경이 너무 좁은지를 따로 확인할 수 있다. 최종 질의만 남기면 해석 오류와 실행 조건의 오류가 섞여 보인다.</p></div></div><div class="concept" id="chapter-07-concept-3"><span class="concept-num">03</span><h3>해석 실패와 기본 검색 경로</h3><div class="explanation"><ul>
 <li><strong>모든 입력을 안다고 가정하지 않는다.</strong> 보강할 근거가 없으면 원래 키워드를 유지하고 기본 어휘 검색으로 넘길 수 있어야 한다. 잘못된 확장은 후보를 늘리는 만큼 잘못된 의미도 확대한다.</li>
 <li><strong>단계별 결과로 실패 위치를 구별한다.</strong> 개체를 잘못 골랐는지, 관련어가 틀렸는지, 필터가 과한지 따로 볼 수 있다. 상황에 따라 단계를 생략하거나 조건을 완화해 재검색·병합할 수도 있다. 네 역할이 고정된 네 번의 호출을 뜻하지는 않는다.</li>
 </ul></div></div></div><section class="review recap" id="chapter-07-recap"><h3>한눈에 정리</h3><ul>
@@ -179,7 +246,8 @@ f: 해당 단어의 반복 수 / k: 반복 포화 조절 / b: 길이 보정 강�
 <li><strong>같은 요구의 행동을 함께 센다.</strong> <code>iPad</code>와 <code>ipad</code>를 따로 집계하면 같은 문서에 대한 선호가 나뉜다. 표현을 통일하는 <strong>질의 정규화</strong>로 이를 합친다. 집계와 조회에 같은 규칙을 쓰되, 뜻이 다른 표현까지 합치지 않는다.</li>
 <li><strong>한 사용자의 반복 행동은 한 표로 묶는다.</strong> 동일 사용자 × 정규화한 질의 × 문서를 기준으로 중복을 제거한다. <code>star wars</code> 검색에서 한 사람이 쓰레기통을 5,000번 클릭해도 기여는 1이 된다. 다만 여러 계정을 이용한 조작은 별도 대응이 필요하다.</li>
 </ul>
-<figure aria-label="처리 흐름" class="flow"><ol><li><span>질의 표현 통일</span></li><li><span>사용자별 반복 제거</span></li><li><span>질의·문서별 행동 집계</span></li></ol></figure></div></div><div class="concept" id="chapter-08-concept-2"><span class="concept-num">02</span><h3>행동 강도와 시간에 따른 점수 계산</h3><div class="explanation"><ul>
+<figure aria-label="처리 흐름" class="flow"><ol><li><span>질의 표현 통일</span></li><li><span>사용자별 반복 제거</span></li><li><span>질의·문서별 행동 집계</span></li></ol></figure>
+<figure class="study-visual learning-figure"><h4>이벤트 수에서 사용자별 표로의 전환</h4><div aria-label="이벤트 수에서 사용자별 표로의 전환" class="diagram-scroll" role="region" tabindex="0"><svg aria-labelledby="search-dedup-title" class="learning-diagram" role="img" style="max-width:720px" viewbox="0 0 720 215"><title id="search-dedup-title">이벤트 수에서 사용자별 표로의 전환</title><defs><marker id="arrow-search-dedup" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="65" rx="5" stroke="var(--color-grey-600)" width="320" x="0" y="10"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="160.0" y="37.5">사용자 1 × 같은 질의·문서</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="160.0" y="57.5">클릭 5,000회</text><rect fill="var(--color-bg)" height="65" rx="5" stroke="var(--color-grey-600)" width="320" x="0" y="125"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="160.0" y="152.5">서로 다른 사용자 100명</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="160.0" y="172.5">각각 클릭 1회</text><path d="M320,42 L430,42" fill="none" marker-end="url(#arrow-search-dedup)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path d="M320,157 L430,157" fill="none" marker-end="url(#arrow-search-dedup)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="65" rx="5" stroke="var(--color-grey-600)" width="270" x="435" y="10"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="570.0" y="47.5">중복 제거 후 1표</text><rect fill="var(--color-bg)" height="65" rx="5" stroke="var(--color-grey-600)" width="270" x="435" y="125"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="570.0" y="162.5">중복 제거 후 100표</text></svg></div><figcaption>반복 전체에 작은 계수를 곱하는 것과 다르다. 집계 단위 자체를 바꾼다.</figcaption></figure></div></div><div class="concept" id="chapter-08-concept-2"><span class="concept-num">02</span><h3>행동 강도와 시간에 따른 점수 계산</h3><div class="explanation"><ul>
 <li><strong>강한 의도를 드러내는 행동에 높은 값을 준다.</strong> 예를 들어 <code>클릭 × 1 + 담기 × 10 + 구매 × 25</code>로 결합할 수 있다. 가중치는 예제 값이며 행동 흐름에 맞춰 조정한다. 반품 같은 부정 행동에는 음수를 줄 수 있지만, 결과를 건너뛴 행동은 실제로 봤는지에 따라 해석이 달라진다.</li>
 <li><strong>관심이 낡는 경우 오래된 행동의 기여를 낮춘다.</strong> 이 <strong>시간 감쇠</strong>는 아래 식으로 계산할 수 있다. 반감기는 기여가 절반이 되는 기간이다. 시작 가중치가 25, 반감기가 30일이면 현재 25점, 30일 전 12.5점, 60일 전 6.25점이다. 반감기가 짧으면 변화에 빠르게 반응하지만 충분한 행동이 쌓이기 전에 근거가 약해질 수 있다.</li>
 </ul>
@@ -188,7 +256,10 @@ f: 해당 단어의 반복 수 / k: 반복 포화 조절 / b: 길이 보정 강�
 </code></pre>
 <ul>
 <li><strong>빠른 갱신과 시간 감쇠는 별개다.</strong> 30일 뒤 사라지는 공고는 살아 있는 동안 행동을 빨리 반영해야 한다. 그 기간의 클릭 가치가 같다면 감쇠는 필요하지 않을 수 있다. 반면 뉴스처럼 문서가 남아도 관심이 빠르게 바뀌면 최근 행동의 비중과 갱신 속도를 함께 높여야 한다.</li>
-</ul></div></div><div class="concept" id="chapter-08-concept-3"><span class="concept-num">03</span><h3>부스팅의 적용 위치와 트레이드오프</h3><div class="explanation"><ul>
+</ul>
+<figure class="study-visual learning-figure"><h4>반감기 30일에서 행동 기여의 변화</h4><div aria-label="반감기 30일에서 행동 기여의 변화" class="diagram-scroll" role="region" tabindex="0"><svg aria-labelledby="search-decay-title" class="learning-diagram" role="img" style="max-width:720px" viewbox="0 0 720 215"><title id="search-decay-title">반감기 30일에서 행동 기여의 변화</title><defs><marker id="arrow-search-decay" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="var(--color-grey-600)"></path></marker></defs><text fill="var(--color-text-primary)" font-size="14" x="0" y="40">0일 전</text><rect fill="var(--color-primary)" height="35" width="500" x="90" y="15"></rect><text fill="var(--color-text-primary)" font-size="14" x="605" y="40">25점</text><text fill="var(--color-text-primary)" font-size="14" x="0" y="105">30일 전</text><rect fill="var(--color-primary)" height="35" width="250.0" x="90" y="80"></rect><text fill="var(--color-text-primary)" font-size="14" x="355.0" y="105">12.5점</text><text fill="var(--color-text-primary)" font-size="14" x="0" y="170">60일 전</text><rect fill="var(--color-primary)" height="35" width="125.0" x="90" y="145"></rect><text fill="var(--color-text-primary)" font-size="14" x="230.0" y="170">6.25점</text></svg></div><figcaption>보충 계산. 시작 가중치 25에 나이÷반감기만큼 0.5를 거듭 곱한다.</figcaption></figure>
+<p><strong>보충 계산: 행동별 기여의 합</strong></p>
+<p>반복 제거 뒤 서로 다른 기여가 클릭 2회·담기 1회·구매 1회라면 감쇠 전 점수는 <code>2×1+1×10+1×25=37</code>이다. 구매 한 건이 30일 전이고 반감기가 30일이면 그 기여만 12.5로 줄어 현재 합은 <code>2+10+12.5=24.5</code>다. 오래됐다는 이유로 집계 전체를 같은 비율로 줄이는 대신 각 행동의 시각과 강도를 반영한다.</p></div></div><div class="concept" id="chapter-08-concept-3"><span class="concept-num">03</span><h3>부스팅의 적용 위치와 트레이드오프</h3><div class="explanation"><ul>
 <li><strong>계산한 점수를 어디에 저장하고 읽을지 선택한다.</strong> 질의 시점에는 별도 모델에서 해당 질의의 문서·가중치를 읽은 뒤 본 검색에 반영한다. 인덱싱 시점에는 각 문서에 질의별 가중치를 미리 넣고 검색 중 읽는다. 두 방식 모두 기존 검색 점수와 결합해 순위를 보정한다.</li>
 </ul>
 <div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table>
@@ -226,14 +297,17 @@ f: 해당 단어의 반복 수 / k: 반복 포화 조절 / b: 길이 보정 강�
 <li><strong>콘텐츠 추천은 속성이 비슷한 대상을 찾는다.</strong> 문서 벡터와 관심 문서의 관계를 사용한다. <strong>협업 필터링</strong>은 비슷한 선택을 한 사람들이 또 무엇을 선택했는지 이용한다. 두 방식은 서로 다른 근거를 보완한다.</li>
 <li><strong>공유 행동은 잠재 벡터로 학습할 수 있다.</strong> 사용자 × 아이템의 상호작용 행렬을 작은 사용자·아이템 행렬의 곱으로 근사하는 것이 <strong>행렬 분해</strong>다. <strong>ALS</strong>는 한쪽을 고정하고 다른 쪽을 번갈아 갱신한다. 관측하지 않은 칸은 싫다는 평가와 다르다.</li>
 <li><strong>신호가 없는 대상은 다른 근거가 필요하다.</strong> 새 사용자·아이템에는 협업 모델이 배울 행동이 부족하다. 이 <strong>콜드 스타트</strong>에서는 콘텐츠와 기본 검색을 사용하고 신호가 쌓이면 행동 모델을 보탤 수 있다.</li>
-</ul></div></div><div class="concept" id="chapter-09-concept-2"><span class="concept-num">02</span><h3>현재 질의에 맞는 프로필</h3><div class="explanation"><ul>
+</ul>
+<p><strong>보충 예시: 협업과 콘텐츠의 다른 추론</strong></p>
+<p>사용자 U1이 A·B를, U2가 A를 선택했다면 두 사람의 공유 선택 A가 U2에게 B를 제안할 단서가 된다. 콘텐츠 모델은 다른 사용자의 행동 없이 A·B의 내용이 비슷한지 본다. 행렬 분해는 이런 사용자·아이템 관계를 작은 잠재 벡터의 곱으로 근사한다. ALS는 아이템 쪽을 고정해 사용자 벡터를 맞추고, 사용자 쪽을 고정해 아이템 벡터를 맞추는 일을 반복한다. 빈 칸은 싫다는 명시 평가와 다르게 다뤄야 한다.</p></div></div><div class="concept" id="chapter-09-concept-2"><span class="concept-num">02</span><h3>현재 질의에 맞는 프로필</h3><div class="explanation"><ul>
 <li><strong>전체 이력을 섞으면 무관한 관심이 개입한다.</strong> 현재 질의와 관련된 범주나 벡터 군집의 이력을 먼저 고른다. 선택한 문서들의 벡터와 질의 벡터를 결합하면 이번 요구에 맞는 관심 표현을 만들 수 있다.</li>
 </ul>
 <figure aria-label="처리 흐름" class="flow"><ol><li><span>현재 질의</span></li><li><span>관련 이력 선택</span></li><li><span>질의·이력 가중 결합</span></li><li><span>질의 후보의 개인화 순위</span></li></ol></figure>
 <ul>
 <li><strong>이력 개수와 총 영향력을 구별한다.</strong> 질의의 총 가중치가 1, 이력 전체의 합이 1이면 최종 기여는 각각 50%다. 이력 하나마다 50%를 준다는 뜻이 아니다. 개별 이력이 늘 때 총 가중치도 늘면 개인화 강도가 달라진다.</li>
 <li><strong>추천 점수는 현재 후보를 보완한다.</strong> 질의로 찾은 문서와 추천 목록의 겹침에 점수를 보탤 수 있다. 질의와 무관한 추천을 넣거나 명시한 조건을 과거 선호로 덮어쓰는 것과 구별해야 한다.</li>
-</ul></div></div><div class="concept" id="chapter-09-concept-3"><span class="concept-num">03</span><h3>개인화의 적용 조건과 제어</h3><div class="explanation"><ul>
+</ul>
+<figure class="study-visual learning-figure"><h4>이력 개수와 총 가중치의 구별</h4><div aria-label="이력 개수와 총 가중치의 구별" class="diagram-scroll" role="region" tabindex="0"><svg aria-labelledby="search-profile-title" class="learning-diagram" role="img" style="max-width:720px" viewbox="0 0 720 165"><title id="search-profile-title">이력 개수와 총 가중치의 구별</title><defs><marker id="arrow-search-profile" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="95" rx="5" stroke="var(--color-grey-600)" width="205" x="0" y="35"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="102.5" y="77.5">현재 질의</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="102.5" y="97.5">총 가중치 1</text><rect fill="var(--color-bg)" height="95" rx="5" stroke="var(--color-grey-600)" width="205" x="270" y="35"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="372.5" y="77.5">관련 이력 4개</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="372.5" y="97.5">가중치 합계 1</text><path d="M205,80 L265,80" fill="none" marker-end="url(#arrow-search-profile)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="12" text-anchor="middle" x="235.0" y="71.0">+</text><path d="M475,80 L535,80" fill="none" marker-end="url(#arrow-search-profile)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="95" rx="5" stroke="var(--color-grey-600)" width="175" x="540" y="35"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="627.5" y="67.5">결합 프로필</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="627.5" y="87.5">질의 50%</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="627.5" y="107.5">이력 전체 50%</text></svg></div><figcaption>관련 이력만 고른 뒤 결합한다. 개별 이력마다 50%를 부여하는 계산이 아니다.</figcaption></figure></div></div><div class="concept" id="chapter-09-concept-3"><span class="concept-num">03</span><h3>개인화의 적용 조건과 제어</h3><div class="explanation"><ul>
 <li><strong>현재 입력을 우선한다.</strong> 다른 지역을 명시했다면 이전 지역 선호로 바꾸지 않는다. 관련 이력이 없거나 추론이 맞지 않으면 기본 검색으로 돌아갈 수 있어야 한다.</li>
 <li><strong>사용자가 잘못된 프로필을 고칠 수 있게 한다.</strong> 취향은 변하고 원치 않는 관심이 노출될 수도 있다. 수집·활용 범위를 알리고 개인화를 수정하거나 끌 수 있는 제어가 필요하다.</li>
 </ul></div></div></div><section class="review recap" id="chapter-09-recap"><h3>한눈에 정리</h3><ul>
@@ -249,7 +323,10 @@ f: 해당 단어의 반복 수 / k: 반복 포화 조절 / b: 길이 보정 강�
 <li><strong>같은 질의 안에서 더 관련된 문서를 비교한다.</strong> 선형 pairwise 예제에서는 등급이 다른 두 문서의 특성을 빼고, 어느 방향이 더 좋은지 학습한다. 보충 예제로 A=<code>[2,1]</code>, B=<code>[0.5,0.8]</code>이면 차이는 <code>[1.5,0.2]</code>다.</li>
 <li><strong>검색 때는 문서별 점수를 계산한다.</strong> 학습한 가중치가 w라면 각 문서 x에 <code>w·x</code>를 계산한다. <code>w·(A−B)=w·A−w·B</code>이므로 모든 쌍을 다시 비교하지 않아도 학습한 방향대로 정렬할 수 있다.</li>
 </ul>
-<figure aria-label="처리 흐름" class="flow"><ol><li><span>질의별 판단·특성</span></li><li><span>문서 쌍의 특성 차이</span></li><li><span>비교 방향 학습</span></li><li><span>문서별 점수</span></li><li><span>순위</span></li></ol></figure></div></div><div class="concept" id="chapter-10-concept-3"><span class="concept-num">03</span><h3>학습과 검색의 계산 일치</h3><div class="explanation"><ul>
+<figure aria-label="처리 흐름" class="flow"><ol><li><span>질의별 판단·특성</span></li><li><span>문서 쌍의 특성 차이</span></li><li><span>비교 방향 학습</span></li><li><span>문서별 점수</span></li><li><span>순위</span></li></ol></figure>
+<figure class="study-visual learning-figure"><h4>쌍의 비교에서 개별 문서 점수까지</h4><div aria-label="쌍의 비교에서 개별 문서 점수까지" class="diagram-scroll" role="region" tabindex="0"><svg aria-labelledby="search-pairwise-title" class="learning-diagram" role="img" style="max-width:720px" viewbox="0 0 720 140"><title id="search-pairwise-title">쌍의 비교에서 개별 문서 점수까지</title><defs><marker id="arrow-search-pairwise" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="70" rx="5" stroke="var(--color-grey-600)" width="161.25" x="0.0" y="30"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="80.625" y="70.0">질의별 판단</text><path d="M161.25,65 L182.25,65" fill="none" marker-end="url(#arrow-search-pairwise)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="70" rx="5" stroke="var(--color-grey-600)" width="161.25" x="186.25" y="30"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="266.875" y="70.0">A−B 특성 차이</text><path d="M347.5,65 L368.5,65" fill="none" marker-end="url(#arrow-search-pairwise)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="70" rx="5" stroke="var(--color-grey-600)" width="161.25" x="372.5" y="30"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="453.125" y="70.0">좋은 비교 방향 학습</text><path d="M533.75,65 L554.75,65" fill="none" marker-end="url(#arrow-search-pairwise)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="70" rx="5" stroke="var(--color-grey-600)" width="161.25" x="558.75" y="30"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="639.375" y="70.0">문서별 w·x 정렬</text></svg></div><figcaption>선형 모델에서는 w·(A−B)=w·A−w·B여서 검색마다 모든 쌍을 만들 필요가 없다.</figcaption></figure>
+<p><strong>보충 계산: 비교 방향에서 점수까지</strong></p>
+<p>설명을 위해 학습된 가중치를 <code>[2,1]</code>이라고 두자. A=<code>[2,1]</code>의 점수는 <code>2×2+1×1=5</code>, B=<code>[0.5,0.8]</code>의 점수는 <code>2×0.5+1×0.8=1.8</code>이다. 차이는 3.2다. 쌍의 차이 <code>[1.5,0.2]</code>를 직접 계산해도 <code>2×1.5+1×0.2=3.2</code>다. 가중치가 두 특성의 차이를 어느 방향으로 보상하는지 학습하면 검색에서는 각 문서의 점수만 구해 정렬할 수 있다.</p></div></div><div class="concept" id="chapter-10-concept-3"><span class="concept-num">03</span><h3>학습과 검색의 계산 일치</h3><div class="explanation"><ul>
 <li><strong>단위가 다른 특성은 범위를 조정한다.</strong> 표준화 예제는 <code>z=(값−평균)/표준편차</code>다. 평균 연도 1990, 표준편차 22이면 2012는 1이다. 검색에서도 훈련 때의 통계를 써야 같은 값이 같은 의미가 된다.</li>
 <li><strong>배포 대상은 계수만이 아니다.</strong> 특성의 이름·순서·계산 정의·정규화 통계가 모델과 함께 움직여야 한다. 제목 점수 자리에 연도를 넣거나 요청마다 표준화 기준을 바꾸면 다른 함수를 실행하게 된다.</li>
 </ul></div></div><div class="concept" id="chapter-10-concept-4"><span class="concept-num">04</span><h3>일반화 평가와 후보의 한계</h3><div class="explanation"><ul>
@@ -274,7 +351,30 @@ f: 해당 단어의 반복 수 / k: 반복 포화 조절 / b: 길이 보정 강�
 </code></pre>
 <ul>
 <li><strong>관측이 쌓이면 실제 비율의 영향이 커진다.</strong> 사전분포는 부족한 근거를 다루는 가정이지 정답을 추가하는 장치가 아니다. 실패 횟수에는 검토 후 미클릭을 넣어야 앞의 검토 모델과 일관된다.</li>
-</ul></div></div><div class="concept" id="chapter-11-concept-3"><span class="concept-num">03</span><h3>자동 판단과 순위 학습의 연결</h3><div class="explanation"><ul>
+</ul>
+<p><strong>보충 계산: 같은 클릭률과 다른 근거량</strong></p>
+<div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>관측</th>
+<th>초기 a=30, b=70과 결합</th>
+<th style="text-align: right;">조정 평균</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1회 검토·1회 클릭</td>
+<td>(30+1)÷(100+1)</td>
+<td style="text-align: right;">약 0.307</td>
+</tr>
+<tr>
+<td>100회 검토·100회 클릭</td>
+<td>(30+100)÷(100+100)</td>
+<td style="text-align: right;">0.65</td>
+</tr>
+</tbody>
+</table></div>
+<p>두 원시 클릭률은 100%지만 후자는 더 많은 관측으로 초기 평균 0.3에서 더 멀리 움직인다. E에는 반환된 모든 결과가 아니라 모델이 검토했다고 간주한 횟수를 넣는다. 위치의 가정과 관측량의 보정이 같은 데이터 정의를 사용해야 한다.</p></div></div><div class="concept" id="chapter-11-concept-3"><span class="concept-num">03</span><h3>자동 판단과 순위 학습의 연결</h3><div class="explanation"><ul>
 <li><strong>보정한 관련성 값을 LTR의 판단으로 사용한다.</strong> 클릭 모델이 판단을 만들고, 특성 기록과 순위 학습이 그 판단을 따라가는 함수를 만든다. 결과가 틀리면 학습기뿐 아니라 클릭 해석도 살펴야 한다.</li>
 <li><strong>미노출 결과의 공백은 남는다.</strong> 위치 보정은 검토 기회를, 사전분포는 관측량의 과신을 다룬다. 둘 다 한 번도 보여주지 않은 문서를 발견하지는 못한다. 그 공백을 탐색으로 채우는 것이 12장의 역할이다.</li>
 </ul></div></div></div><section class="review recap" id="chapter-11-recap"><h3>한눈에 정리</h3><ul>
@@ -291,7 +391,36 @@ f: 해당 단어의 반복 수 / k: 반복 포화 조절 / b: 길이 보정 강�
 <li><strong>유망함과 불확실성을 함께 본다.</strong> 가우시안 프로세스로 예상 관련성과 불확실성을 추정할 수 있다. <strong>기대 개선량(EI)</strong>은 높은 예상 값뿐 아니라 아직 모르는 후보가 더 좋을 가능성도 반영해 탐색 대상을 고른다.</li>
 <li><strong>노출해 행동을 얻어야 학습 자료가 된다.</strong> 선택한 문서를 일부 결과에 넣고 노출·클릭을 기록한다. 그 뒤 클릭 모델로 판단을 다시 만들고 순위 모델을 갱신한다. 예측 점수만 바꾼 것은 새 관측을 얻은 탐색과 다르다.</li>
 </ul>
-<figure aria-label="처리 흐름" class="flow"><ol><li><span>현재 모델 활용</span></li><li><span>학습 공백 선택</span></li><li><span>일부 결과 탐색</span></li><li><span>새 행동 수집</span></li><li><span>판단 갱신·재학습</span></li><li><span>평가</span></li></ol></figure></div></div><div class="concept" id="chapter-12-concept-3"><span class="concept-num">03</span><h3>오프라인 평가와 실제 목표</h3><div class="explanation"><ul>
+<figure aria-label="처리 흐름" class="flow"><ol><li><span>현재 모델 활용</span></li><li><span>학습 공백 선택</span></li><li><span>일부 결과 탐색</span></li><li><span>새 행동 수집</span></li><li><span>판단 갱신·재학습</span></li><li><span>평가</span></li></ol></figure>
+<figure class="study-visual learning-figure"><h4>알고 있는 결과와 새 관측의 연결</h4><div aria-label="알고 있는 결과와 새 관측의 연결" class="diagram-scroll" role="region" tabindex="0"><svg aria-labelledby="search-explore-title" class="learning-diagram" role="img" style="max-width:720px" viewbox="0 0 720 230"><title id="search-explore-title">알고 있는 결과와 새 관측의 연결</title><defs><marker id="arrow-search-explore" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="65" rx="5" stroke="var(--color-grey-600)" width="270" x="0" y="10"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="135.0" y="37.5">현재 상위 결과</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="135.0" y="57.5">충분한 관측</text><rect fill="var(--color-bg)" height="65" rx="5" stroke="var(--color-grey-600)" width="270" x="0" y="135"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="135.0" y="162.5">미노출 후보</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="135.0" y="182.5">관련성 판단 공백</text><path d="M270,167 L355,167" fill="none" marker-end="url(#arrow-search-explore)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="12" text-anchor="middle" x="312.5" y="158.0">일부 노출</text><rect fill="var(--color-bg)" height="65" rx="5" stroke="var(--color-grey-600)" width="350" x="360" y="135"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="535.0" y="172.5">새 행동 → 판단 → 재학습</text><path d="M535,135 L535,70" fill="none" marker-end="url(#arrow-search-explore)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="65" rx="5" stroke="var(--color-grey-600)" width="350" x="360" y="5"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="535.0" y="42.5">기존 결과와 사용자 목표로 비교</text></svg></div><figcaption>예측 점수를 바꾸는 것과 실제 선택 기회를 주어 데이터를 얻는 것은 다르다.</figcaption></figure>
+<p><strong>탐색 전후의 데이터 차이</strong></p>
+<div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>단계</th>
+<th>알 수 있는 것</th>
+<th>아직 모르는 것</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>미노출 후보의 점수 예측</td>
+<td>현재 모델의 기대와 불확실성</td>
+<td>실제 선택 반응</td>
+</tr>
+<tr>
+<td>일부 위치에서 후보 노출</td>
+<td>선택 기회를 줬다는 기록</td>
+<td>충분한 관측의 판단</td>
+</tr>
+<tr>
+<td>클릭 해석·재학습</td>
+<td>새 관측을 반영한 순위</td>
+<td>실제 사용자 목표의 개선</td>
+</tr>
+</tbody>
+</table></div>
+<p>따라서 예상 점수를 올리는 것만으로 학습 공백이 사라지지 않는다. 실제 노출을 거쳐 새 행동을 얻고, 그 행동의 편향을 해석한 뒤 모델과 목표를 다시 평가해야 한다.</p></div></div><div class="concept" id="chapter-12-concept-3"><span class="concept-num">03</span><h3>오프라인 평가와 실제 목표</h3><div class="explanation"><ul>
 <li><strong>학습 점수의 개선이 사용자 목표의 개선은 아니다.</strong> 오프라인 평가는 주어진 판단을 얼마나 잘 따르는지 본다. 판단에 편향이 있다면 더 잘 따라갈수록 잘못된 목표를 강화할 수 있다.</li>
 <li><strong>A/B는 실제 목표의 차이를 비교한다.</strong> 사용자를 무작위로 모델에 배정하고 구매 같은 목표를 관측한다. 이 장의 수치는 모사 사용자 실습의 결과이며 실제 서비스 효과나 통계적 유의성을 입증한 값은 아니다.</li>
 <li><strong>자동화해도 탐색 범위와 승격 조건은 정해야 한다.</strong> 허용할 품질 비용·관측 기간·성공 기준을 정하고, 새 관측의 개선이 확인된 모델을 적용해야 한다. 탐색했다는 사실만으로 운영 모델을 교체하지 않는다.</li>
@@ -312,7 +441,9 @@ f: 해당 단어의 반복 수 / k: 반복 포화 조절 / b: 길이 보정 강�
 <ul>
 <li><strong>같은 압축률도 전체 비용은 다르다.</strong> 보충 계산으로 1,024차원 float32 값은 4,096바이트다. 값당 8비트로 줄이면 1,024바이트지만 실제 인덱스에는 그래프·메타데이터 등의 비용도 있다.</li>
 <li><strong>압축은 검색 때의 비교 방법과 함께 정한다.</strong> PQ는 질의와 대표 벡터 사이 거리를 계산한 뒤 문서의 대표 ID로 거리를 합산한다. MRL은 문서와 질의 양쪽에 같은 길이의 앞부분을 사용해야 한다.</li>
-</ul></div></div><div class="concept" id="chapter-13-concept-4"><span class="concept-num">04</span><h3>정밀 재정렬과 회복 범위</h3><div class="explanation"><figure aria-label="처리 흐름" class="flow"><ol><li><span>근사·압축 검색</span></li><li><span>넓은 후보 집합</span></li><li><span>정밀 벡터 또는 쌍별 모델 계산</span></li><li><span>최종 순위</span></li></ol></figure>
+</ul>
+<p><strong>보충 계산: 저장량이 줄어드는 위치</strong></p>
+<p>1,024차원에 값당 32비트를 쓰면 <code>1,024×32÷8=4,096바이트</code>다. 8비트 양자화는 차원 수를 유지하고 <code>1,024×8÷8=1,024바이트</code>로 줄인다. 앞 256차원을 쓰도록 학습한 MRL 표현을 float32로 저장해도 <code>256×32÷8=1,024바이트</code>지만 줄인 대상은 다르다. 같은 바이트 수가 같은 정확도나 검색 비용을 뜻하지 않으므로 후보 재현율까지 확인한다.</p></div></div><div class="concept" id="chapter-13-concept-4"><span class="concept-num">04</span><h3>정밀 재정렬과 회복 범위</h3><div class="explanation"><figure aria-label="처리 흐름" class="flow"><ol><li><span>근사·압축 검색</span></li><li><span>넓은 후보 집합</span></li><li><span>정밀 벡터 또는 쌍별 모델 계산</span></li><li><span>최종 순위</span></li></ol></figure>
 <ul>
 <li><strong>싼 표현으로 후보를 찾고 비싼 계산을 좁게 적용한다.</strong> 정밀 벡터로 다시 계산하면 압축 때문에 흔들린 후보 안의 순서를 회복할 수 있다. 질의·문서를 함께 읽는 <strong>cross-encoder</strong>도 이 단계에 사용할 수 있다.</li>
 <li><strong>재정렬은 후보 밖의 문서를 복구하지 못한다.</strong> 후보를 넓히면 회복 가능성과 비용이 함께 커진다. 빠르게 찾은 후보의 재현율과 그 안의 순위 품질을 나눠 평가해야 한다.</li>
@@ -332,7 +463,9 @@ f: 해당 단어의 반복 수 / k: 반복 포화 조절 / b: 길이 보정 강�
 <li><strong>긴 답변 문서와 정답 구간은 다르다.</strong> 질문의 채택 답변이 문맥이 될 수는 있어도 짧은 정답의 위치까지 알려주지는 않는다. 기존 모델의 초벌 답은 <strong>silver set</strong>, 사람이 검토·수정한 신뢰할 라벨은 <strong>golden set</strong>으로 구별한다.</li>
 <li><strong>틀린 답과 답할 수 없는 문맥을 나눈다.</strong> 정답이 있다면 올바른 텍스트와 문자 위치로 고친다. 추가 정보가 없으면 답할 수 없는 사례와 아직 검토하지 않은 사례는 별도로 다뤄야 한다.</li>
 <li><strong>문자 위치를 토큰 위치로 연결한다.</strong> <strong>offset mapping</strong>으로 원문의 정답 범위를 모델의 시작·끝 라벨로 옮긴다. 긴 문맥은 겹치는 입력 창으로 나눠 경계의 답을 보존한다. 창이 늘면 계산 비용도 늘어난다.</li>
-</ul></div></div><div class="concept" id="chapter-14-concept-3"><span class="concept-num">03</span><h3>reader 평가와 전체 시스템 평가</h3><div class="explanation"><ul>
+</ul>
+<p><strong>문자 범위에서 입력 창까지</strong></p>
+<p>보충 문장의 답 <code>매일 오전 9시</code>는 원문 안의 문자 범위로 먼저 표시한다. 토크나이저의 offset mapping에서 그 범위와 겹치는 토큰의 시작과 끝을 찾는다. 긴 문맥을 나눌 때 답 전체를 포함하는 입력 창이 있어야 올바른 라벨을 만들 수 있다. 모든 창을 무조건 같은 정답 구간으로 표시하면 답이 없는 창에 잘못된 라벨이 들어간다.</p></div></div><div class="concept" id="chapter-14-concept-3"><span class="concept-num">03</span><h3>reader 평가와 전체 시스템 평가</h3><div class="explanation"><ul>
 <li><strong>학습·설정 선택·최종 평가를 나눈다.</strong> 훈련으로 모델을 학습하고 개발 평가로 설정을 고른 뒤 보류 자료로 최종 성능을 본다. 같은 자료를 보며 계속 조정하면 그 평가에 맞춰질 수 있다.</li>
 <li><strong>정답 문맥을 준 평가와 전체 QA 평가는 다르다.</strong> 전자는 reader의 추출 능력을 본다. 실제 서비스는 근거 검색·답 추출·답 후보 정렬을 함께 거친다. 어느 단계에서 틀렸는지 나눠야 개선 위치를 알 수 있다.</li>
 <li><strong>답과 근거를 함께 보존한다.</strong> 문서 ID·URL을 연결하면 사용자가 답이 나온 위치를 확인할 수 있다. 모델의 높은 점수나 문맥에서 정확히 뽑았다는 사실이 그 문맥의 사실성까지 보장하지는 않는다.</li>
@@ -355,7 +488,41 @@ f: 해당 단어의 반복 수 / k: 반복 포화 조절 / b: 길이 보정 강�
 <li><strong>서로 다른 원점수는 그대로 비교하기 어렵다.</strong> BM25와 벡터 유사도는 척도가 다르다. <strong>RRF</strong>는 문서의 각 목록 순위 r에 <code>1/(k+r)</code>를 주고 합산한다. 여러 목록에서 높게 나온 문서는 기여가 누적된다.</li>
 <li><strong>융합과 재정렬은 후보의 범위가 다르다.</strong> 어휘·벡터 목록을 합친 뒤 융합하면 한쪽에만 있는 문서도 포함할 수 있다. 어휘 후보를 고정한 뒤 벡터로 재정렬하면 후보 밖 문서는 들어오지 못한다.</li>
 </ul>
-<figure aria-label="처리 흐름" class="flow"><ol><li><span>어휘 후보 + 벡터 후보</span></li><li><span>후보 합집합</span></li><li><span>순위 또는 점수 융합</span></li><li><span>최종 결과</span></li></ol></figure></div></div><div class="concept" id="chapter-15-concept-4"><span class="concept-num">04</span><h3>입력 양식과 대화 문맥의 확장</h3><div class="explanation"><ul>
+<figure aria-label="처리 흐름" class="flow"><ol><li><span>어휘 후보 + 벡터 후보</span></li><li><span>후보 합집합</span></li><li><span>순위 또는 점수 융합</span></li><li><span>최종 결과</span></li></ol></figure>
+<figure class="study-visual learning-figure"><h4>두 후보 목록의 합집합과 순위 융합</h4><div aria-label="두 후보 목록의 합집합과 순위 융합" class="diagram-scroll" role="region" tabindex="0"><svg aria-labelledby="search-fusion-title" class="learning-diagram" role="img" style="max-width:720px" viewbox="0 0 720 225"><title id="search-fusion-title">두 후보 목록의 합집합과 순위 융합</title><defs><marker id="arrow-search-fusion" markerheight="6" markerwidth="6" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="65" rx="5" stroke="var(--color-grey-600)" width="240" x="0" y="5"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="120.0" y="42.5">어휘 후보 A·B</text><rect fill="var(--color-bg)" height="65" rx="5" stroke="var(--color-grey-600)" width="240" x="0" y="135"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="120.0" y="172.5">벡터 후보 B·C</text><path d="M240,37 L330,105" fill="none" marker-end="url(#arrow-search-fusion)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path d="M240,167 L330,120" fill="none" marker-end="url(#arrow-search-fusion)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="70" rx="5" stroke="var(--color-grey-600)" width="380" x="335" y="75"></rect><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="525.0" y="105.0">융합 후보 A·B·C</text><text fill="var(--color-text-primary)" font-size="14" text-anchor="middle" x="525.0" y="125.0">각 목록의 순위 기여를 합산</text></svg></div><figcaption>보충 예시. 어휘 후보 A·B를 고정한 재정렬이라면 C는 들어오지 못한다.</figcaption></figure>
+<p><strong>보충 계산: RRF의 순위 기여</strong></p>
+<p>설명을 위해 k=60, 어휘 순위는 A·B, 벡터 순위는 B·C라고 두자.</p>
+<div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>문서</th>
+<th style="text-align: right;">어휘 기여</th>
+<th style="text-align: right;">벡터 기여</th>
+<th style="text-align: right;">합계</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td style="text-align: right;">1/61</td>
+<td style="text-align: right;">없음</td>
+<td style="text-align: right;">약 0.0164</td>
+</tr>
+<tr>
+<td>B</td>
+<td style="text-align: right;">1/62</td>
+<td style="text-align: right;">1/61</td>
+<td style="text-align: right;">약 0.0325</td>
+</tr>
+<tr>
+<td>C</td>
+<td style="text-align: right;">없음</td>
+<td style="text-align: right;">1/62</td>
+<td style="text-align: right;">약 0.0161</td>
+</tr>
+</tbody>
+</table></div>
+<p>B는 두 목록의 기여가 더해져 가장 높다. C는 벡터 목록에서 후보에 들어왔다. BM25와 코사인의 원점수 크기를 직접 비교하지 않고 각 목록의 순위를 같은 형태의 기여로 바꾼 결과다. k=60은 이 보충 계산의 설정이다.</p></div></div><div class="concept" id="chapter-15-concept-4"><span class="concept-num">04</span><h3>입력 양식과 대화 문맥의 확장</h3><div class="explanation"><ul>
 <li><strong>호환 표현으로 다른 양식의 자료도 찾는다.</strong> 텍스트와 이미지를 함께 학습한 공간에서는 글로 이미지를 검색할 수 있다. 음성·영상도 각 양식의 정보를 보존할 표현과 검색 단위가 필요하다.</li>
 <li><strong>대화와 에이전트도 의도 해석과 근거 검색을 필요로 한다.</strong> ‘그중 하나’ 같은 표현에는 이전 결과가 필요하다. 에이전트가 요청을 여러 단계로 나눠도 각 단계에서 무엇을 찾고 어떤 근거를 전달할지 정해야 한다. 모든 모델을 넣기보다 필요한 실패 경로를 보완하는 조합을 선택한다.</li>
 </ul></div></div></div><section class="review recap" id="chapter-15-recap"><h3>한눈에 정리</h3><ul>

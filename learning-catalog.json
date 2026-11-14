@@ -41,6 +41,23 @@
       "description": "품질 목표와 지표를 연결하고, 측정 결과를 구조·개발 흐름의 개선으로 옮기는 10장 학습 노트.",
       "chapters": 10,
       "updated": "2026-11-14"
+    },
+    {
+      "id": "illustrated-ai-agents",
+      "type": "book",
+      "title": "An Illustrated Guide to AI Agents",
+      "authors": [
+        "Maarten Grootendorst",
+        "Jay Alammar"
+      ],
+      "year": 2026,
+      "publisher": "O’Reilly Media",
+      "metadata_source": "https://www.oreilly.com/library/view/an-illustrated-guide/9798341662681/",
+      "publication_basis": "Publisher and authenticated book page: September 2026",
+      "href": "./illustrated-ai-agents.html",
+      "description": "모델·기억·도구·계획·평가에서 협업·멀티모달·코딩까지, 원리와 도식으로 배우는 10장 학습 노트.",
+      "chapters": 10,
+      "updated": "2026-11-14"
     }
   ]
 }

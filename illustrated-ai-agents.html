@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="ko"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><meta content="AI 에이전트의 모델·기억·도구·계획·평가·협업·멀티모달·코딩을 원리와 도식으로 배우는 10장 학습 노트." name="description"/><title>An Illustrated Guide to AI Agents · 책 학습 노트</title><link href="./favicon.svg" rel="icon" type="image/svg+xml"/><link href="https://static.toss.im/tps/main.css" rel="stylesheet"/><link href="https://static.toss.im/tps/others.css" rel="stylesheet"/><link href="./assets/css/muse-core-light.css" rel="stylesheet"/><link href="./assets/css/muse-diagram-light.css" rel="stylesheet"/><link href="./assets/css/learning-study.css" rel="stylesheet"/><link href="./assets/css/learning-diagrams.css" rel="stylesheet"/></head><body class="learning-study" data-layout="reading"><a class="skip" href="#overview">본문으로 이동</a><aside aria-label="장별 목차" class="sidebar"><div class="brand"><a href="#overview">An Illustrated Guide to AI Agents</a></div><p class="date">학습 자료 · 2026.11.14</p><nav aria-label="목차"><a class="nav-overview" href="./learning-notes.html">책·논문 목록</a><a class="nav-overview" href="#overview">00　개요</a><p class="part-label"><span>01</span>모델과 추론</p><div class="nav-group"><a class="nav-link" href="#chapter-01"><span>01</span>에이전트의 구성</a><a class="nav-link" href="#chapter-02"><span>02</span>언어 모델의 계산</a><a class="nav-link" href="#chapter-03"><span>03</span>추론과 후보 선택</a></div><p class="part-label"><span>02</span>기억과 행동</p><div class="nav-group"><a class="nav-link" href="#chapter-04"><span>04</span>기억과 컨텍스트</a><a class="nav-link" href="#chapter-05"><span>05</span>도구·MCP·스킬</a><a class="nav-link" href="#chapter-06"><span>06</span>계획·행동·성찰</a></div><p class="part-label"><span>03</span>평가</p><div class="nav-group"><a class="nav-link" href="#chapter-07"><span>07</span>평가와 신뢰성</a></div><p class="part-label"><span>04</span>전문화와 확장</p><div class="nav-group"><a class="nav-link" href="#chapter-08"><span>08</span>다중 에이전트</a><a class="nav-link" href="#chapter-09"><span>09</span>멀티모달 이해</a><a class="nav-link" href="#chapter-10"><span>10</span>코딩 에이전트</a></div></nav></aside><main class="study-main"><a class="library-back" href="./learning-notes.html"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M14 6L8 12L14 18M8 12H21" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg><span>책·논문 목록</span></a><section aria-labelledby="page-title" id="overview"><p class="eyebrow">책 학습 노트</p><h1 id="page-title">An Illustrated Guide to AI Agents</h1><p class="book-meta">Maarten Grootendorst · Jay Alammar<br/>2026 · O’Reilly Media · <a href="https://www.oreilly.com/library/view/an-illustrated-guide/9798341662681/">출판사 정보</a></p><p class="overview-lead">모델의 생성이 기억·도구·계획과 연결되어<br/>목표를 향한 행동과 검증으로 이어지는 구조를 이해한다.</p><p class="read-note">각 장의 핵심과 학습 목표에서 시작해 도식·사례·계산으로 원리를 익히고, 정리와 Quiz로 복습한다.</p><div class="map"><div><span class="num">01–03</span><a href="#chapter-01">모델과 추론</a><p>토큰·학습·주의·추론 계산</p></div><div><span class="num">04–06</span><a href="#chapter-04">기억과 행동</a><p>문맥·도구·계획·실행 순환</p></div><div><span class="num">07</span><a href="#chapter-07">평가</a><p>결과·경로·반복 신뢰성</p></div><div><span class="num">08–10</span><a href="#chapter-08">전문화와 확장</a><p>협업·시각과 음성·코드 실행</p></div></div></section><section aria-labelledby="chapter-01-title" class="chapter" id="chapter-01"><header class="chapter-head"><span class="chapter-num">01</span><div><p class="original">Chapter 1. Introduction</p><h2 id="chapter-01-title">에이전트의 구성과 행동 순환</h2></div></header><div class="chapter-intro"><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>에이전트는 목표를 받아 행동하고, 그 결과를 관찰해 다음 행동을 바꾸는 시스템이다.</li><li>모델의 판단을 기억·도구·계획과 연결하는 실행 구조가 필요하다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>언어 모델의 출력과 외부 환경에서 실행되는 행동을 구별한다.</li>
+<li>기억·도구·계획이 행동 순환에서 맡는 역할을 설명한다.</li>
+<li>고정된 처리 순서와 자율적인 선택의 적합한 경계를 판단한다.</li>
+</ul></div></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-01-concept-1"><span class="concept-num">01</span><h3>모델과 환경의 연결</h3><div class="explanation"><ul>
+<li>언어 모델은 주어진 입력 뒤에 올 토큰을 하나씩 생성한다. 생성한 토큰을 다시 입력에 붙여 다음 토큰을 예측한다. 이 반복만으로 외부 파일이 바뀌거나 계산 함수가 실행되지는 않는다. 에이전트는 생성 결과를 실제 행동에 연결하고, 환경의 응답을 다시 모델에 제공한다.</li>
+<li>관찰은 현재 상태를 판단할 재료다. 행동은 환경을 바꾸거나 새로운 정보를 가져오는 수단이다. 검색 결과를 읽은 뒤 추가 검색 여부를 정하는 것처럼, 앞선 행동의 결과가 다음 선택을 바꾼다. 목표는 알려져 있지만 경로를 미리 정하기 어려운 작업에서 이 순환이 유용하다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-01"><h4>에이전트 내부와 환경의 왕복</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-01-title" class="ref-svg" role="img" viewbox="0 0 720 217"><title id="ref-illustrated-ai-agents-01-title">에이전트 내부와 환경의 왕복</title><defs><marker id="ref-arrow-illustrated-ai-agents-01" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-primary-soft)" fill-opacity=".4" height="161" rx="8" stroke="var(--color-grey-300)" stroke-dasharray="5 5" width="320" x="188" y="9.8"></rect><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="start" x="202" y="25.2">에이전트 내부</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="276" x="210" y="43.4"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="348.0" y="63">추론 모델</text><rect fill="var(--color-bg)" height="33.6" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="130" x="210" y="110.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="275.0" y="127.4">기억</text><rect fill="var(--color-bg)" height="33.6" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="130" x="356" y="110.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="421.0" y="127.4">계획·도구</text><path class="ref-edge" d="M275 110.6 V86.8" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-01)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M421 110.6 V86.8" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-01)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="138" x="12" y="43.4"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="81.0" y="63">사용자</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="152" x="556" y="43.4"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="632.0" y="63">환경</text><path class="ref-edge" d="M150 63 H180 V63 H205" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-01)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="180.0" y="56.7">요청</text><path class="ref-edge" d="M486 63 H521 V63 H551" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-01)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="521.0" y="56.7">행동</text><path class="ref-edge" d="M632 82.6 V198.8 H524 V75.6 H492" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-01)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="584" y="191.8">관찰</text><path class="ref-edge" d="M210 75.6 H172 V186.2 H80 V86.8" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-01)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="126" y="179.2">답변</text></svg></div><figcaption>원서 그림 1-2를 참고한 새 도식. 사용자 요청·답변과 환경 행동·관찰은 서로 다른 왕복이다.</figcaption></figure></div></div><div class="concept" id="chapter-01-concept-2"><span class="concept-num">02</span><h3>기억과 도구의 실행 경계</h3><div class="explanation"><ul>
+<li>모델 호출 사이에 대화가 저절로 보존되는 것은 아니다. 첫 호출에서 이름을 알려 줬더라도 다음 입력에 그 정보가 없으면 답하지 못할 수 있다. 응용 프로그램이 이전 메시지나 저장 정보를 골라 다시 넣어야 한다. 기억을 제공하는 것과 모델의 파라미터를 다시 학습하는 것은 다르다.</li>
+<li>도구 호출도 두 주체의 일이다. 모델이 <code>multiply(5.1, 7.3)</code>에 해당하는 이름과 인수를 출력한다. 실행 프로그램이 이를 해석해 실제 함수를 호출한다. 결과 <code>37.23</code>을 모델 입력에 되돌려 주면 모델이 사용자 답변을 완성한다. 모델이 호출 문자열을 만들었다는 사실만으로 계산을 끝냈다고 볼 수 없다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-02"><h4>호출 의도와 실제 실행의 경계</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-02-title" class="ref-svg" role="img" viewbox="0 0 720 189"><title id="ref-illustrated-ai-agents-02-title">호출 의도와 실제 실행의 경계</title><defs><marker id="ref-arrow-illustrated-ai-agents-02" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="184" y="16.1">모델 출력·판단</text><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="534" y="16.1">하네스의 실제 실행</text><path class="ref-edge" d="M184 25.9 V180.6" fill="none" stroke="var(--color-grey-600)" stroke-dasharray="5 4" stroke-width="1.5"></path><path class="ref-edge" d="M534 25.9 V180.6" fill="none" stroke="var(--color-grey-600)" stroke-dasharray="5 4" stroke-width="1.5"></path><path class="ref-edge" d="M184 46.2 H534" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-02)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="359" y="37.8">multiply · 5.1, 7.3</text><path class="ref-edge" d="M534 98 H184" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-02)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="359" y="89.6">실행 결과 37.23</text><path class="ref-edge" d="M184 149.8 H534" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-02)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="359" y="141.4">결과를 근거로 최종 답 구성</text></svg></div><figcaption>원서 그림 1-13을 참고해 실행 주체를 분리했다.</figcaption></figure>
+<ul>
+<li>기억·검색 결과·도구 설명을 모두 넣으면 입력 용량을 넘거나 중요한 정보가 묻힐 수 있다. 현재 목표에 필요한 정보를 골라 입력을 구성해야 한다. 이 입력 구성 작업을 컨텍스트 엔지니어링이라고 한다.</li>
+</ul></div></div><div class="concept" id="chapter-01-concept-3"><span class="concept-num">03</span><h3>계획·성찰과 자율성의 범위</h3><div class="explanation"><ul>
+<li>계획은 큰 목표를 실행 가능한 하위 작업으로 나눈다. 에이전트 조사라면 일반 검색, 논문 탐색, 결과 통합이 될 수 있다. 앞 검색에서 공백을 발견하면 다음 탐색 출처를 바꾼다. 행동 결과를 보고 부족한 부분을 고치는 과정이 성찰이다.</li>
+<li>고정 워크플로는 실행 순서를 프로그램이 정한다. 자율적인 에이전트는 도구·순서·반복·중단을 더 많이 선택한다. 선택의 폭이 넓다고 모든 작업에 유리하지는 않다. 빠르고 저렴한 고정 처리로 충분한 일과, 파일 삭제처럼 사람의 확인이 필요한 행동을 구분해야 한다.</li>
+<li>평가는 최종 답뿐 아니라 실제 결과와 실행 경로를 본다. 메시지를 보냈다는 문장과 실제 전달은 다르다. 성공한 실행도 불필요한 도구 호출이 많을 수 있다. 반복 성공률과 오류 상황에서의 행동까지 전체 시스템으로 확인해야 한다.</li>
+</ul></div></div><div class="concept" id="chapter-01-concept-4"><span class="concept-num">04</span><h3>TinyAgent의 학습 경로</h3><div class="explanation"><ul>
+<li>모델 주변에서 상태·도구·실행을 연결하는 코드를 하네스라고 한다. TinyAgent는 작은 Python 구성 요소를 차례로 붙여 하네스의 책임을 드러낸다. 모델, 기억, 도구, 계획을 한꺼번에 마법처럼 제공하는 것이 아니다.</li>
+<li>첫 장의 골격은 입력을 돌려줄 뿐이다. <code>What is 2 + 2?</code>를 넣어도 <code>Received: What is 2 + 2?</code>라는 응답이 나온다. 아직 계산을 담당할 모델과 도구가 연결되지 않았기 때문이다. 후속 장에서는 이 골격에 각 기능을 추가한다.</li>
+<li>기억과 도구를 갖춘 단일 에이전트에서 출발해 협업, 이미지·음성 이해, 코드 실행 환경으로 범위를 넓힌다. 기능을 추가할 때마다 모델 자체의 능력과 하네스가 제공한 능력을 나누어 보면 구조를 이해하기 쉽다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-01-recap"><h3>한눈에 정리</h3><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">질문</th>
+<th scope="col">핵심 관계</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>무엇이 에이전트를 이루는가</td>
+<td>목표 → 판단 → 행동 → 관찰 → 다음 판단</td>
+</tr>
+<tr>
+<td>기억과 도구는 누가 연결하는가</td>
+<td>하네스가 정보 재입력과 실제 실행을 담당한다</td>
+</tr>
+<tr>
+<td>무엇으로 성공을 판단하는가</td>
+<td>실제 결과·실행 경로·반복 신뢰성</td>
+</tr>
+</tbody>
+</table></div></section><section class="review quiz" id="chapter-01-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>모델이 곱셈 함수 이름과 인수를 출력했다. 계산은 끝난 것인가?</summary><p>아니다. 하네스가 함수를 실행하고 결과를 다시 모델에 전달해야 한다. 호출 의도와 실행 결과는 별개다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>첫 검색 결과가 부족한데도 처음 정한 계획을 끝까지 실행한다면 어떤 연결이 빠졌는가?</summary><p>관찰에서 계획 수정으로 돌아가는 연결이다. 성찰은 행동 결과를 근거로 탐색 출처나 다음 작업을 갱신한다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>첫 대화에서 알려 준 이름을 다음 호출에서 답했다. 모델이 새로 학습했다는 뜻인가?</summary><p>그렇게 판단할 수 없다. 응용 프로그램이 이전 대화를 다음 입력에 포함했기 때문일 수 있다. 입력을 통한 기억 제공과 파라미터 학습을 구별해야 한다.</p></details></div></section><a class="back-top" href="#overview">목차 위로</a></section><section aria-labelledby="chapter-02-title" class="chapter" id="chapter-02"><header class="chapter-head"><span class="chapter-num">02</span><div><p class="original">Chapter 2. Large Language Models</p><h2 id="chapter-02-title">언어 모델의 생성·학습·계산 구조</h2></div></header><div class="chapter-intro"><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>언어 모델은 토큰의 표현을 문맥에 맞게 바꾸고 다음 토큰을 반복 선택한다.</li><li>학습은 출력 행동을 바꾸고, 캐시·주의 구조·전문가 라우팅은 실행 비용을 바꾼다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>입력 토큰에서 다음 토큰 확률과 선택까지의 경로를 설명한다.</li>
+<li>사전 학습·지도 미세조정·강화학습의 학습 신호를 구별한다.</li>
+<li>캐시와 희소 구조의 계산 절약을 메모리 요구와 함께 판단한다.</li>
+</ul></div></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-02-concept-1"><span class="concept-num">01</span><h3>토큰에서 다음 토큰까지</h3><div class="explanation"><ul>
+<li>입력은 토크나이저가 어휘의 ID로 변환한다. 각 ID에 대응하는 숫자 벡터를 임베딩이라고 한다. 이 벡터가 여러 Transformer 블록을 통과하면서 앞 문맥을 반영한 표현으로 바뀐다. 마지막 위치의 표현을 LM head가 어휘 전체의 다음 토큰 확률로 변환한다.</li>
+<li>확률 계산과 토큰 선택은 별개다. 가장 높은 확률만 고르거나 확률에 따라 샘플링할 수 있다. 온도를 높이면 상대적으로 낮은 확률의 후보도 선택될 가능성이 커진다. 선택한 토큰을 입력 뒤에 붙인 뒤 같은 과정을 반복한다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-03"><h4>입력 표현에서 다음 토큰과 재입력까지</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-03-title" class="ref-svg" role="img" viewbox="0 0 720 84"><title id="ref-illustrated-ai-agents-03-title">입력 표현에서 다음 토큰과 재입력까지</title><defs><marker id="ref-arrow-illustrated-ai-agents-03" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="150.0" x="24.0" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="99.0" y="32.2">토큰 ID → 임베딩</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="150.0" x="198.0" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="273.0" y="24.85">블록에서 문맥</text><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="273.0" y="39.55">반영</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="150.0" x="372.0" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="447.0" y="32.2">어휘별 확률</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="150.0" x="546.0" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="621.0" y="32.2">토큰 선택·재입력</text><path class="ref-edge" d="M174 32.2 H193" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-03)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M348 32.2 H367" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-03)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M522 32.2 H541" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-03)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M621 51.8 V65.8 H99 V56" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-03)" stroke="var(--color-grey-600)" stroke-dasharray="5 4" stroke-width="1.5"></path></svg></div><figcaption>토큰 생성 원리의 새 도식. 선택한 토큰을 입력 뒤에 붙여 반복한다.</figcaption></figure>
+<ul>
+<li>시스템 지시, 사용자 요청, 이전 대화와 도구 정의도 입력 토큰이다. 역할 표시는 누가 어떤 말을 했는지 구분한다. 도구 호출용 출력 역시 한 토큰씩 생성한다. 따라서 대화나 도구 기능이 붙어도 기본 생성 원리가 다른 계산으로 바뀌는 것은 아니다.</li>
+</ul></div></div><div class="concept" id="chapter-02-concept-2"><span class="concept-num">02</span><h3>학습 신호의 세 단계</h3><div class="explanation"><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">단계</th>
+<th scope="col">모델이 보는 것</th>
+<th scope="col">가중치를 바꾸는 근거</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>사전 학습</td>
+<td>일반 텍스트의 앞부분</td>
+<td>예측한 다음 토큰과 실제 토큰의 차이</td>
+</tr>
+<tr>
+<td>지도 미세조정·SFT</td>
+<td>요청과 원하는 응답</td>
+<td>요청은 맥락으로 쓰고 응답 토큰의 예측 오류를 학습</td>
+</tr>
+<tr>
+<td>강화학습·RL</td>
+<td>요청에 대해 스스로 만든 응답</td>
+<td>선호 또는 자동 검증으로 얻은 보상</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>사전 학습은 넓은 언어 패턴을 만든다. SFT는 지시를 받은 뒤 원하는 방식으로 응답하는 예시를 학습한다. 요청 문장 자체를 맞히는 일과 응답을 맞히는 일을 구분하기 위해 프롬프트 토큰은 손실 계산에서 제외한다.</li>
+<li>RLHF는 사람의 선호 또는 그 선호를 학습한 보상 모델을 쓴다. RLVR은 정답·형식처럼 자동 검증할 수 있는 기준을 쓴다. 어떤 보상을 주는지가 강화될 행동을 정한다.</li>
+<li>형식에 0.3, 정답에 0.7을 주는 예시라면 형식만 맞은 답은 0.3이다. 둘 다 맞으면 1.0이다. GRPO는 같은 요청에 여러 응답을 만들고 집단 안의 상대적인 보상으로 더 나은 출력을 강화한다. 한 응답의 점수만 보는 학습과 다르다.</li>
+</ul></div></div><div class="concept" id="chapter-02-concept-3"><span class="concept-num">03</span><h3>자기주의의 점수와 정보 결합</h3><div class="explanation"><ul>
+<li>같은 단어도 문맥에 따라 뜻이 달라진다. 자기주의는 현재 위치가 앞의 어느 위치에서 정보를 가져올지 결정한다. 각 위치의 표현을 학습된 행렬로 투영해 Query·Key·Value, 즉 Q·K·V를 만든다.</li>
+<li>현재 Q와 각 위치 K의 내적이 관련성 점수다. Key 차원 수인 dₖ의 제곱근으로 점수를 나눈 뒤 softmax를 적용한다. 그러면 합이 1인 위치별 가중치가 나온다. 각 위치 V에 그 가중치를 곱해 더하면 현재 위치의 맥락화된 표현이 된다.</li>
+</ul>
+<p><code>Attention(Q, K, V) = softmax(QKᵀ / √dₖ)V</code></p>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-04"><h4>관련성 점수와 내용의 가중합</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-04-title" class="ref-svg" role="img" viewbox="0 0 720 225.4"><title id="ref-illustrated-ai-agents-04-title">관련성 점수와 내용의 가중합</title><defs><marker id="ref-arrow-illustrated-ai-agents-04" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="170" x="16" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="101.0" y="32.2">현재 위치의 Q</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="170" x="16" y="77"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="101.0" y="96.6">각 위치의 K</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="170" x="16" y="154"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="101.0" y="173.6">각 위치의 V</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="206" x="246" y="45.5"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="349.0" y="65.1">Q·K 내적 → ÷√dₖ</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="206" x="496" y="45.5"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="599.0" y="65.1">softmax → 가중치</text><path class="ref-edge" d="M186 32.2 H216 V65.1 H241" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-04)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M186 96.6 H216 V65.1 H241" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-04)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M452 65.1 H474 V65.1 H491" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-04)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="206" x="496" y="154"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="599.0" y="173.6">가중치 × V의 합</text><path class="ref-edge" d="M186 173.6 H341 V173.6 H491" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-04)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M599 84.7 V149.8" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-04)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="middle" x="360" y="213.5">점수 계산과 실제 내용의 가중합은 서로 다른 단계다.</text></svg></div><figcaption>원서 그림 2-33을 참고한 계산 관계. Q·K의 점수와 V의 결합을 구분한다.</figcaption></figure>
+<ul>
+<li>Q·K는 가져올 정보의 비중을 정한다. V는 실제로 합칠 내용이다. 여러 헤드는 서로 다른 관련성을 학습할 수 있다. 이어지는 피드포워드 층은 각 위치의 표현을 학습한 패턴에 따라 변환한다. 여러 블록을 지나는 동안 벡터의 의미는 바뀌지만 모델이 정한 표현 크기는 유지된다.</li>
+</ul></div></div><div class="concept" id="chapter-02-concept-4"><span class="concept-num">04</span><h3>KV 캐시와 주의 구조의 절충</h3><div class="explanation"><ul>
+<li>첫 입력은 여러 위치를 처리한다. 그다음 토큰을 생성할 때 이전 위치의 K·V를 매번 다시 계산하면 중복이다. KV 캐시는 이 값을 저장하고 새 토큰의 Q가 과거 K를 참조하게 한다. 이전 Q는 다음 위치의 계산에 같은 방식으로 필요하지 않다.</li>
+<li>계산은 줄지만 긴 문맥일수록 저장할 K·V가 많아진다. 컨텍스트 길이를 늘리면 입력 공간뿐 아니라 캐시 메모리도 고려해야 한다. 서로 다른 효율화 방식은 이 저장량과 참조 범위에 개입한다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-05"><h4>과거 K·V의 재사용과 새 토큰 계산</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-05-title" class="ref-svg" role="img" viewbox="0 0 720 148.4"><title id="ref-illustrated-ai-agents-05-title">과거 K·V의 재사용과 새 토큰 계산</title><defs><marker id="ref-arrow-illustrated-ai-agents-05" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="middle" x="80" y="19.6">기존 입력</text><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="middle" x="80" y="82.6">새 토큰</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="220" x="162" y="2.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="272.0" y="22.4">이전 K·V 저장</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="220" x="162" y="65.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="272.0" y="85.4">새 Q·K·V 계산</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="226" x="466" y="65.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="579.0" y="85.4">주의 계산</text><path class="ref-edge" d="M382 22.4 H424 V85.4 H461" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-05)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="424.0" y="16.1">재사용</text><path class="ref-edge" d="M382 85.4 H424 V85.4 H461" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-05)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="middle" x="360" y="136.5">과거 K·V는 재사용 · 새 위치는 계산 · 캐시는 길이에 따라 증가</text></svg></div><figcaption>원서 그림 2-35를 참고한 새 도식. 기존 Q를 쌓는 구조가 아니다.</figcaption></figure>
+<div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">구조</th>
+<th scope="col">줄이는 대상</th>
+<th scope="col">핵심 방법</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GQA</td>
+<td>K·V 헤드 수</td>
+<td>여러 Q 헤드가 K·V 그룹을 공유</td>
+</tr>
+<tr>
+<td>MQA</td>
+<td>K·V 헤드 수</td>
+<td>모든 Q 헤드가 한 K·V를 공유</td>
+</tr>
+<tr>
+<td>MLA</td>
+<td>캐시 표현 크기</td>
+<td>작은 잠재 KV를 저장하고 필요할 때 확장</td>
+</tr>
+<tr>
+<td>DSA</td>
+<td>참조하는 토큰 수</td>
+<td>빠른 중요도 계산 뒤 상위 토큰의 KV만 선택</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>MLA는 내용 정보와 위치 정보를 구분해 작은 위치 Key도 별도로 다룬다. DSA는 압축된 캐시를 전부 참조하는 대신 중요도가 높은 일부를 선택한다. 저장 표현을 줄이는 것과 읽을 항목 수를 줄이는 것은 다른 최적화다. 공유·압축·선택은 정확도와 구현 비용의 절충을 동반할 수 있다.</li>
+</ul></div></div><div class="concept" id="chapter-02-concept-5"><span class="concept-num">05</span><h3>혼합 전문가의 용량과 활성 계산</h3><div class="explanation"><ul>
+<li>밀집 모델은 토큰마다 같은 피드포워드 층을 실행한다. MoE는 여러 전문가 신경망 중 일부를 라우터가 선택한다. 전체 파라미터는 많아도 토큰 하나가 통과하는 활성 파라미터는 일부가 된다. 여기서 전문가가 반드시 수학·역사 같은 사람의 주제별 전문성을 뜻하지는 않는다.</li>
+<li>라우터가 네 전문가에 0.45·0.05·0.19·0.31의 점수를 줬다면 최고 점수 선택에서는 첫 전문가가 활성화된다. 선택된 출력은 라우팅 비중과 결합된다. 항상 같은 곳으로 몰리면 다른 전문가는 학습 기회를 잃는다. 용량 제한, 점수 잡음, 균형을 유도하는 보조 손실로 쏠림을 다룬다.</li>
+<li>일반적인 배치에서는 선택되지 않은 전문가도 메모리에 적재한다. 활성 파라미터 수는 토큰당 계산량과 관련된다. 전체 파라미터 수는 적재 메모리와 관련된다. 활성 수가 작다는 이유만으로 작은 메모리에서 실행할 수 있다고 판단하면 안 된다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-06"><h4>라우터의 선택과 활성 전문가</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-06-title" class="ref-svg" role="img" viewbox="0 0 720 226.8"><title id="ref-illustrated-ai-agents-06-title">라우터의 선택과 활성 전문가</title><defs><marker id="ref-arrow-illustrated-ai-agents-06" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="150" x="18" y="44.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="93.0" y="64.4">토큰 표현</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="192" x="218" y="44.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="314.0" y="64.4">라우터 → 확률</text><path class="ref-edge" d="M168 64.4 H193 V64.4 H213" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-06)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="210" x="486" y="7"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="591.0" y="19.25">전문가 1</text><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="591.0" y="33.95">.45 · 선택</text><path class="ref-edge" d="M410 64.4 H448 V26.6 H481" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-06)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="210" x="486" y="58.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="591.0" y="71.05">전문가 2</text><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="591.0" y="85.75">.05</text><path class="ref-edge" d="M410 64.4 H448 V78.4 H481" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-06)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="210" x="486" y="110.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="591.0" y="122.85">전문가 3</text><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="591.0" y="137.55">.19</text><path class="ref-edge" d="M410 64.4 H448 V130.2 H481" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-06)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="210" x="486" y="162.4"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="591.0" y="174.65">전문가 4</text><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="591.0" y="189.35">.31</text><path class="ref-edge" d="M410 64.4 H448 V182 H481" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-06)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="middle" x="300" y="214.9">전체 전문가는 적재 · 선택한 일부만 토큰 계산에 참여</text></svg></div><figcaption>원서 그림 2-42의 선택 확률을 참고했다. 그림의 최고 점수 선택 예시다.</figcaption></figure></div></div><div class="concept" id="chapter-02-concept-6"><span class="concept-num">06</span><h3>TinyAgent의 응답과 실행 이력</h3><div class="explanation"><ul>
+<li>모델 어댑터는 역할별 메시지와 도구 정의를 서버에 보내고 응답을 공통 구조로 바꾼다. <code>content</code>는 응답 텍스트, <code>tool_call</code>은 실행할 호출, <code>reasoning</code>은 제공되는 추론 내용, <code>metadata</code>는 모델·토큰 사용 정보 등을 담는다. 지원 필드는 서버와 모델에 따라 다를 수 있다.</li>
+<li>모델의 Response와 하네스의 Step은 다르다. Step은 응답뿐 아니라 행동과 도구의 관찰 결과, 최종 답을 담는다. Trajectory는 최초 요청과 여러 Step을 모아 실행 경로를 남긴다. 도구 관찰은 다음 판단의 입력이므로 사용자에게 줄 최종 답과 분리한다.</li>
+<li>이 장의 TinyAgent는 모델을 한 번 호출하고 이력을 남긴다. <code>What is 2 + 2?</code>에 모델이 <code>2 + 2 is 4.</code>를 반환하는 예시가 나온다. 아직 실제 도구나 자율 반복은 없다. 모델의 응답 기능을 연결한 단계다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-02-recap"><h3>한눈에 정리</h3><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">이해할 대상</th>
+<th scope="col">연결</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>생성</td>
+<td>토큰 ID → 임베딩 → 문맥화 → 확률 → 토큰 선택</td>
+</tr>
+<tr>
+<td>학습</td>
+<td>실제 다음 토큰 → 모범 응답 → 보상</td>
+</tr>
+<tr>
+<td>실행 효율</td>
+<td>KV 재사용·저장 압축·참조 선택·전문가 일부 활성화</td>
+</tr>
+<tr>
+<td>실행 기록</td>
+<td>모델 Response → 하네스 Step → 전체 Trajectory</td>
+</tr>
+</tbody>
+</table></div></section><section class="review quiz" id="chapter-02-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>형식 보상 0.3과 정답 보상 0.7을 쓴다. 형식만 맞은 답과 둘 다 맞은 답의 점수는?</summary><p>각각 0.3과 1.0이다. 점수는 어떤 기준을 만족했는지의 합이다. GRPO는 같은 요청의 여러 응답을 이런 보상으로 상대 비교한다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>KV 캐시가 빨라지는 이유와 긴 문맥에서 늘어나는 비용은?</summary><p>이전 토큰의 K·V 계산을 재사용해 중복 계산을 줄인다. 반면 토큰이 늘면 저장하는 K·V도 늘어 메모리를 소비한다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>MoE의 활성 파라미터만 보고 필요한 메모리를 정하면 왜 틀릴 수 있는가?</summary><p>한 토큰에서 실행하는 전문가와 메모리에 적재하는 전체 전문가는 다르기 때문이다. 활성 수는 주로 계산량을, 전체 수는 적재 규모를 판단하는 근거다.</p></details></div></section><a class="back-top" href="#overview">목차 위로</a></section><section aria-labelledby="chapter-03-title" class="chapter" id="chapter-03"><header class="chapter-head"><span class="chapter-num">03</span><div><p class="original">Chapter 3. Reasoning Large Language Models</p><h2 id="chapter-03-title">추론 계산과 답의 선택</h2></div></header><div class="chapter-intro"><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>추론 성능은 모델 학습뿐 아니라 답을 만들 때 쓰는 계산과 선택 방식에도 좌우된다.</li><li>후보를 잘 고르는 방법과 좋은 추론을 생성하도록 학습하는 방법을 구분해야 한다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>학습 계산과 추론 계산의 차이를 설명한다.</li>
+<li>다수 응답·검증 점수·학습 보상의 선택 기준을 구별한다.</li>
+<li>추론 길이와 정확도·비용·관찰 가능성의 절충을 판단한다.</li>
+</ul></div></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-03-concept-1"><span class="concept-num">01</span><h3>학습과 사용 시점의 계산</h3><div class="explanation"><ul>
+<li>더 많은 데이터·파라미터·학습 계산은 모델의 능력을 높이는 축이다. 고정 계산 예산에서는 세 자원의 균형도 중요하다. 모델만 크게 만들고 충분한 데이터로 학습하지 않으면 효율적인 배분이 아닐 수 있다.</li>
+<li>사용 시점에도 계산을 늘릴 수 있다. 문제를 중간 단계로 나누거나, 여러 답을 생성해 비교하거나, 더 많은 경로를 탐색하는 방식이다. 학습을 더 하는 것과 이미 학습한 모델을 더 많이 실행하는 것은 다른 투자다. 난도에 맞는 조합이 필요하다.</li>
+<li>중간 토큰이 많다고 자동으로 정답이 되는 것은 아니다. 홍학 6마리 중 2마리가 떠나고 1마리가 숨었다면 보이는 수는 <code>6−2=4</code>, <code>4−1=3</code>이다. 계산을 단계로 나눠 누락을 줄이는 것이 목적이다. 같은 결론을 길게 반복하는 것은 다른 일이다.</li>
+</ul></div></div><div class="concept" id="chapter-03-concept-2"><span class="concept-num">02</span><h3>후보 탐색과 검증</h3><div class="explanation"><ul>
+<li>self-consistency는 서로 다른 추론 경로를 여러 번 생성한 뒤 가장 자주 나온 최종 답을 고른다. 별도 보상 모델이 없어도 적용할 수 있다. 그러나 모델이 같은 오류를 반복하면 빈도도 틀릴 수 있다.</li>
+<li>좌석 퍼즐을 10회 푼 예시에서는 답 5가 4회, 1이 3회, 4가 1회, 2가 2회 나왔다. 선택은 5다. 4회는 과반수가 아니지만 가장 잦은 값이다. 후보가 다양해야 탐색의 의미가 생긴다.</li>
+<li>Best-of-N은 빈도 대신 검증 점수를 쓴다. 로마 숫자 변환 함수를 10개 생성하고 12개 테스트로 채점한다면 점수는 <code>통과 수÷12</code>다. 11개 통과는 약 0.917, 12개 통과는 1.0이다. 실행 가능 여부만 검사하면 잘못된 변환을 놓치므로 정상·뺄셈 표기·잘못된 문자·빈 입력 같은 동작을 확인해야 한다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-07"><h4>후보 생성과 검증에 따른 선택</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-07-title" class="ref-svg" role="img" viewbox="0 0 720 235.2"><title id="ref-illustrated-ai-agents-07-title">후보 생성과 검증에 따른 선택</title><defs><marker id="ref-arrow-illustrated-ai-agents-07" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-primary-soft)" fill-opacity=".4" height="218.4" rx="8" stroke="var(--color-grey-300)" stroke-dasharray="5 5" width="238" x="18" y="8.4"></rect><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="start" x="32" y="23.8">입력</text><rect fill="var(--color-bg)" height="53.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="210" x="32" y="33.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="137.0" y="60.2">후보 1 · 추론과 답</text><path class="ref-edge" d="M242 60.2 H315 V116.2 H392" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-07)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="53.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="210" x="32" y="103.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="137.0" y="130.2">후보 2 · 추론과 답</text><path class="ref-edge" d="M242 130.2 H315 V116.2 H392" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-07)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="53.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="210" x="32" y="173.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="137.0" y="200.2">후보 N · 추론과 답</text><path class="ref-edge" d="M242 200.2 H315 V116.2 H392" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-07)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="58.8" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="290" x="398" y="86.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="543.0" y="108.85">검증 → 후보 선택</text><text dominant-baseline="central" fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="543.0" y="123.55">ORM 결과 / PRM 과정</text></svg></div><figcaption>원서 그림 3-26을 참고했다. 결과 점수와 과정 점수는 다른 후보를 고를 수 있다.</figcaption></figure>
+<div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">검증 대상</th>
+<th scope="col">방법</th>
+<th scope="col">놓칠 수 있는 것</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>최종 결과</td>
+<td>ORM·결과 보상</td>
+<td>중간 오류와 비효율적인 경로</td>
+</tr>
+<tr>
+<td>중간 단계</td>
+<td>PRM·과정 보상</td>
+<td>최종 답의 실제 정확성</td>
+</tr>
+<tr>
+<td>준비한 동작</td>
+<td>단위 테스트</td>
+<td>테스트에 없는 입력의 오류</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>같은 최종 답의 경로 점수를 합칠 수도 있다. 답 5의 경로 점수가 0.9와 0.6이면 합계 1.5다. 답 3의 0.3과 0.7을 합친 1.0보다 높다. 빈도와 경로의 질을 함께 반영한 집계다. 검증 기준과 집계 규칙이 선택 결과를 바꾼다.</li>
+</ul></div></div><div class="concept" id="chapter-03-concept-3"><span class="concept-num">03</span><h3>추론 행동의 유도와 학습</h3><div class="explanation"><ul>
+<li>프롬프트에 중간 계산 예시를 넣거나 단계적으로 풀라고 요청하면 기존 모델에서도 추론 행동을 유도할 수 있다. 펭귄 9마리에서 2마리가 사라지고 4마리가 올라오는 문제는 <code>9−2=7</code>, <code>7+4=11</code>이다. 중간 과정을 생략한 예시에서는 마지막 유입을 놓쳤지만 단계 예시를 준 실행에서는 이를 반영했다. 한 예시의 성공이 모든 문제의 성공을 보장하지는 않는다.</li>
+<li>SFT는 준비한 추론 경로를 모방하도록 학습한다. RL은 정답·형식 보상을 통해 도움이 되는 행동을 강화한다. 두 방식 모두 다음에 생성할 토큰의 확률 분포를 바꾼다. 후보를 만든 뒤 고르는 탐색과, 좋은 후보가 나올 가능성을 바꾸는 학습을 구별해야 한다.</li>
+<li>Flan 계열은 다양한 지시에 추론 예시를 섞었다. s1은 고른 추론 예시 1,000개를 사용하고 종료를 늦추거나 앞당겨 추론 예산을 조절했다. 중요한 차이는 예시의 수 자체보다 학습시킨 행동과 사용 시점의 계산 제어에 있다.</li>
+</ul></div></div><div class="concept" id="chapter-03-concept-4"><span class="concept-num">04</span><h3>R1의 학습과 합성 자료 순환</h3><div class="explanation"><ul>
+<li>R1-Zero는 기반 모델에서 대규모 추론 SFT 없이 GRPO를 적용했다. 정답과 형식에 보상을 주자 긴 중간 계산이 나타났다. 그러나 언어가 섞이거나 읽기 어려운 출력도 생겼다. 정답 보상만으로 사용자에게 좋은 표현까지 자동 확보되는 것은 아니다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-08"><h4>합성 자료 생성과 기반 모델의 재학습</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-08-title" class="ref-svg" role="img" viewbox="0 0 720 156.8"><title id="ref-illustrated-ai-agents-08-title">합성 자료 생성과 기반 모델의 재학습</title><defs><marker id="ref-arrow-illustrated-ai-agents-08" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="190" x="18" y="16.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="113.0" y="36.4">기반 모델 A</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="190" x="262" y="16.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="357.0" y="36.4">초기 SFT → RL</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="194" x="506" y="16.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="603.0" y="36.4">선별 자료 생성</text><path class="ref-edge" d="M208 36.4 H235 V36.4 H257" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-08)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M452 36.4 H479 V36.4 H501" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-08)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="190" x="18" y="105"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="113.0" y="124.6">원래 기반 모델 A</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="190" x="262" y="105"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="357.0" y="124.6">선별 자료로 SFT</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="194" x="506" y="105"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="603.0" y="124.6">전반적 RL → R1</text><path class="ref-edge" d="M208 124.6 H235 V124.6 H257" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-08)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M452 124.6 H479 V124.6 H501" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-08)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M603 56 V81.2 H357 V100.8" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-08)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="476" y="77">자료 전달</text></svg></div><figcaption>원서 그림 3-40·3-41을 참고해 자료 전달 분기를 새로 표현했다.</figcaption></figure>
+<div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">단계</th>
+<th scope="col">역할</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>고품질 추론 예시로 초기 SFT</td>
+<td>읽기 쉬운 형태와 언어의 출발점</td>
+</tr>
+<tr>
+<td>추론 중심 RL</td>
+<td>정답·형식·언어 일관성의 강화</td>
+</tr>
+<tr>
+<td>생성과 선별</td>
+<td>추론 60만·비추론 20만 개의 학습 자료 구성</td>
+</tr>
+<tr>
+<td>원래 기반 모델에 새 SFT</td>
+<td>선별 자료의 추론·일반 행동 학습</td>
+</tr>
+<tr>
+<td>전반적인 RL</td>
+<td>유용성과 무해성 등을 함께 조정</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>앞의 중간 모델을 계속 갱신하기만 하는 직선 경로가 아니다. 중간 모델로 자료를 만들고, 그 자료로 원래 기반 모델을 새로 학습하는 갈림이 있다. 추론 문제만 학습하면 번역·쓰기 같은 일반 과제에 약할 수 있어 비추론 자료도 포함한다.</li>
+<li>이미지 추론도 같은 큰 틀을 쓸 수 있지만 자료와 보상은 시각 과제에 맞아야 한다. MCoT는 이미지에서 근거 설명을 만든 뒤 원래 이미지·질문·설명을 함께 써 답한다. Llava-CoT는 요약·캡션·추론·답으로 나눈 합성 자료를 쓴다. Reason-RFT는 시각 추론 SFT 뒤 RL을 적용한다. 수치 오차·변환의 부분 일치·정확한 분류처럼 정답의 형태가 보상 설계를 결정한다.</li>
+</ul></div></div><div class="concept" id="chapter-03-concept-5"><span class="concept-num">05</span><h3>추론 예산과 내부 표현</h3><div class="explanation"><ul>
+<li>Chain-of-Draft는 긴 설명 대신 짧은 초안으로 중간 계산을 남긴다. 펭귄 문제라면 <code>9−2=7; 7+4=11</code>로 핵심 변화를 보존한다. 지나친 축약은 정확성과 사람이 이해할 수 있는 정도를 떨어뜨릴 수 있다.</li>
+<li>길이 보상은 정답 조건과 함께 설계해야 한다. 짧은 오답을 강화하면 목적을 잃는다. 길이 벌점을 점차 늘리거나, 기준 모델의 길이와 비교하거나, 요청한 토큰 예산과 정답을 함께 평가하는 접근이 있다. 쉬운 요청은 바로 답하고 어려운 요청에는 더 많은 계산을 배분할 수 있다.</li>
+<li>잠재 공간 추론은 중간 단어를 고르고 다시 임베딩하는 경로 대신 은닉 상태 벡터를 다음 입력으로 직접 넘긴다. 마지막에 답 토큰을 생성한다. CODI는 명시적 추론을 하는 교사와 벡터로 이어 가는 학생을 연결해 그 차이로도 학습한다. 텍스트 생성 비용을 줄일 가능성과 읽을 수 있는 과정이 줄어드는 디버깅 비용을 함께 봐야 한다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-03-recap"><h3>한눈에 정리</h3><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">선택</th>
+<th scope="col">늘리는 것</th>
+<th scope="col">판단 기준</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>여러 후보 탐색</td>
+<td>실행 횟수</td>
+<td>빈도 또는 독립적인 검증</td>
+</tr>
+<tr>
+<td>추론 학습</td>
+<td>학습 예시·보상</td>
+<td>유용한 중간 계산의 생성 확률</td>
+</tr>
+<tr>
+<td>추론 예산 제어</td>
+<td>문제별 계산 배분</td>
+<td>정확도·지연·비용</td>
+</tr>
+<tr>
+<td>잠재 공간 추론</td>
+<td>내부 표현의 연속 계산</td>
+<td>효율과 과정 관찰 가능성</td>
+</tr>
+</tbody>
+</table></div></section><section class="review quiz" id="chapter-03-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>10개 답 중 정답이 4회로 가장 많았다. self-consistency는 무엇을 고르는가?</summary><p>그 정답을 고른다. 최빈값 선택이므로 과반수가 필수는 아니다. 다만 빈도가 정확성의 독립 증거는 아니다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>생성 코드가 12개 테스트를 모두 통과했다. 모든 입력에 정확하다고 말할 수 있는가?</summary><p>아니다. 점수 1.0은 준비한 12개 기준을 통과했다는 뜻이다. 검증기의 범위가 선택 결과의 신뢰 범위를 제한한다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>R1의 자료 생성 단계와 최종 SFT를 한 모델의 연속 갱신으로 보면 무엇을 놓치는가?</summary><p>중간 모델이 선별 학습 자료를 만들고, 그 자료로 원래 기반 모델을 새로 학습한다는 분기를 놓친다. 모델을 개선하는 과정과 개선에 쓸 자료를 만드는 과정이 연결돼 있다.</p></details></div></section><a class="back-top" href="#overview">목차 위로</a></section><section aria-labelledby="chapter-04-title" class="chapter" id="chapter-04"><header class="chapter-head"><span class="chapter-num">04</span><div><p class="original">Chapter 4. Memory</p><h2 id="chapter-04-title">기억과 컨텍스트의 구성</h2></div></header><div class="chapter-intro"><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>기억은 저장한 정보를 현재 판단의 입력으로 다시 제공하는 시스템이다.</li><li>좋은 컨텍스트는 많은 정보보다 필요한 정보의 선택·압축·배치에서 나온다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>대화 이력·외부 지식·경험·절차가 각각 어떤 기억인지 구별한다.</li>
+<li>자르기·요약·검색이 보존하거나 잃는 정보를 설명한다.</li>
+<li>관련성과 중복도를 함께 고려해 입력을 구성한다.</li>
+</ul></div></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-04-concept-1"><span class="concept-num">01</span><h3>저장 정보와 현재 입력의 구별</h3><div class="explanation"><ul>
+<li>LLM은 호출 사이의 상태를 스스로 보존하지 않는다. 이름을 알려 준 첫 대화 뒤 이름을 다시 물으면, 이전 대화가 다음 입력에 있어야 답할 수 있다. 모델이 기억을 꺼내는 듯 보여도 실제로는 하네스가 정보를 다시 넣는 경우다.</li>
+<li>작업 기억은 현재 대화와 실행 중인 맥락이다. 장기 기억은 과거 행동과 결과를 담는 일화 기억, 외부 문서 같은 의미 기억, 실행 방법과 규칙을 담는 절차 기억으로 구분할 수 있다. 저장소를 반드시 세 개로 나눠야 한다는 뜻은 아니다. 무엇을 기억하고 어떻게 사용할지 구별하는 분류다.</li>
+<li>모델 가중치에 학습된 정보도 있지만, 이를 원하는 사실을 정확하게 넣고 꺼내는 데이터베이스처럼 다룰 수는 없다. 외부 저장소와 현재 입력을 명시적으로 관리하면 어떤 근거가 사용됐는지 추적하기 쉽다.</li>
+</ul></div></div><div class="concept" id="chapter-04-concept-2"><span class="concept-num">02</span><h3>짧은 기억의 유지와 손실</h3><div class="explanation"><ul>
+<li>대화를 전부 붙이면 앞선 내용을 보존할 수 있지만 입력과 출력이 공유하는 컨텍스트 창을 소모한다. 공간에 맞더라도 너무 많은 정보가 판단을 방해할 수 있다. 길이 제한과 유효한 정보 활용 능력은 같은 기준이 아니다.</li>
+</ul>
+<div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">방법</th>
+<th scope="col">남기는 정보</th>
+<th scope="col">잃기 쉬운 정보</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>최근 이력만 유지</td>
+<td>최근 대화의 원문</td>
+<td>오래됐지만 중요한 제약</td>
+</tr>
+<tr>
+<td>누적 요약</td>
+<td>과거의 압축된 핵심</td>
+<td>작은 조건·정확한 표현·세부 값</td>
+</tr>
+<tr>
+<td>과거 요약 + 최근 원문</td>
+<td>장기 방향과 최근 세부</td>
+<td>요약에서 이미 탈락한 내용</td>
+</tr>
+</tbody>
+</table></div>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-09"><h4>과거 요약과 최근 원문의 결합</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-09-title" class="ref-svg" role="img" viewbox="0 0 720 172.2"><title id="ref-illustrated-ai-agents-09-title">과거 요약과 최근 원문의 결합</title><defs><marker id="ref-arrow-illustrated-ai-agents-09" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-primary-soft)" fill-opacity=".4" height="82.6" rx="8" stroke="var(--color-grey-300)" stroke-dasharray="5 5" width="692" x="14" y="7"></rect><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="start" x="28" y="22.4">다음 호출에 구성할 입력</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="220" x="30" y="33.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="140.0" y="53.2">과거 1–5턴의 요약</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="200" x="268" y="33.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="368.0" y="53.2">최근 6턴의 원문</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="202" x="486" y="33.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="587.0" y="53.2">현재 질문</text><path class="ref-edge" d="M360 89.6 V116.2" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-09)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="260" x="230" y="120.4"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="360.0" y="140">LLM → 다음 응답</text></svg></div><figcaption>원서 그림 4-13을 참고했다. 요약과 최근 세부는 함께 현재 입력을 구성한다.</figcaption></figure>
+<ul>
+<li>앞의 1~5턴은 요약하고 6턴은 원문으로 둔다면, 현재 질문은 압축된 배경과 최근 세부를 함께 받는다. 요약을 계속 요약하면 손실도 누적될 수 있다. 삭제·압축한 작업용 기억과 별개로 전체 실행 이력은 보관해야 실패 경로를 되짚을 수 있다.</li>
+<li>최근 몇 개 메시지만 유지하는 간단한 구현은 도구 호출이 늘어날 때 주의해야 한다. 자율 실행에서는 사용자·assistant가 번갈아 한 번씩 말하지 않을 수 있다. 메시지 수가 곧 대화 턴이나 완결된 행동 수는 아니다.</li>
+</ul></div></div><div class="concept" id="chapter-04-concept-3"><span class="concept-num">03</span><h3>외부 지식의 검색과 재입력</h3><div class="explanation"><ul>
+<li>RAG는 문서를 저장할 때 임베딩을 만들고, 질문이 들어오면 같은 임베딩 모델로 질문을 변환한다. 질문과 가까운 문서를 찾아 원문 내용을 질문과 함께 넣고 답을 생성한다. 숫자 벡터가 문서의 내용을 대신 답하는 것이 아니라, 어떤 문서를 가져올지 고르는 데 쓰인다.</li>
+<li>코사인 유사도는 두 벡터의 내적을 길이의 곱으로 나눈 값이다. 예시의 홍학 선호 문장과 홍학 설명은 약 0.639, 돌고래 설명과는 약 0.355다. 더 가까운 표현을 골라 질문에 필요한 문맥을 제공한다. 유사도가 높다는 사실만으로 내용이 정확하거나 답에 충분하다는 보장은 없다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-10"><h4>외부 문서 저장과 질문 시 검색</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-10-title" class="ref-svg" role="img" viewbox="0 0 720 207.2"><title id="ref-illustrated-ai-agents-10-title">외부 문서 저장과 질문 시 검색</title><defs><marker id="ref-arrow-illustrated-ai-agents-10" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="210" x="18" y="7"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="123.0" y="26.6">외부 문서 → 임베딩</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="216" x="288" y="7"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="396.0" y="26.6">저장소</text><path class="ref-edge" d="M228 26.6 H258 V26.6 H283" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-10)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="210" x="18" y="78.4"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="123.0" y="98">질문 → 같은 임베딩</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="216" x="288" y="78.4"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="396.0" y="98">유사 문서 검색</text><path class="ref-edge" d="M228 98 H258 V98 H283" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-10)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M396 46.2 V74.2" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-10)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="216" x="288" y="155.4"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="396.0" y="175">질문 + 검색 원문</text><path class="ref-edge" d="M396 117.6 V151.2" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-10)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="150" x="550" y="155.4"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="625.0" y="175">LLM → 답</text><path class="ref-edge" d="M504 175 H527 V175 H545" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-10)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M120 117.6 V175 H282" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-10)" stroke="var(--color-grey-600)" stroke-dasharray="5 4" stroke-width="1.5"></path></svg></div><figcaption>원서 4장의 RAG 설명을 재구성했다. 임베딩은 검색에, 원문은 답의 근거에 사용한다.</figcaption></figure>
+<ul>
+<li>Sarah가 좋아하는 동물을 묻는 예시에서는 관련 문서 셋을 입력에 추가해 홍학이라는 답을 얻는다. 하지만 같은 검색에 취미나 다른 사람의 선호도 함께 들어온다. 무조건 상위 세 개를 쓰는 규칙 대신 관련성 기준·재정렬·중복 제거로 내용을 다듬을 필요가 있다.</li>
+</ul></div></div><div class="concept" id="chapter-04-concept-4"><span class="concept-num">04</span><h3>기억의 갱신과 능동 검색</h3><div class="explanation"><ul>
+<li>MemoryBank는 대화·요약·사용자 특성을 저장한다. 검색해 사용한 기억은 더 오래 유지하도록 강화하고 오래 쓰지 않은 기억은 약화한다. 저장 후 읽기만 하는 데이터베이스와 달리 사용 경험이 이후 보존에 영향을 준다.</li>
+<li>A-MEM은 한 상호작용을 하나의 노트로 만든다. 원래 내용·시각·키워드·태그·설명을 보관하고, 유사한 기존 노트를 찾은 뒤 연결할 대상을 정한다. 새 기억을 넣을 때 기존 노트의 설명과 태그도 갱신한다. 검색 가능한 기록과 서로 연결된 지식의 변화를 함께 관리하는 방식이다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-11"><h4>검색·연결·갱신이 이어지는 기억</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-11-title" class="ref-svg" role="img" viewbox="0 0 720 197.4"><title id="ref-illustrated-ai-agents-11-title">검색·연결·갱신이 이어지는 기억</title><defs><marker id="ref-arrow-illustrated-ai-agents-11" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="192" x="16" y="56"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="112.0" y="75.6">기존 노트와 연결망</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="200" x="264" y="9.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="364.0" y="29.4">새 상호작용 노트</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="194" x="510" y="56"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="607.0" y="75.6">관련 노트 검색</text><path class="ref-edge" d="M464 29.4 H487 V75.6 H505" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-11)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M510 75.6 H214" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-11)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="360" y="65.8">유사도 검색</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="200" x="264" y="133"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="364.0" y="152.6">연결 선택·설명 갱신</text><path class="ref-edge" d="M608 95.2 V152.6 H470" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-11)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M264 152.6 H112 V99.4" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-11)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="184" y="182">노트 추가·기존 기억 갱신</text></svg></div><figcaption>원서 그림 4-24를 참고한 새 도식. 새 노트 추가가 기존 기억의 갱신으로 이어진다.</figcaption></figure>
+<ul>
+<li>Agentic RAG는 검색을 고정된 사전 단계가 아닌 도구로 둔다. 에이전트가 출처·질의·반복 여부를 정한다. Search-o1은 추론 중 부족한 정보를 검색하고, 질문·검색 결과·현재 추론에 맞춰 필요한 정보만 압축해 연결한다. 검색 문서 전체가 추론을 끊거나 잡음이 되는 문제에 대응한다.</li>
+</ul></div></div><div class="concept" id="chapter-04-concept-5"><span class="concept-num">05</span><h3>관련성·중복·배치의 균형</h3><div class="explanation"><ul>
+<li>컨텍스트 엔지니어링은 사용자 프롬프트뿐 아니라 시스템 지시·도구 정의·기억·검색 결과·출력 형식을 함께 구성한다. 먼저 후보를 찾고, 재정렬로 관련성을 높이고, 중복을 줄이며, 요약으로 길이를 조절한다. 무엇을 수행하려는지 보여 주는 계획과 요구 조건도 입력의 일부다.</li>
+<li>MMR은 질문과의 관련성에서 이미 고른 문서와의 중복도에 대한 벌점을 뺀다. 후보 d와 선택 집합 S에 대해 <code>λ×관련성(d) − (1−λ)×S와의 최대 유사도</code>로 다음 후보를 비교한다. 이 식에서는 λ가 클수록 질문 관련성을, 작을수록 중복 억제를 더 강조한다.</li>
+<li>보충 계산으로 λ=0.5라고 하자. 후보 A는 질문 관련성 0.9·기존 문서와 유사도 0.9다. 점수는 <code>0.45−0.45=0</code>이다. 후보 B는 관련성 0.8·중복도 0.2다. 점수는 <code>0.4−0.1=0.3</code>이다. 질문과 조금 덜 닮았어도 새 정보를 주는 B를 선택한다. 다음 후보를 고를 때는 B도 선택 집합에 넣고 중복도를 다시 계산한다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-12"><h4>관련성과 중복도를 함께 본 선택</h4><div aria-label="관련성과 중복도를 함께 본 선택" class="ref-compare table-wrap" role="region" tabindex="0"><table class="table"><thead><tr><th scope="col">후보</th><th scope="col">질문 관련성</th><th scope="col">기존 문서 중복</th><th scope="col">λ=0.5의 점수</th></tr></thead><tbody><tr><td>A</td><td>0.9</td><td>0.9</td><td>0.45 − 0.45 = 0</td></tr><tr><td>B · 선택</td><td>0.8</td><td>0.2</td><td>0.40 − 0.10 = 0.30</td></tr></tbody></table></div><figcaption>원서 그림 4-36의 개념을 별도 수치 예시로 설명했다. 원본 그림의 점수를 복사한 표가 아니다.</figcaption></figure>
+<ul>
+<li>중요한 정보가 긴 입력의 가운데에 있을 때 활용이 떨어지는 현상도 있다. 원서의 위치별 성능 그림은 앞·뒤보다 가운데가 불리할 수 있음을 보여 준다. 따라서 많이 넣는 것만으로 충분하지 않다. 정보의 위치와 형식까지 설계해야 한다. 계획·요구 조건·설정도 기록하면 결과뿐 아니라 그 행동을 선택한 의도를 추적할 수 있다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-04-recap"><h3>한눈에 정리</h3><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">질문</th>
+<th scope="col">선택 기준</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>무엇을 저장하는가</td>
+<td>대화·경험·지식·절차의 역할</td>
+</tr>
+<tr>
+<td>무엇을 입력에 넣는가</td>
+<td>현재 질문과의 관련성·정보 손실·용량</td>
+</tr>
+<tr>
+<td>무엇을 덜어내는가</td>
+<td>중복·불필요한 세부·낡은 정보</td>
+</tr>
+<tr>
+<td>무엇을 기록으로 남기는가</td>
+<td>원래 의도·선택한 맥락·전체 실행 이력</td>
+</tr>
+</tbody>
+</table></div></section><section class="review quiz" id="chapter-04-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>작업용 기억을 요약했다면 전체 실행 이력도 요약본으로 바꿔도 되는가?</summary><p>목적이 다르다. 작업용 기억은 현재 판단을 돕기 위한 압축본이다. 전체 이력은 실패와 정보 손실을 추적하기 위해 원래 상호작용을 보존한다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>MMR에서 관련성 0.8·중복도 0.2, λ=0.5인 후보의 점수는?</summary><p>0.5×0.8−0.5×0.2=0.3이다. 관련성만이 아니라 이미 선택한 내용과 얼마나 겹치는지도 반영한다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>RAG와 Agentic RAG의 검색 시점은 어떻게 다른가?</summary><p>기본 RAG는 정해진 단계에서 검색한 내용을 모델에 제공한다. Agentic RAG는 검색을 도구로 연결해 에이전트가 출처와 검색 횟수, 후속 질의를 선택한다.</p></details></div></section><a class="back-top" href="#overview">목차 위로</a></section><section aria-labelledby="chapter-05-title" class="chapter" id="chapter-05"><header class="chapter-head"><span class="chapter-num">05</span><div><p class="original">Chapter 5. Tool Usage, Learning, and Protocols</p><h2 id="chapter-05-title">도구의 실행·학습·연결 규약</h2></div></header><div class="chapter-intro"><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>도구 사용은 기능 구현부터 정의·선택·실행·결과 재입력까지 이어지는 과정이다.</li><li>MCP는 연결을 표준화하고, 스킬은 도구를 어떤 절차로 사용할지 제공한다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>도구의 설명과 실제 실행 사이에 필요한 처리를 설명한다.</li>
+<li>프롬프트·SFT·RL이 도구 사용 행동을 바꾸는 방식을 구별한다.</li>
+<li>MCP와 스킬이 각각 해결하는 문제를 판단한다.</li>
+</ul></div></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-05-concept-1"><span class="concept-num">01</span><h3>도구 정의에서 결과 처리까지</h3><div class="explanation"><ul>
+<li>모델이 사용할 기능은 먼저 실제 함수나 API로 구현돼 있어야 한다. 이름을 함수 구현에 연결한 레지스트리가 실행 대상을 찾는다. 모델에는 이름·역할·인수·필수 조건·반환값을 설명한다. 자연어 규칙이나 JSON Schema로 표현할 수 있다.</li>
+<li>곱셈 질문에 모델이 함수 이름과 5.1·7.3을 출력하면 파서가 구조를 읽고 인수를 검증한다. 하네스가 실제 함수를 실행한다. 결과 37.23을 대화에 추가한 뒤 모델을 다시 호출하면 최종 답을 만든다. 원서의 도구 사용 그림은 모델과 외부 실행 주체가 번갈아 맡는 일을 보여 준다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-13"><h4>도구 호출 전후의 두 모델 판단</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-13-title" class="ref-svg" role="img" viewbox="0 0 720 240.8"><title id="ref-illustrated-ai-agents-13-title">도구 호출 전후의 두 모델 판단</title><defs><marker id="ref-arrow-illustrated-ai-agents-13" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="184" y="16.1">모델</text><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="534" y="16.1">하네스·도구</text><path class="ref-edge" d="M184 25.9 V232.4" fill="none" stroke="var(--color-grey-600)" stroke-dasharray="5 4" stroke-width="1.5"></path><path class="ref-edge" d="M534 25.9 V232.4" fill="none" stroke="var(--color-grey-600)" stroke-dasharray="5 4" stroke-width="1.5"></path><path class="ref-edge" d="M534 46.2 H184" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-13)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="359" y="37.8">함수 정의·스키마와 질문 제공</text><path class="ref-edge" d="M184 98 H534" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-13)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="359" y="89.6">도구 선택·인수 출력</text><path class="ref-edge" d="M534 149.8 H184" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-13)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="359" y="141.4">파싱·검증·실행 후 결과 반환</text><path class="ref-edge" d="M184 201.6 H534" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-13)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="359" y="193.2">결과를 반영한 답변</text></svg></div><figcaption>원서 그림 5-5를 참고한 새 시퀀스. 기능과 스키마를 준비한 뒤 호출·결과·답변을 잇는다.</figcaption></figure>
+<ul>
+<li>기본 도구 호출을 학습한 모델은 assistant의 호출과 tool 역할의 결과를 구분한다. 직접 만든 프롬프트 방식은 관찰 결과를 user 메시지로 전달할 수도 있다. 서버는 공통 도구 스키마를 모델이 학습한 대화 템플릿으로 변환한다. 구조화된 요청 형식이 실제 실행을 대신하지는 않는다.</li>
+</ul></div></div><div class="concept" id="chapter-05-concept-2"><span class="concept-num">02</span><h3>선택 가능한 기능과 입력의 관리</h3><div class="explanation"><ul>
+<li>도구가 많으면 기능이 늘지만 선택도 어려워진다. 비슷한 도구와 수십 개 인수는 혼동을 키운다. 범위를 작게 나누고 정확한 설명을 제공해야 한다. 전체 정의를 항상 입력에 넣는 대신 관련 도구를 검색해 제공할 수 있다.</li>
+<li>도구 설명은 기억과 공존해야 한다. 요약 기억이 시스템 프롬프트 전체를 덮어쓰면 도구 정의가 사라질 수 있다. 요약할 구역과 고정 지시 구역을 나누어 갱신해야 한다. 각 모듈이 잘 작동해도 같은 입력 공간을 덮어쓰면 결합에 실패한다.</li>
+<li>파싱 실패와 인수 오류, 실행 오류는 다른 단계의 문제다. 간단한 정규식은 조금 달라진 JSON 구조에서 실패할 수 있다. 스키마 검증은 필요한 형식과 필드를 확인하는 수단이다. 결과가 나와도 다음 모델 입력에 넣지 않으면 모델은 무슨 일이 일어났는지 알지 못한다.</li>
+</ul></div></div><div class="concept" id="chapter-05-concept-3"><span class="concept-num">03</span><h3>도구 행동의 학습</h3><div class="explanation"><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">방법</th>
+<th scope="col">학습 재료</th>
+<th scope="col">특징</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>문맥 내 학습</td>
+<td>입력에 넣은 호출 예시</td>
+<td>가중치 갱신 없이 형식과 사용법을 유도</td>
+</tr>
+<tr>
+<td>SFT</td>
+<td>올바른 호출과 결과의 예시</td>
+<td>주어진 호출 패턴을 학습</td>
+</tr>
+<tr>
+<td>RL</td>
+<td>시도한 행동에 대한 보상</td>
+<td>도구 선택·인수·결과를 피드백으로 조정</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>Toolformer는 생성 도중 호출 시작을 표시하고 도구 이름과 인수를 만든다. 실행 지점에서 생성을 멈추고 외부 결과를 토큰 흐름에 삽입한 뒤 이어 간다. 이런 호출이 도움이 되는 예시를 생성·선별해 SFT 자료로 사용한다.</li>
+<li>도구에는 정답 경로가 하나만 있지 않을 수 있다. README를 전용 읽기 함수로 가져와도 되고 일반 파일 조회로 가져와도 된다. SFT 예시가 한 경로만 보여 주면 다른 유효한 경로나 실패 후 복구를 충분히 배우기 어렵다.</li>
+<li>ToolRL은 호출 이름·인수의 정확성과 형식을 보상한다. Search-R1은 추론과 검색을 반복하며 최종 정확도를 보상한다. 검색 엔진이 반환한 토큰은 모델이 만든 행동이 아니므로 학습 손실에서 제외한다. 외부 결과까지 모델이 생성해야 할 정답처럼 학습시키지 않기 위한 구분이다. 긴 추론을 추가 보상하는 것만으로 성능이 좋아지지는 않는다.</li>
+</ul></div></div><div class="concept" id="chapter-05-concept-4"><span class="concept-num">04</span><h3>MCP의 발견·호출·반환</h3><div class="explanation"><ul>
+<li>서비스마다 다른 API를 모든 응용 프로그램이 직접 연결하면 조합마다 유지보수가 생긴다. MCP는 도구와 문맥을 주고받는 연결 규약을 표준화한다. 도구가 바뀔 때 서비스 연동을 담당하는 서버 쪽에서 조정할 수 있다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-14"><h4>호스트에서 서비스까지의 호출과 반환</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-14-title" class="ref-svg" role="img" viewbox="0 0 720 154"><title id="ref-illustrated-ai-agents-14-title">호스트에서 서비스까지의 호출과 반환</title><defs><marker id="ref-arrow-illustrated-ai-agents-14" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="156" x="12" y="18.2"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="90.0" y="37.8">호스트·모델</text><path class="ref-edge" d="M168 37.8 H186" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-14)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="156" x="192" y="18.2"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="270.0" y="37.8">클라이언트</text><path class="ref-edge" d="M348 37.8 H366" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-14)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="156" x="372" y="18.2"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="450.0" y="37.8">MCP 서버</text><path class="ref-edge" d="M528 37.8 H546" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-14)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="156" x="552" y="18.2"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="630.0" y="37.8">외부 서비스</text><path class="ref-edge" d="M630 57.4 V110.6 H90 V61.6" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-14)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="360" y="138.6">실행 결과는 같은 연결을 거쳐 역방향 반환</text></svg></div><figcaption>원서 그림 5-31의 통신 관계를 새 배치로 표현했다.</figcaption></figure>
+<ul>
+<li>호스트는 모델을 사용하는 응용 프로그램이다. 클라이언트는 호스트 안에서 서버와의 연결을 유지한다. 서버는 서비스 기능을 MCP로 노출한다. 서버가 제공하는 것은 호출 가능한 도구, 문맥으로 읽을 리소스, 재사용할 프롬프트다.</li>
+<li>최근 커밋 다섯 개를 요약하는 경우 먼저 호스트가 클라이언트를 통해 도구 목록을 받는다. 모델에 요청과 정의를 보내면 모델이 커밋 조회를 선택한다. 호출은 클라이언트→서버→서비스로 전달된다. 결과는 역방향으로 돌아오고 모델이 내용을 요약한다. 연결 규약과 모델의 적절한 도구 선택 능력은 별개로 필요하다.</li>
+</ul></div></div><div class="concept" id="chapter-05-concept-5"><span class="concept-num">05</span><h3>스킬의 절차와 단계적 로딩</h3><div class="explanation"><ul>
+<li>도구 정의는 무엇을 실행할 수 있는지 알려 준다. 스킬은 팀의 규칙과 작업 순서, 참고 자료를 제공한다. 회의록 정리라면 회의 유형을 고르고 해당 양식을 읽고 행동 항목을 추출하는 절차가 된다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-15"><h4>필요에 따른 절차와 자료의 로딩</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-15-title" class="ref-svg" role="img" viewbox="0 0 720 273"><title id="ref-illustrated-ai-agents-15-title">필요에 따른 절차와 자료의 로딩</title><defs><marker id="ref-arrow-illustrated-ai-agents-15" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="53.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="656.0" x="32.0" y="21"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="360.0" y="47.6">이름·설명으로 관련성 판단</text><rect fill="var(--color-bg)" height="53.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="656.0" x="32.0" y="110.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="360.0" y="137.2">선택한 SKILL.md 지침</text><path class="ref-edge" d="M360 74.2 V91.7 H360 V106.4" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-15)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="53.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="312.0" x="32.0" y="200.2"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="188.0" y="226.8">필요한 양식</text><rect fill="var(--color-bg)" height="53.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="312.0" x="376.0" y="200.2"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="532.0" y="226.8">필요한 스크립트</text><path class="ref-edge" d="M360 163.8 V181.3 H188 V196" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-15)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M360 163.8 V181.3 H532 V196" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-15)" stroke="var(--color-grey-600)" stroke-width="1.5"></path></svg></div><figcaption>원서 그림 5-34를 참고했다. 메타데이터 → 지침 → 관련 양식·스크립트의 순서다.</figcaption></figure>
+<ul>
+<li>이름과 설명은 사용할 스킬을 판단할 최소 정보다. 관련되면 본문 지침을 읽는다. 특정 양식·스크립트가 필요할 때만 추가 파일을 연다. 모든 절차를 처음부터 입력에 넣지 않아 문맥 부담을 줄인다.</li>
+<li>스킬과 MCP는 서로 대체하지 않는다. 스킬은 어떤 순서와 기준으로 일을 할지 제공한다. MCP는 도구와 자료에 연결하는 통로다. 절차가 도구를 호출할 수 있지만 절차 문서 자체가 실행 권한이나 실제 함수는 아니다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-05-recap"><h3>한눈에 정리</h3><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">층</th>
+<th scope="col">맡는 일</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>도구 구현</td>
+<td>실제 기능 실행</td>
+</tr>
+<tr>
+<td>스키마·호출 형식</td>
+<td>모델과 실행기의 정보 교환</td>
+</tr>
+<tr>
+<td>도구 학습</td>
+<td>무엇을 언제 어떻게 호출할지의 행동</td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>기능 발견과 호출 연결의 표준화</td>
+</tr>
+<tr>
+<td>스킬</td>
+<td>작업 절차·관례·참고 자료 제공</td>
+</tr>
+</tbody>
+</table></div></section><section class="review quiz" id="chapter-05-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>도구 결과를 계산했지만 다음 호출에 넣지 않았다. 어떤 문제가 생기는가?</summary><p>모델은 실행을 보지 못하므로 결과를 근거로 후속 판단을 할 수 없다. 호출과 관찰 결과를 기억에 넣고 다시 전달해야 한다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>Search-R1이 검색 결과 토큰을 학습 손실에서 제외하는 이유는?</summary><p>검색 엔진의 반환값은 모델이 생성한 행동이 아니기 때문이다. 검색 질의와 답을 선택하는 모델의 행동과 외부 관찰을 구별한다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>MCP 연결이 있는데도 회의록 형식이 매번 다르다. 어느 층의 정보가 부족한가?</summary><p>절차와 작성 관례다. 연결 규약만으로는 원하는 회의록 양식과 판단 기준을 알 수 없다. 스킬과 관련 양식이 그 정보를 제공한다.</p></details></div></section><a class="back-top" href="#overview">목차 위로</a></section><section aria-labelledby="chapter-06-title" class="chapter" id="chapter-06"><header class="chapter-head"><span class="chapter-num">06</span><div><p class="original">Chapter 6. Planning and Reflection</p><h2 id="chapter-06-title">계획·행동·성찰의 순환</h2></div></header><div class="chapter-intro"><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>계획은 목표를 하위 작업으로 나누고, 실행은 관찰에 따라 그 순서를 갱신한다.</li><li>성찰을 기억에 넣는 것과 모델 파라미터를 학습하는 것은 다른 개선 경로다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>작업 분해와 실제 행동의 순서 결정을 구별한다.</li>
+<li>ReAct의 실행·관찰·중단 조건을 설명한다.</li>
+<li>성찰·경험 저장·사용 중 학습의 차이를 이해한다.</li>
+</ul></div></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-06-concept-1"><span class="concept-num">01</span><h3>작업 분해와 의존 관계</h3><div class="explanation"><ul>
+<li>새 기능을 구현하려면 요구 확인, 코드 읽기, 설계, 구현, 시험이 필요할 수 있다. 전체 요청을 한 번에 해결하려 하기보다 의존하는 하위 문제로 나눈다. 코드를 읽기 전에 구현부터 하면 기존 기능을 중복하거나 수정 위치를 잘못 고를 수 있다.</li>
+<li>CoT는 단계별 추론을 만든다. least-to-most는 먼저 하위 문제를 정한 뒤 앞 문제의 질문과 답을 다음 입력에 넣는다. plan-and-solve는 계획을 만든 뒤 그에 따라 해결하도록 유도한다. 계획 문장 생성만으로 외부 행동의 성공이 보장되는 것은 아니다.</li>
+<li>여러 추론 경로를 샘플링해 최빈 답을 고르는 self-consistency와, 중간 분기에서 후보를 평가하며 경로를 탐색하는 Tree of Thoughts도 구분해야 한다. 하나는 완성된 답들의 일관성을, 다른 하나는 중간 탐색의 선택을 다룬다.</li>
+</ul></div></div><div class="concept" id="chapter-06-concept-2"><span class="concept-num">02</span><h3>ReAct의 행동 순서와 종료</h3><div class="explanation"><ul>
+<li>ReAct는 현재 상황 판단, 행동, 관찰을 연결한다. 모델이 무엇을 할지 정하면 하네스가 도구를 실행하고 결과를 반환한다. 모델은 그 관찰을 입력받아 다음 행동을 정한다. 처음 계획을 그대로 재생하는 고정 절차와 다르다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-16"><h4>판단·행동·관찰의 실행 순환</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-16-title" class="ref-svg" role="img" viewbox="0 0 720 154"><title id="ref-illustrated-ai-agents-16-title">판단·행동·관찰의 실행 순환</title><defs><marker id="ref-arrow-illustrated-ai-agents-16" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="192" x="264" y="49"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="360.0" y="68.6">현재 상태 판단</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="186" x="22" y="49"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="115.0" y="68.6">계획·실행 기억</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="188" x="510" y="49"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="604.0" y="68.6">도구 → 환경</text><path class="ref-edge" d="M208 68.6 H236 V68.6 H259" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-16)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="236.0" y="62.3">입력</text><path class="ref-edge" d="M456 68.6 H483 V68.6 H505" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-16)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="483.0" y="62.3">행동</text><path class="ref-edge" d="M604 88.2 V127.4 H360 V92.4" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-16)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="460" y="142.8">관찰을 다음 판단에 반영</text><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="middle" x="360" y="24.5">목표와 현재 상태</text><path class="ref-edge" d="M360 28.7 V44.8" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-16)" stroke="var(--color-grey-600)" stroke-width="1.5"></path></svg></div><figcaption>원서 그림 6-11을 참고한 새 도식. 관찰에 따라 다음 행동과 완료 여부가 달라진다.</figcaption></figure>
+<ul>
+<li>덧셈→곱셈→뺄셈이 필요한 요청이라면 첫 도구의 결과를 다음 계산에 사용한다. 필요한 계산이 끝나면 최종 답을 반환하고 멈춘다. 도구 실행 중 문제가 생기면 관찰에 근거해 입력이나 순서를 바꿀 수 있어야 한다.</li>
+<li>TinyAgent는 반복문에 최대 단계 수를 둔다. 모델은 그 전에 완료를 선택할 수 있다. 최대 단계 수는 끝없는 순환을 막는 외부 한도다. 모델의 완료 판단과 외부 실행 한도는 서로 다른 중단 조건이다. 긴 실행에서는 과거 행동을 잊지 않도록 기억 관리도 필요하다.</li>
+</ul></div></div><div class="concept" id="chapter-06-concept-3"><span class="concept-num">03</span><h3>행동 순환의 프롬프트와 학습</h3><div class="explanation"><ul>
+<li>프롬프트 방식은 THOUGHT·ACTION·OBSERVATION 형식을 지시하고 출력에서 각 부분을 추출한다. 기본 추론·도구 호출을 학습한 모델은 reasoning·tool_call·tool 메시지로 같은 역할을 표현할 수 있다. 명시적인 문자열 라벨이 사라져도 행동·관찰의 순환은 남는다.</li>
+<li>FireAct는 여러 방식으로 생성한 성공 경로를 공통 ReAct 형식으로 바꾸어 작은 모델에 SFT한다. 단일 응답은 한 단계 경로로 표현할 수 있다. 추론 예시를 매번 길게 입력하지 않아도 행동 형식을 따르도록 하는 접근이다.</li>
+<li>ETO는 SFT로 기본 행동을 익힌 뒤 환경에서 탐색한다. 실패 경로를 같은 과제의 성공 경로와 짝짓고 DPO로 성공 쪽 가능성을 높인다. 제시된 성공을 모방하는 것에서 직접 겪은 실패와 대비해 갱신하는 것으로 학습 근거를 넓힌다.</li>
+</ul></div></div><div class="concept" id="chapter-06-concept-4"><span class="concept-num">04</span><h3>성찰의 점수와 경험</h3><div class="explanation"><ul>
+<li>Self-Refine은 같은 모델이 초안을 만들고 비평하고 수정한다. 피드백과 수정은 서로 다른 호출 역할이다. 정해진 횟수나 완료 조건에 도달할 때까지 반복한다. 단순히 답을 다시 생성하는 것과 달리 무엇을 고칠지 피드백을 제공한다.</li>
+<li>Reflexion은 실행자, 평가자, 성찰자의 역할을 나눈다. 실행자는 행동한다. 평가자는 현재 경로와 결과를 점수화한다. 성찰자는 경로와 점수·외부 피드백을 읽어 다음 시도에 쓸 구체적인 교훈을 만든다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-17"><h4>현재 경로에서 다음 시도의 경험까지</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-17-title" class="ref-svg" role="img" viewbox="0 0 720 166.6"><title id="ref-illustrated-ai-agents-17-title">현재 경로에서 다음 시도의 경험까지</title><defs><marker id="ref-arrow-illustrated-ai-agents-17" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="204" x="18" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="120.0" y="32.2">실행자 → 환경</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="204" x="278" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="380.0" y="32.2">현재 실행 이력</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="174" x="526" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="613.0" y="32.2">평가자 → 점수</text><path class="ref-edge" d="M222 32.2 H250 V32.2 H273" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-17)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M482 32.2 H504 V32.2 H521" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-17)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="174" x="526" y="102.2"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="613.0" y="121.8">성찰자</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="204" x="278" y="102.2"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="380.0" y="121.8">장기 경험 기억</text><path class="ref-edge" d="M613 51.8 V98" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-17)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M526 121.8 H504 V121.8 H487" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-17)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M278 121.8 H120 V56" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-17)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="154" y="149.8">다음 시도의 입력</text><path class="ref-edge" d="M380 51.8 V77 H613 V98" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-17)" stroke="var(--color-grey-600)" stroke-dasharray="5 4" stroke-width="1.5"></path></svg></div><figcaption>원서 그림 6-20을 참고했다. 평가 점수와 구체적인 성찰 경험을 구분한다.</figcaption></figure>
+<ul>
+<li>현재 경로는 단기 기억에 둔다. 성찰한 경험은 장기 기억으로 전달해 다음 실행자의 입력에 넣는다. 이 과정에서 모델의 가중치를 반드시 갱신하는 것은 아니다. 더 나은 경험을 입력받아 행동이 달라지는 개선이다. 자기 비평도 틀릴 수 있으므로 외부 도구의 확인 결과를 함께 사용할 수 있다.</li>
+</ul></div></div><div class="concept" id="chapter-06-concept-5"><span class="concept-num">05</span><h3>사용 중 학습과 문제 생성</h3><div class="explanation"><ul>
+<li>TTRL은 같은 문제의 응답을 여러 번 생성하고 가장 자주 나온 답을 보상 기준으로 삼아 GRPO로 파라미터를 갱신한다. 사용 중에 기억만 추가하는 것과 다르다. 다수 답이 틀릴 수도 있으므로 스스로 만든 보상은 외부 정답과 같은 증거가 아니다.</li>
+<li>R-Zero는 문제를 만드는 Challenger와 푸는 Solver를 번갈아 학습한다. Challenger를 갱신할 때 Solver는 고정해 난도와 반복성에 관한 신호를 얻는다. Solver를 갱신할 때는 Challenger를 고정하고 생성 문제를 선별한다. 너무 쉽거나 어려운 문제를 걸러 학습 가능한 난도에 집중한다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-18"><h4>문제 생성자와 해결자의 교대 학습</h4><div aria-label="문제 생성자와 해결자의 교대 학습" class="ref-compare table-wrap" role="region" tabindex="0"><table class="table"><thead><tr><th scope="col">번갈아 수행</th><th scope="col">고정할 모델</th><th scope="col">학습할 모델</th><th scope="col">피드백</th></tr></thead><tbody><tr><td>문제 생성 개선</td><td>Solver</td><td>Challenger</td><td>난도·형식·반복 억제</td></tr><tr><td>풀이 개선</td><td>Challenger</td><td>Solver</td><td>선별 문제의 답 일치</td></tr></tbody></table></div><figcaption>원서 그림 6-25를 참고해 어느 모델을 고정하고 학습하는지 비교했다.</figcaption></figure>
+<ul>
+<li>Challenger에는 도전적인 문제와 다양성을 유도하는 신호를 준다. Solver에는 답의 일치에 대한 이진 신호를 준다. 두 모델이 동시에 막연히 서로를 칭찬하는 구조가 아니다. 어느 쪽을 고정하고 어느 쪽을 어떤 기준으로 바꾸는지가 중요하다. 이런 자기 생성 학습은 연구 접근이며 끝없는 개선을 보장하는 장치는 아니다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-06-recap"><h3>한눈에 정리</h3><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">과정</th>
+<th scope="col">바뀌는 것</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>계획</td>
+<td>하위 작업과 의존 순서</td>
+</tr>
+<tr>
+<td>ReAct</td>
+<td>관찰에 따른 다음 행동</td>
+</tr>
+<tr>
+<td>성찰과 기억</td>
+<td>다음 시도에 제공할 경험</td>
+</tr>
+<tr>
+<td>사용 중 RL</td>
+<td>모델 파라미터와 행동 확률</td>
+</tr>
+</tbody>
+</table></div></section><section class="review quiz" id="chapter-06-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>실패한 도구 호출을 보고 계획을 바꿨다. 모델이 재학습된 것인가?</summary><p>아니다. 새 관찰이 입력에 들어와 다음 행동이 달라진 것일 수 있다. 가중치 갱신 여부를 별도로 봐야 한다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>모델이 완료를 선택하는데도 최대 단계 수를 두는 이유는?</summary><p>완료 판단에 실패하면 반복이 이어질 수 있기 때문이다. 최대 단계 수는 모델 밖에서 실행 자원을 제한하는 별도 중단 조건이다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>Reflexion의 평가 점수만 다음 시도에 넣으면 충분한가?</summary><p>점수만으로 무엇을 고칠지 알기 어렵다. 성찰자가 실행 경로와 피드백을 구체적인 경험으로 정리해 다음 행동의 근거로 제공한다.</p></details></div></section><a class="back-top" href="#overview">목차 위로</a></section><section aria-labelledby="chapter-07-title" class="chapter" id="chapter-07"><header class="chapter-head"><span class="chapter-num">07</span><div><p class="original">Chapter 7. Evaluating Agents</p><h2 id="chapter-07-title">결과·경로·반복 신뢰성의 평가</h2></div></header><div class="chapter-intro"><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>올바른 최종 답만으로 올바른 실행과 반복 성공을 확인할 수는 없다.</li><li>평가 대상·채점 방법·실행 조건을 함께 봐야 점수의 의미를 이해할 수 있다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>결과 평가와 실행 경로 평가의 역할을 구별한다.</li>
+<li>pass@k와 pass^k가 서로 다른 질문에 답함을 설명한다.</li>
+<li>실제 작업에 맞는 채점 기준과 실패 사례를 구성한다.</li>
+</ul></div></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-07-concept-1"><span class="concept-num">01</span><h3>벤치마크 점수의 범위</h3><div class="explanation"><ul>
+<li>벤치마크는 과제 집합, 시도 절차, 채점 규칙의 조합이다. 코드 수정은 테스트 통과, 함수 호출은 이름과 인수, 브라우저 작업은 실제 행동의 완료를 평가할 수 있다. 같은 80%라도 서로 다른 능력과 성공 조건을 뜻한다.</li>
+<li>언어 모델의 시험 문제 정답률과 여러 도구를 쓰는 에이전트의 완료율도 다르다. 같은 모델이라도 프롬프트·기억·재시도·도구를 연결하는 하네스에 따라 점수가 달라질 수 있다. 점수는 모델과 실행 시스템의 조합에 대한 결과로 읽어야 한다.</li>
+<li>비교할 때는 평가 변형·단일 또는 반복 실행·부분 점수·데이터 오염·과제별 프롬프트 조정·실행 비용을 확인한다. 더 많은 토큰과 시간을 사용한 최고 점수만으로 실제 배치의 우열을 결정할 수는 없다.</li>
+</ul></div></div><div class="concept" id="chapter-07-concept-2"><span class="concept-num">02</span><h3>출력에 맞는 채점 방법</h3><div class="explanation"><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">방법</th>
+<th scope="col">적합한 대상</th>
+<th scope="col">한계</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>정확한 값 비교</td>
+<td>선택지·숫자·추출 값</td>
+<td>동등한 표현도 형식 차이로 실패할 수 있다</td>
+</tr>
+<tr>
+<td>프로그램 검증</td>
+<td>JSON 구조·테스트 가능한 코드</td>
+<td>검증하지 않은 성질은 알 수 없다</td>
+</tr>
+<tr>
+<td>사람의 평가</td>
+<td>열린 결과물의 품질·선호</td>
+<td>비용과 평가자 간 일관성</td>
+</tr>
+<tr>
+<td>모델 심판</td>
+<td>대규모 열린 응답의 비교</td>
+<td>표현·순서·자기 모델 선호의 편향</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>모델 심판에게 단순히 좋은 답인지 묻기보다 정확성·완전성·근거 연결 같은 축을 나누어 기준을 준다. 각 점수 수준의 의미를 설명하는 기준표가 루브릭이다. 축이 분리돼야 어느 성질이 나빠졌는지 알 수 있다.</li>
+<li>쌍 비교의 A·B 순서를 바꿔 위치 편향을 확인하거나, 다른 모델 계열의 심판과 사람 평가를 비교할 수 있다. 심판이 점수를 준 사실 자체가 정답의 증명은 아니다. 자동 점수도 무엇을 잘못 인정하는지 살펴야 한다.</li>
+</ul></div></div><div class="concept" id="chapter-07-concept-3"><span class="concept-num">03</span><h3>같은 정답과 다른 실행 경로</h3><div class="explanation"><ul>
+<li>현재 도쿄의 비를 묻는 세 에이전트가 모두 맞는 답을 냈다고 하자. 하나는 추측으로 맞혔다. 다른 하나는 필요 이상의 도구를 반복했다. 마지막은 올바른 도구를 쓰기 전 지나치게 오래 추론했다. 결과만 채점하면 세 실행이 모두 통과한다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-19"><h4>같은 정답을 만든 서로 다른 경로</h4><div aria-label="같은 정답을 만든 서로 다른 경로" class="ref-compare table-wrap" role="region" tabindex="0"><table class="table"><thead><tr><th scope="col">실행</th><th scope="col">경로</th><th scope="col">같은 정답 뒤의 문제</th></tr></thead><tbody><tr><td>A</td><td>조회 없이 추측 → 정답</td><td>근거 없는 우연한 성공</td></tr><tr><td>B</td><td>여러 도구 반복 → 정답</td><td>필요 이상의 호출</td></tr><tr><td>C</td><td>긴 추론 → 필요한 조회 → 정답</td><td>불필요한 판단 비용</td></tr></tbody></table></div><figcaption>원서 그림 7-9의 세 실패 유형을 새 비교표로 표현했다.</figcaption></figure>
+<ul>
+<li>경로 평가는 도구 선택과 인수, 관찰에서 다음 행동으로의 연결, 단계 수·호출 수·추론 토큰을 본다. 근거 없는 우연한 성공, 실행 낭비, 불필요한 추론은 다른 실패 형태다. 최종 답의 정확성과 함께 측정해야 개선 위치를 찾을 수 있다.</li>
+<li>실행 경로를 남기지 않으면 실패한 최종 답만 남는다. 기억에서 정보를 놓친 것인지, 도구 인수가 잘못됐는지, 관찰을 잘못 해석했는지 구별하기 어렵다. 평가 하네스는 입력·각 단계·관찰·채점 결과를 연결해야 한다.</li>
+</ul></div></div><div class="concept" id="chapter-07-concept-4"><span class="concept-num">04</span><h3>가능성과 일관성의 두 지표</h3><div class="explanation"><ul>
+<li>pass@k는 k번 중 한 번이라도 성공할 가능성이다. 시도를 늘리면 올라가는 능력의 지표다. pass^k는 k번 모두 성공할 가능성이다. 같은 요청을 계속 맡길 수 있는지 보는 신뢰성의 지표다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-20"><h4>한 번 이상 성공과 모두 성공의 구별</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-20-title" class="ref-svg" role="img" viewbox="0 0 720 165.2"><title id="ref-illustrated-ai-agents-20-title">한 번 이상 성공과 모두 성공의 구별</title><defs><marker id="ref-arrow-illustrated-ai-agents-20" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="start" x="20" y="19.6">같은 과제의 세 실행 결과를 묶어 비교</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="122" x="20" y="44.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="81.0" y="64.4">성공</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="122" x="160" y="44.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="221.0" y="64.4">실패</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="122" x="300" y="44.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="361.0" y="64.4">실패</text><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="start" x="456" y="67.2">pass@3 통과 / pass^3 실패</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="122" x="20" y="110.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="81.0" y="130.2">성공</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="122" x="160" y="110.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="221.0" y="130.2">성공</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="122" x="300" y="110.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="361.0" y="130.2">성공</text><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="start" x="456" y="133">둘 다 통과</text></svg></div><figcaption>원서 그림 7-11·7-12의 지표 관계를 세 번 시도의 보충 예시로 표현했다.</figcaption></figure>
+<ul>
+<li>총 n개 응답 중 c개가 맞았다면 pass@1은 c÷n이다. k개를 중복 없이 고르는 조합 수를 C(n,k)라고 할 때, pass@k는 <code>1−C(n−c,k)÷C(n,k)</code>다. 모두 실패한 묶음의 비율을 1에서 뺀다. pass^k는 <code>C(c,k)÷C(n,k)</code>로, 모두 성공한 묶음의 비율이다.</li>
+<li>100번 중 85번 성공했다면 pass@1은 0.85다. 두 번 중 한 번 이상 성공할 추정값은 <code>1−(15×14)/(100×99)≈0.979</code>다. 두 번 모두 성공할 값은 <code>(85×84)/(100×99)≈0.721</code>이다. 뒤의 값은 같은 식으로 덧붙인 보충 계산이다. 약 98%라는 높은 재시도 성공률을 약 72%의 반복 완전 성공과 혼동하면 안 된다.</li>
+<li>표본이 k보다 충분히 커야 추정이 안정된다. 두 번만 생성해 하나가 맞았다고 pass@2=1인 결과를 얻어도, 실제로 두 번 시도하면 항상 성공한다는 뜻은 아니다. 검증기로 성공 후보를 선택할 수 있는지도 실제 사용의 조건이다.</li>
+</ul></div></div><div class="concept" id="chapter-07-concept-5"><span class="concept-num">05</span><h3>실패 조건과 실제 사용 평가</h3><div class="explanation"><ul>
+<li>해를 만드는 경로는 악의적인 사용자 요청, 읽는 자료 속 조작 지시, 정상 작업 중의 자체 실수로 나눌 수 있다. 첫째는 거절, 둘째는 외부 내용에 의한 행동 탈선, 셋째는 잘못된 삭제나 되돌리기 어려운 행동을 평가한다. 하나의 안전 점수로 합치기보다 실제 사용 경로에 맞는 사례가 필요하다.</li>
+<li>자체 평가는 실제 요청을 대표하는 작은 집합에서 시작한다. 정상 사례뿐 아니라 모호한 요청·도구 실패·경계 조건도 둔다. 각 사례를 새 상태로 실행해 이전 기억의 영향을 통제하고, 적합한 채점 방법을 적용한다.</li>
+<li>모델·도구·프롬프트·기억 정책을 바꾸면 같은 사례를 다시 실행한다. 한 번 좋은 결과를 만드는 것보다 어떤 변경이 어느 실패를 고쳤고 무엇을 악화했는지 관찰하는 체계가 중요하다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-07-recap"><h3>한눈에 정리</h3><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">질문</th>
+<th scope="col">평가</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>맞는 결과인가</td>
+<td>출력·실제 환경의 성공 조건</td>
+</tr>
+<tr>
+<td>타당한 방법인가</td>
+<td>근거·도구·관찰·효율의 실행 경로</td>
+</tr>
+<tr>
+<td>재시도로 가능한가</td>
+<td>pass@k</td>
+</tr>
+<tr>
+<td>계속 믿고 맡길 수 있는가</td>
+<td>pass^k</td>
+</tr>
+<tr>
+<td>어떤 상황에서 피해가 생기는가</td>
+<td>사용 환경에 맞춘 실패 사례</td>
+</tr>
+</tbody>
+</table></div></section><section class="review quiz" id="chapter-07-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>pass@3가 높은 모델은 세 번 모두 성공하는가?</summary><p>아니다. 세 번 중 적어도 한 번의 성공을 뜻한다. 세 번 모두 성공하는지를 보려면 pass^3를 봐야 한다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>실시간 날씨를 추측으로 맞힌 응답은 어디에서 문제를 찾을 수 있는가?</summary><p>결과 평가에서는 통과할 수 있다. 실행 경로 평가에서 실시간 근거를 조회하지 않은 행동을 발견할 수 있다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>코드가 테스트를 통과했는데 불필요한 도구 호출이 많다. 정확도만 올리면 되는가?</summary><p>아니다. 최종 정확성과 별도로 호출 수·시간·추론 비용을 측정해야 한다. 같은 정답이라도 실행 효율은 다를 수 있다.</p></details></div></section><a class="back-top" href="#overview">목차 위로</a></section><section aria-labelledby="chapter-08-title" class="chapter" id="chapter-08"><header class="chapter-head"><span class="chapter-num">08</span><div><p class="original">Chapter 8. Multi-Agent Systems</p><h2 id="chapter-08-title">다중 에이전트의 역할과 조율</h2></div></header><div class="chapter-intro"><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>여러 에이전트의 이점은 역할과 문맥을 나누는 데서 나오지만 조율·통신 비용도 늘어난다.</li><li>자율성은 시스템 전체의 순서와 각 역할 내부의 실행에서 따로 판단해야 한다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>협업의 배치가 책임과 실패 경로를 어떻게 바꾸는지 설명한다.</li>
+<li>도구 연결과 에이전트 간 통신을 구별한다.</li>
+<li>공유 환경과 연구 시스템에서 기억·계획·피드백의 역할을 이해한다.</li>
+</ul></div></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-08-concept-1"><span class="concept-num">01</span><h3>역할 분담과 문맥의 분리</h3><div class="explanation"><ul>
+<li>한 조사 에이전트가 검색·논문 읽기·비평·통합을 모두 맡으면 도구와 문맥을 한곳에서 관리해야 한다. 역할을 나누면 검색 담당과 통합 담당이 필요한 정보에 집중할 수 있다. 독립된 작업은 병렬 실행할 수도 있다.</li>
+<li>같은 능력을 가진 에이전트들이 일을 나누는 동질 구성과, 모델·도구·목표가 다른 이질 구성을 구분한다. 처음에는 같아도 상호작용을 거쳐 역할이 달라지는 전문화도 있다. 역할 이름만 다르게 붙였다고 실제 전문성이 확보되는 것은 아니다.</li>
+<li>에이전트가 늘면 호출 비용과 통신, 상태 관리, 평가 경로도 늘어난다. 상위 답이 맞아도 하위 역할이 불필요한 실행을 했을 수 있다. 조율자의 이력과 각 하위 에이전트의 이력을 연결해 봐야 한다.</li>
+</ul></div></div><div class="concept" id="chapter-08-concept-2"><span class="concept-num">02</span><h3>네 가지 조율 구조</h3><div class="explanation"><figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-21"><h4>조율 책임과 연결 구조의 비교</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-21-title" class="ref-svg" role="img" viewbox="0 0 720 301"><title id="ref-illustrated-ai-agents-21-title">조율 책임과 연결 구조의 비교</title><defs><marker id="ref-arrow-illustrated-ai-agents-21" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="start" x="14" y="37.8">중앙</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="150" x="110" y="16.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="185.0" y="36.4">조율자</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="138" x="360" y="16.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="429.0" y="36.4">작업자</text><path class="ref-edge" d="M185 56 V70 H429 V60.2" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-21)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="138" x="540" y="16.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="609.0" y="36.4">작업자</text><path class="ref-edge" d="M185 56 V70 H609 V60.2" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-21)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="start" x="14" y="107.8">분산</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="138" x="110" y="86.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="179.0" y="106.4">동료</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="138" x="360" y="86.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="429.0" y="106.4">동료</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="138" x="540" y="86.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="609.0" y="106.4">동료</text><path class="ref-edge" d="M248 106.4 H354" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-21)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M498 106.4 H534" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-21)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M609 126 V140 H179 V130.2" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-21)" stroke="var(--color-grey-600)" stroke-dasharray="5 4" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="start" x="14" y="177.8">계층</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="138" x="110" y="156.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="179.0" y="176.4">전체 조율</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="138" x="360" y="156.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="429.0" y="176.4">분야 조율</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="138" x="540" y="156.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="609.0" y="176.4">작업자</text><path class="ref-edge" d="M248 176.4 H304 V176.4 H355" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-21)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M498 176.4 H519 V176.4 H535" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-21)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="start" x="14" y="247.8">연합</text><rect fill="var(--color-primary-soft)" fill-opacity=".4" height="53.2" rx="8" stroke="var(--color-grey-300)" stroke-dasharray="5 5" width="230" x="100" y="222.6"></rect><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="start" x="114" y="238">조직 A</text><rect fill="var(--color-primary-soft)" fill-opacity=".4" height="53.2" rx="8" stroke="var(--color-grey-300)" stroke-dasharray="5 5" width="230" x="470" y="222.6"></rect><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="start" x="484" y="238">조직 B</text><rect fill="var(--color-bg)" height="29.4" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="170" x="130" y="240.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="215.0" y="255.5">내부 에이전트</text><rect fill="var(--color-bg)" height="29.4" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="170" x="500" y="240.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="585.0" y="255.5">내부 에이전트</text><path class="ref-edge" d="M330 256.2 H400 V256.2 H465" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-21)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="400.0" y="249.9">결과 공유</text></svg></div><figcaption>원서 그림 8-4를 참고한 새 배치. 연결선은 통신·배정 관계를 뜻한다.</figcaption></figure>
+<div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">구조</th>
+<th scope="col">책임의 위치</th>
+<th scope="col">주요 절충</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>중앙형</td>
+<td>조율자가 배정과 통신 관리</td>
+<td>단순한 관리와 조율자 실패의 집중</td>
+</tr>
+<tr>
+<td>분산형</td>
+<td>동료들이 책임과 통신 분담</td>
+<td>일부 실패의 회복과 통신 부담</td>
+</tr>
+<tr>
+<td>계층형</td>
+<td>층별 권한과 전문 역할</td>
+<td>역할별 자원 배분과 복잡한 전달 경로</td>
+</tr>
+<tr>
+<td>연합형</td>
+<td>조직별 경계를 유지하며 결과 교환</td>
+<td>데이터 경계 보존과 공통 규약의 필요</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>작은 중앙형 시스템은 하위 에이전트를 도구처럼 감쌀 수 있다. 조율자가 날짜 에이전트에서 남은 일수를 받은 뒤 수학 에이전트에 계산을 맡긴다. 뒤 계산이 앞의 날짜에 의존하므로 둘을 무조건 병렬 실행할 수는 없다.</li>
+<li>CAMEL은 지시하는 AI 사용자와 실행하는 AI assistant의 역할 대화로 과제를 구체화한다. MetaGPT는 역할별 작업과 문서·다이어그램 같은 산출물 전달을 조직의 절차처럼 구성한다. 자유 대화와 구조화된 산출물 중 무엇으로 정보를 넘길지도 조율 설계다.</li>
+</ul></div></div><div class="concept" id="chapter-08-concept-3"><span class="concept-num">03</span><h3>A2A와 MCP의 연결 범위</h3><div class="explanation"><ul>
+<li>서로 다른 조직·프레임워크의 에이전트가 협업하려면 능력 발견, 인증, 과제 전달, 상태·결과 반환을 합의해야 한다. A2A는 이런 에이전트 간 교환을 표준화한다. 클라이언트 에이전트는 원격 에이전트의 설명을 보고 요청을 보낸다. 원격 쪽은 작업 도중 추가 정보를 묻거나 상태와 산출물을 돌려줄 수 있다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-22"><h4>에이전트 간 통신과 도구 연결</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-22-title" class="ref-svg" role="img" viewbox="0 0 720 155.4"><title id="ref-illustrated-ai-agents-22-title">에이전트 간 통신과 도구 연결</title><defs><marker id="ref-arrow-illustrated-ai-agents-22" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="200" x="24" y="14"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="124.0" y="33.6">클라이언트 에이전트</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="200" x="496" y="14"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="596.0" y="33.6">원격 에이전트</text><path class="ref-edge" d="M224 33.6 H360 V33.6 H491" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-22)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="360.0" y="27.3">A2A · 과제와 결과</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="200" x="24" y="102.2"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="124.0" y="121.8">MCP → 검색·저장소</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="200" x="496" y="102.2"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="596.0" y="121.8">MCP → 별도 서비스</text><path class="ref-edge" d="M124 53.2 V98" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-22)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M596 53.2 V98" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-22)" stroke="var(--color-grey-600)" stroke-width="1.5"></path></svg></div><figcaption>원서 그림 8-10을 참고했다. 서로 다른 시스템 경계와 두 규약의 역할을 구분한다.</figcaption></figure>
+<ul>
+<li>각 에이전트는 자체 도구와 기억을 가진다. 에이전트 사이에는 A2A, 내부에서 도구·자료에 연결할 때는 MCP를 사용할 수 있다. 통신 규약이 협업 목표와 정확한 역할 분해까지 대신 정해 주는 것은 아니다.</li>
+<li>통신량도 컨텍스트의 일부다. 원문 전체를 넘기면 필요한 제약이 묻히고 비용이 늘 수 있다. 지나치게 요약하면 하위 역할이 판단할 근거를 잃는다. 역할에 필요한 입력과 반환할 결과의 수준을 함께 설계해야 한다.</li>
+</ul></div></div><div class="concept" id="chapter-08-concept-4"><span class="concept-num">04</span><h3>Smallville의 기억·계획·성찰</h3><div class="explanation"><ul>
+<li>Smallville은 서로 다른 프로필을 준 25개 에이전트가 공유 환경에서 생활하고 상호작용하는 실험이다. 각 에이전트는 관찰과 행동을 기억하고 현재 상황에 필요한 경험을 검색한다. 검색은 최근성·중요성·관련성을 함께 반영한다.</li>
+<li>성찰은 최근 관찰에서 중요한 질문을 만들고 관련 기억을 찾아 더 높은 수준의 통찰을 저장한다. 계획에는 장소·시작 시간·지속 시간이 들어간다. 관찰이 중요하면 계획을 바꾸고 다음 행동을 선택한다. 성찰과 계획도 기억에 저장돼 이후 검색 대상이 된다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-23"><h4>관찰과 저장된 계획·성찰의 연결</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-23-title" class="ref-svg" role="img" viewbox="0 0 720 180.6"><title id="ref-illustrated-ai-agents-23-title">관찰과 저장된 계획·성찰의 연결</title><defs><marker id="ref-arrow-illustrated-ai-agents-23" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="176" x="18" y="21"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="106.0" y="40.6">현재 관찰</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="210" x="246" y="21"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="351.0" y="40.6">기억 검색</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="192" x="510" y="21"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="606.0" y="40.6">다음 행동</text><path class="ref-edge" d="M194 40.6 H220 V40.6 H241" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-23)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M456 40.6 H483 V40.6 H505" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-23)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="210" x="246" y="105"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="351.0" y="124.6">계획·성찰도 저장</text><path class="ref-edge" d="M350 60.2 V100.8" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-23)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M246 124.6 H220 V40.6 H240" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-23)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="middle" x="360" y="166.6">검색 기준: 최근성 · 중요성 · 현재 상황과의 관련성</text></svg></div><figcaption>원서 그림 8-16을 참고했다. 계획과 성찰도 다시 검색할 기억으로 들어간다.</figcaption></figure>
+<ul>
+<li>프로필과 상호작용이 그럴듯한 사회 행동을 만들 수 있지만 인간과 같은 마음을 가졌다는 증거는 아니다. 언어 모델은 학습 자료의 집단 편향도 재현할 수 있다. 사회 시뮬레이션은 기억과 상호작용이 행동을 어떻게 바꾸는지 탐색하는 환경으로 이해해야 한다.</li>
+</ul></div></div><div class="concept" id="chapter-08-concept-5"><span class="concept-num">05</span><h3>연구 시스템의 고정 단계와 동적 조율</h3><div class="explanation"><ul>
+<li>AI co-scientist는 연구 목표에서 가설과 제안을 만든다. 생성, 성찰, 순위 평가, 유사 가설 묶기, 개선, 전체 리뷰 통합의 역할을 둔다. 감독자는 공유 문맥의 상태와 결과를 보고 다음에 누구를 실행할지 정한다. 사용자의 피드백도 실행 중 들어올 수 있다.</li>
+<li>Agent Laboratory는 문헌 검토→실험→보고서의 큰 순서를 고정한다. 문헌 담당이 자료를 모으고, 계획과 데이터 준비를 거쳐 코드를 실행한다. 결과를 보고서로 만든 뒤 리뷰를 반영한다. 내부 역할은 각 단계에서 반복하지만 단계 간 전체 순서는 정해져 있다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-24"><h4>동적 감독과 고정 연구 단계의 비교</h4><div aria-label="동적 감독과 고정 연구 단계의 비교" class="ref-compare table-wrap" role="region" tabindex="0"><table class="table"><thead><tr><th scope="col">구조</th><th scope="col">큰 흐름</th><th scope="col">내부 반복</th></tr></thead><tbody><tr><td>AI co-scientist</td><td>감독자가 다음 전문 역할 선택</td><td>가설 생성·비평·순위·개선·통합</td></tr><tr><td>Agent Laboratory</td><td>문헌 → 실험 → 보고서의 고정 순서</td><td>각 단계 안에서 검색·실행·리뷰</td></tr></tbody></table></div><figcaption>원서 그림 8-18·8-22를 참고해 시스템 전체의 자율성을 비교했다.</figcaption></figure>
+<ul>
+<li>이 두 시스템의 차이는 에이전트 수가 아니다. 전체 작업의 다음 단계까지 동적으로 정하는지, 고정 단계 안에서만 반복하는지가 다르다. 많은 모델이 합의한 가설도 실제 연구의 검증 결과와 같지는 않다. 가설 생성·선별과 실험으로 얻은 근거를 구분해야 한다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-08-recap"><h3>한눈에 정리</h3><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">설계 질문</th>
+<th scope="col">확인할 연결</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>일을 누가 나누는가</td>
+<td>중앙·분산·계층·연합의 책임</td>
+</tr>
+<tr>
+<td>정보를 어떻게 넘기는가</td>
+<td>입력·산출물·통신 규약</td>
+</tr>
+<tr>
+<td>무엇을 공유하는가</td>
+<td>역할별 문맥과 공동 상태</td>
+</tr>
+<tr>
+<td>어디까지 자율적인가</td>
+<td>전체 순서와 단계 내부의 선택</td>
+</tr>
+</tbody>
+</table></div></section><section class="review quiz" id="chapter-08-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>날짜 계산 결과를 이용해 금액을 계산한다. 에이전트가 둘이면 병렬로 실행해도 되는가?</summary><p>앞 결과에 의존하는 뒤 계산은 기다려야 한다. 에이전트 수보다 데이터 의존 관계가 실행 순서를 결정한다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>A2A와 MCP를 함께 쓰는 구조에서 각각 무엇을 연결하는가?</summary><p>A2A는 에이전트끼리 과제와 상태·결과를 교환한다. MCP는 각 에이전트의 응용 프로그램에서 도구와 자료를 연결할 수 있다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>문헌 검토·실험·보고서 순서는 고정이지만 각 단계에서 자유롭게 반복한다. 자율성은 있는가?</summary><p>단계 내부에는 있다. 전체 단계 순서를 바꿀 자율성과는 구별해야 한다. Agent Laboratory가 이 차이를 보여 준다.</p></details></div></section><a class="back-top" href="#overview">목차 위로</a></section><section aria-labelledby="chapter-09-title" class="chapter" id="chapter-09"><header class="chapter-head"><span class="chapter-num">09</span><div><p class="original">Chapter 9. Multi-Modal Understanding</p><h2 id="chapter-09-title">이미지·음성·영상의 표현과 연결</h2></div></header><div class="chapter-intro"><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>텍스트 밖의 입력은 인코더가 숫자 표현으로 바꾸고 커넥터가 언어 모델에 연결한다.</li><li>매체의 표현을 만드는 일과 서로 다른 표현을 정렬하는 일은 별개다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>이미지 패치와 음성 구간, 영상의 시간축이 표현되는 방식을 설명한다.</li>
+<li>대조 학습이 서로 다른 매체의 관계를 학습하는 원리를 이해한다.</li>
+<li>투영·질의·융합 커넥터의 정보량과 구조적 절충을 비교한다.</li>
+</ul></div></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-09-concept-1"><span class="concept-num">01</span><h3>입력 이해의 두 단계</h3><div class="explanation"><ul>
+<li>웹사이트의 코드를 읽는 것만으로 화면의 배치와 잘림을 모두 판단할 수는 없다. 시각 입력을 받는 모델은 화면 자체를 관찰할 수 있다. 음성 요청이나 영상의 변화도 텍스트만으로는 빠질 수 있는 정보다.</li>
+<li>인코더는 이미지·음성·영상을 숫자 벡터인 임베딩으로 변환한다. 커넥터는 그 표현을 언어 모델이 사용할 형식과 분포로 맞춘다. 모두 숫자 벡터라고 같은 의미 공간에 놓이는 것은 아니다. 길이와 차원, 값의 분포가 다를 수 있다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-25"><h4>매체 표현과 언어 모델 입력의 연결</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-25-title" class="ref-svg" role="img" viewbox="0 0 720 161"><title id="ref-illustrated-ai-agents-25-title">매체 표현과 언어 모델 입력의 연결</title><defs><marker id="ref-arrow-illustrated-ai-agents-25" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="188" x="14" y="14"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="108.0" y="33.6">텍스트 임베딩</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="216" x="488" y="14"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="596.0" y="33.6">언어 모델</text><path class="ref-edge" d="M202 33.6 H345 V33.6 H483" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-25)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="345.0" y="27.3">직접 입력</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="188" x="14" y="98"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="108.0" y="117.6">매체 인코더 출력</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="174" x="258" y="98"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="345.0" y="117.6">커넥터</text><path class="ref-edge" d="M202 117.6 H230 V117.6 H253" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-25)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M432 117.6 H596 V57.4" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-25)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="550" y="134.4">정렬된 표현</text></svg></div><figcaption>원서 그림 9-41을 참고했다. 인코더 출력과 LLM 입력은 커넥터로 맞춘다.</figcaption></figure>
+<ul>
+<li>입력을 이해해 텍스트 답을 만드는 기능과 이미지·음성을 생성하는 기능은 별개다. 후자에는 다른 매체를 생성할 추가 구조가 필요할 수 있다. 이 장의 중심은 여러 입력을 언어 모델의 판단에 연결하는 경로다.</li>
+</ul></div></div><div class="concept" id="chapter-09-concept-2"><span class="concept-num">02</span><h3>이미지의 패치와 대조 학습</h3><div class="explanation"><ul>
+<li>텍스트가 토큰으로 나뉘듯 ViT는 이미지를 작은 패치로 나눈다. 각 패치를 펼쳐 선형 투영으로 벡터를 만들고 위치 정보를 더한다. Transformer 인코더가 패치들의 관계를 반영한 표현을 만든다. 위치를 빼면 어느 조각이 이미지의 어디에 있었는지 잃는다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-26"><h4>이미지 패치와 공간 위치의 표현</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-26-title" class="ref-svg" role="img" viewbox="0 0 720 169.4"><title id="ref-illustrated-ai-agents-26-title">이미지 패치와 공간 위치의 표현</title><defs><marker id="ref-arrow-illustrated-ai-agents-26" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="start" x="18" y="17.5">공간의 조각</text><rect fill="var(--color-primary-soft)" height="26.6" rx="3" stroke="var(--color-grey-300)" width="43" x="24" y="35"></rect><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="middle" x="45" y="51.8">1</text><rect fill="var(--color-primary-soft)" height="26.6" rx="3" stroke="var(--color-grey-300)" width="43" x="72" y="35"></rect><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="middle" x="93" y="51.8">2</text><rect fill="var(--color-primary-soft)" height="26.6" rx="3" stroke="var(--color-grey-300)" width="43" x="120" y="35"></rect><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="middle" x="141" y="51.8">3</text><rect fill="var(--color-primary-soft)" height="26.6" rx="3" stroke="var(--color-grey-300)" width="43" x="24" y="65.1"></rect><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="middle" x="45" y="81.9">4</text><rect fill="var(--color-primary-soft)" height="26.6" rx="3" stroke="var(--color-grey-300)" width="43" x="72" y="65.1"></rect><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="middle" x="93" y="81.9">5</text><rect fill="var(--color-primary-soft)" height="26.6" rx="3" stroke="var(--color-grey-300)" width="43" x="120" y="65.1"></rect><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="middle" x="141" y="81.9">6</text><rect fill="var(--color-primary-soft)" height="26.6" rx="3" stroke="var(--color-grey-300)" width="43" x="24" y="95.2"></rect><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="middle" x="45" y="112">7</text><rect fill="var(--color-primary-soft)" height="26.6" rx="3" stroke="var(--color-grey-300)" width="43" x="72" y="95.2"></rect><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="middle" x="93" y="112">8</text><rect fill="var(--color-primary-soft)" height="26.6" rx="3" stroke="var(--color-grey-300)" width="43" x="120" y="95.2"></rect><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="middle" x="141" y="112">9</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="210" x="224" y="51.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="329.0" y="71.4">패치별 벡터 + 위치</text><path class="ref-edge" d="M166 79.8 H195 V71.4 H219" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-26)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="216" x="486" y="51.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="594.0" y="71.4">Transformer 인코더</text><path class="ref-edge" d="M434 71.4 H460 V71.4 H481" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-26)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="middle" x="360" y="154">조각의 내용과 원래 위치를 함께 전달한다.</text></svg></div><figcaption>원서 그림 9-13을 참고한 새 도식. 숫자는 조각 위치의 설명용이다.</figcaption></figure>
+<ul>
+<li>CLIP은 이미지 인코더와 텍스트 인코더를 함께 학습한다. 같은 내용을 나타내는 이미지·설명 쌍은 가까워지게 하고 다른 쌍은 멀어지게 한다. 두 출력을 비교할 수 있는 공간으로 정렬하는 대조 학습이다. 단순히 이미지와 설명을 이어 붙이는 작업과 다르다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-27"><h4>이미지와 설명의 대조 학습</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-27-title" class="ref-svg" role="img" viewbox="0 0 720 187.6"><title id="ref-illustrated-ai-agents-27-title">이미지와 설명의 대조 학습</title><defs><marker id="ref-arrow-illustrated-ai-agents-27" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="226" x="18" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="131.0" y="32.2">이미지 → 시각 인코더</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="226" x="18" y="92.4"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="131.0" y="112">설명 → 텍스트 인코더</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="220" x="322" y="51.8"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="432.0" y="71.4">두 벡터의 유사도</text><path class="ref-edge" d="M244 32.2 H283 V71.4 H317" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-27)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M244 112 H283 V71.4 H317" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-27)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="start" x="566" y="56">대응 쌍: 가깝게</text><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="start" x="566" y="91.7">다른 쌍: 멀게</text><path class="ref-edge" d="M432 91 V152.6 H130 V135.8" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-27)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="12" font-weight="400" text-anchor="middle" x="296" y="172.9">양쪽 인코더를 학습</text></svg></div><figcaption>원서 그림 9-14를 참고한 새 도식. 맞는 쌍과 다른 쌍의 관계로 양쪽 표현을 학습한다.</figcaption></figure>
+<ul>
+<li>이미지 설명과 의미적으로 연결된 표현을 얻어도 그것이 특정 LLM의 입력과 바로 일치하는 것은 아니다. CLIP의 정렬 목적과 다음 단계 커넥터의 언어 모델 연결 목적을 구별해야 한다.</li>
+</ul></div></div><div class="concept" id="chapter-09-concept-3"><span class="concept-num">03</span><h3>음성 구간과 언어의 연결</h3><div class="explanation"><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">방식</th>
+<th scope="col">입력의 변화</th>
+<th scope="col">학습·사용의 중심</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>wav2vec 2.0</td>
+<td>겹치는 파형 구간 → CNN 특징 → Transformer</td>
+<td>일부를 가리고 목표 표현을 구별하는 학습</td>
+</tr>
+<tr>
+<td>Whisper</td>
+<td>파형 → 스펙트로그램 → 인코더</td>
+<td>음성과 전사·번역의 연결</td>
+</tr>
+<tr>
+<td>CLAP</td>
+<td>음성 특징과 텍스트 설명</td>
+<td>대응 음성·설명을 가깝게 하는 대조 학습</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>스펙트로그램은 시간에 따라 주파수별 강도가 어떻게 변하는지 나타낸다. 음성을 이미지 형태의 배열로 바꾸면 패치나 합성곱 같은 처리 방법을 사용할 수 있다. 그러나 표현 방법이 비슷하다고 음성의 의미가 자동으로 이미지와 정렬되는 것은 아니다.</li>
+<li>Whisper 전체는 음성을 인코딩하고 전사를 생성하는 인코더·디코더 구조다. 멀티모달 LLM에 연결할 때는 음성 인코더의 표현을 사용하고 LLM이 응답 생성을 맡을 수 있다. 전사 텍스트만 거치는 경로와 음성 표현을 직접 연결하는 경로를 구별해야 한다.</li>
+<li>wav2vec 2.0은 가린 구간의 표현을 학습하며, HuBERT는 군집화로 얻은 목표를 활용하는 확장이다. CLAP은 음성·텍스트 쌍을 사용한다. 어떤 인코더를 택하는지는 음성의 어떤 정보를 보존할지와 연결된다.</li>
+</ul></div></div><div class="concept" id="chapter-09-concept-4"><span class="concept-num">04</span><h3>영상의 공간과 시간</h3><div class="explanation"><ul>
+<li>영상 프레임을 각각 임베딩한 뒤 평균하면 장면의 내용은 모일 수 있다. 그러나 먼저 일어난 일과 나중에 일어난 일을 구별하기 어렵다. 들어오는 장면과 나가는 장면처럼 순서가 의미를 바꾸는 문제에서 시간 정보가 필요하다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-28"><h4>연속 프레임의 같은 공간 조각</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-28-title" class="ref-svg" role="img" viewbox="0 0 720 168"><title id="ref-illustrated-ai-agents-28-title">연속 프레임의 같은 공간 조각</title><defs><marker id="ref-arrow-illustrated-ai-agents-28" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="start" x="24" y="15.4">같은 공간 조각을 시간 방향으로 묶은 tubelet</text><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="middle" x="83" y="39.9">시각 t1</text><rect fill="var(--color-primary-soft)" height="28" rx="3" stroke="var(--color-grey-300)" width="46" x="28" y="53.2"></rect><rect fill="var(--color-primary-soft)" height="28" rx="3" stroke="var(--color-grey-300)" width="46" x="79" y="53.2"></rect><rect fill="var(--color-primary-soft)" height="28" rx="3" stroke="var(--color-grey-300)" width="46" x="28" y="84.7"></rect><rect fill="var(--color-primary-soft)" height="28" rx="3" stroke="var(--color-grey-300)" width="46" x="79" y="84.7"></rect><rect fill="none" height="28" rx="3" stroke="var(--color-primary)" stroke-width="2.5" width="46" x="28" y="53.2"></rect><path class="ref-edge" d="M74 67.2 H172" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-28)" stroke="var(--color-grey-600)" stroke-dasharray="5 4" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="middle" x="233" y="39.9">시각 t2</text><rect fill="var(--color-primary-soft)" height="28" rx="3" stroke="var(--color-grey-300)" width="46" x="178" y="53.2"></rect><rect fill="var(--color-primary-soft)" height="28" rx="3" stroke="var(--color-grey-300)" width="46" x="229" y="53.2"></rect><rect fill="var(--color-primary-soft)" height="28" rx="3" stroke="var(--color-grey-300)" width="46" x="178" y="84.7"></rect><rect fill="var(--color-primary-soft)" height="28" rx="3" stroke="var(--color-grey-300)" width="46" x="229" y="84.7"></rect><rect fill="none" height="28" rx="3" stroke="var(--color-primary)" stroke-width="2.5" width="46" x="178" y="53.2"></rect><path class="ref-edge" d="M224 67.2 H322" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-28)" stroke="var(--color-grey-600)" stroke-dasharray="5 4" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="middle" x="383" y="39.9">시각 t3</text><rect fill="var(--color-primary-soft)" height="28" rx="3" stroke="var(--color-grey-300)" width="46" x="328" y="53.2"></rect><rect fill="var(--color-primary-soft)" height="28" rx="3" stroke="var(--color-grey-300)" width="46" x="379" y="53.2"></rect><rect fill="var(--color-primary-soft)" height="28" rx="3" stroke="var(--color-grey-300)" width="46" x="328" y="84.7"></rect><rect fill="var(--color-primary-soft)" height="28" rx="3" stroke="var(--color-grey-300)" width="46" x="379" y="84.7"></rect><rect fill="none" height="28" rx="3" stroke="var(--color-primary)" stroke-width="2.5" width="46" x="328" y="53.2"></rect><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="192" x="510" y="53.2"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="606.0" y="72.8">공간 + 시간 표현</text><path class="ref-edge" d="M434 67.2 H472 V72.8 H505" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-28)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="middle" x="360" y="152.6">프레임을 평균하는 대신 순서와 변화를 표현한다.</text></svg></div><figcaption>원서 그림 9-26을 참고해 tubelet의 공간·시간 관계를 추상화했다.</figcaption></figure>
+<ul>
+<li>ViViT의 tubelet은 연속 프레임의 같은 공간 구역을 함께 묶는 3차원 조각이다. 한 장의 패치와 달리 공간과 시간의 변화를 포함한다. 공간 인코딩과 시간 인코딩을 나눌 수도 있다. TimeSformer는 한 모델의 주의 계산을 시간과 공간으로 나누어 다룬다.</li>
+<li>다른 경로는 프레임 표현을 순서 있는 토큰처럼 LLM에 넘기는 것이다. 프레임 안의 위치와 프레임 간 순서를 나타내는 정보를 추가하고 커넥터로 연결한다. 시간 관계를 별도 인코더가 처리할지, LLM이 처리하도록 넘길지의 설계 차이다.</li>
+</ul></div></div><div class="concept" id="chapter-09-concept-5"><span class="concept-num">05</span><h3>여러 매체의 공통 공간</h3><div class="explanation"><ul>
+<li>ImageBind는 이미지·영상과 다른 매체의 쌍을 연결 고리로 사용한다. 이미지와 텍스트, 이미지와 깊이·열 정보, 영상과 음성·센서 정보 등을 정렬한다. 모든 매체의 모든 조합을 직접 학습하지 않고도 공통 공간의 연결을 얻으려는 방식이다.</li>
+<li>핵심은 중간 매체가 공유하는 관계다. 이미지와 연결된 음성, 이미지와 연결된 텍스트가 같은 공간에서 가까워질 수 있다. 학습하지 않은 모든 관계를 완벽하게 이해한다는 의미는 아니다.</li>
+</ul></div></div><div class="concept" id="chapter-09-concept-6"><span class="concept-num">06</span><h3>세 가지 커넥터와 학습 범위</h3><div class="explanation"><figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-29"><h4>입력 투영·질의 압축·내부 융합</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-29-title" class="ref-svg" role="img" viewbox="0 0 720 198.8"><title id="ref-illustrated-ai-agents-29-title">입력 투영·질의 압축·내부 융합</title><defs><marker id="ref-arrow-illustrated-ai-agents-29" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="start" x="14" y="35.7">투영</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="190" x="100" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="195.0" y="32.2">각 특징의 차원 변환</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="204" x="370" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="472.0" y="32.2">입력 토큰으로 연결</text><path class="ref-edge" d="M290 32.2 H330 V32.2 H365" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-29)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="start" x="604" y="35.7">LLM 입력</text><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="start" x="14" y="98.7">질의</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="190" x="100" y="75.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="195.0" y="95.2">학습 질의로 정보 압축</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="204" x="370" y="75.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="472.0" y="95.2">고정 수의 입력 표현</text><path class="ref-edge" d="M290 95.2 H330 V95.2 H365" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-29)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="start" x="604" y="98.7">LLM 입력</text><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="start" x="14" y="161.7">융합</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="190" x="100" y="138.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="195.0" y="158.2">시각 특징을 별도 전달</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="204" x="370" y="138.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="472.0" y="158.2">LLM 내부 교차주의</text><path class="ref-edge" d="M290 158.2 H330 V158.2 H365" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-29)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="12" font-weight="400" text-anchor="start" x="604" y="161.7">LLM 내부</text></svg></div><figcaption>원서 그림 9-41·9-45·9-48의 연결 차이를 새 배치로 비교했다.</figcaption></figure>
+<div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">커넥터</th>
+<th scope="col">연결 방식</th>
+<th scope="col">얻는 것과 비용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>투영</td>
+<td>각 시각 표현을 LLM 입력 차원으로 변환</td>
+<td>단순하고 가볍지만 토큰 수가 많아질 수 있다</td>
+</tr>
+<tr>
+<td>질의</td>
+<td>학습한 질의가 정보를 고정 개수로 추출</td>
+<td>입력 길이 제어와 압축, 세부 손실 가능성</td>
+</tr>
+<tr>
+<td>융합</td>
+<td>LLM 내부에 교차주의 층 추가</td>
+<td>깊은 결합과 모델 구조 변경·학습 복잡성</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>LLaVA는 먼저 이미지 인코더와 LLM을 고정하고 투영층을 학습한다. 다음에는 이미지 인코더를 고정한 채 투영층과 LLM을 함께 조정한다. 표현을 맞추는 단계와 그 표현으로 지시를 수행하는 단계를 구분한다.</li>
+<li>BLIP-2의 Q-Former는 학습 가능한 질의를 사용해 많은 이미지 특징에서 고정 수의 표현을 추출한다. 이 표현을 MLP로 LLM 차원에 맞춘다. 이미지 인코더와 LLM을 고정하고 연결 모듈을 학습할 수 있다. 고정 수로 압축하므로 작은 글자 같은 세부가 손실될 수 있다.</li>
+<li>Flamingo는 리샘플러로 고정 수의 시각 표현을 만들고 LLM 내부의 추가 교차주의 층에 전달한다. 기존 시각 인코더와 LLM은 고정한다. 추가 층의 기여를 <code>tanh(α)</code>로 조절하고 α=0에서 시작하면 초기에는 기존 모델의 동작을 유지한다. 학습하면서 시각 정보의 기여를 열어 간다.</li>
+</ul></div></div><div class="concept" id="chapter-09-concept-7"><span class="concept-num">07</span><h3>TinyAgent의 이미지 입력</h3><div class="explanation"><ul>
+<li>이미지 이해 능력이 있는 모델을 쓰더라도 하네스가 실제 이미지를 전달해야 한다. 메시지 내용에 질문 텍스트와 이미지 데이터를 함께 넣고, 서버가 모델 템플릿에 맞춰 처리하도록 한다. 질문에 이미지 이름만 적는 것은 이미지 입력과 다르다.</li>
+<li>TinyAgent는 run의 이미지 인수를 Memory.add로 넘겨 메시지 구조에 포함한다. 모델 능력을 새로 학습하는 변경이 아니라 이미 가진 능력을 사용할 입력 경로를 여는 변경이다. 원서의 표지 동물 질문은 이미지를 주기 전과 준 뒤의 차이를 보여 준다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-09-recap"><h3>한눈에 정리</h3><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">층</th>
+<th scope="col">알아야 할 관계</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>표현</td>
+<td>이미지 패치·음성 구간·영상의 공간과 시간</td>
+</tr>
+<tr>
+<td>정렬</td>
+<td>같은 내용을 나타내는 매체 간 대응</td>
+</tr>
+<tr>
+<td>연결</td>
+<td>LLM의 입력 또는 내부 주의 계산에 맞추기</td>
+</tr>
+<tr>
+<td>실행</td>
+<td>실제 이미지·음성 데이터를 메시지에 전달</td>
+</tr>
+</tbody>
+</table></div></section><section class="review quiz" id="chapter-09-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>각 프레임을 임베딩하고 평균하면 영상의 무엇이 약해지는가?</summary><p>시간 순서다. 장면 내용은 모일 수 있지만 시작과 끝, 행동의 전후 관계를 구별하기 어렵다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>인코더가 모두 벡터를 출력한다면 커넥터를 생략해도 되는가?</summary><p>일반적으로 그렇지 않다. 차원과 값의 분포, 의미 공간이 다를 수 있다. LLM이 사용할 표현으로 맞추는 학습과 연결이 필요하다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>고해상도 영상에서 입력 토큰 수를 일정하게 유지하고 싶다. 어떤 방식이 이를 직접 다루는가?</summary><p>질의 기반 커넥터는 많은 특징을 고정 수의 질의 표현으로 압축한다. 대신 작은 세부가 사라질 수 있고 학습·처리가 더 복잡하다.</p></details></div></section><a class="back-top" href="#overview">목차 위로</a></section><section aria-labelledby="chapter-10-title" class="chapter" id="chapter-10"><header class="chapter-head"><span class="chapter-num">10</span><div><p class="original">Chapter 10. Code Agents and Code LLMs</p><h2 id="chapter-10-title">코딩 에이전트의 실행 환경과 문맥</h2></div></header><div class="chapter-intro"><div class="summary"><p class="summary-label">이 장의 핵심</p><ul><li>코딩 에이전트는 코드를 생성하는 데서 나아가 실행·오류 관찰·수정을 반복한다.</li><li>좋은 모델뿐 아니라 실행 권한, 관련 코드의 선택, 캐시와 검증 구조가 필요하다.</li></ul></div><div class="learning-goal"><h3>학습 목표</h3><ul>
+<li>코드 제안과 실행 가능한 에이전트의 차이를 설명한다.</li>
+<li>코드 도구·문맥 구성·캐시가 작업의 정확성과 비용에 미치는 영향을 이해한다.</li>
+<li>자율 순환과 고정 워크플로를 작업 특성에 따라 비교한다.</li>
+</ul></div></div><h3 class="concept-heading">핵심 내용과 설명</h3><div class="concepts"><div class="concept" id="chapter-10-concept-1"><span class="concept-num">01</span><h3>코드 생성과 실제 결과</h3><div class="explanation"><ul>
+<li>코드로 표현할 수 있는 작업은 소프트웨어 개발뿐만이 아니다. 데이터 조회와 분석, 그림 생성도 포함된다. 사용자는 코드를 보지 않고 결과만 받을 수 있다. 이때 에이전트는 데이터를 읽을 방법을 고르고 코드를 작성해 실행한 뒤 결과를 전달한다.</li>
+<li>분기별 매출 그래프를 요청했다면 SQL 도구가 데이터를 가져오고 Python 도구가 그래프를 만든다. 첫 도구의 실제 결과가 뒤 코드의 입력이다. 오류가 나면 그 메시지가 다음 판단의 관찰이 된다. 코드 문자열을 출력한 것과 데이터를 조회하고 그래프를 만든 것은 다른 완료 상태다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-30"><h4>조회 결과에서 코드 실행과 산출물까지</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-30-title" class="ref-svg" role="img" viewbox="0 0 720 84"><title id="ref-illustrated-ai-agents-30-title">조회 결과에서 코드 실행과 산출물까지</title><defs><marker id="ref-arrow-illustrated-ai-agents-30" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="150.0" x="24.0" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="99.0" y="32.2">SQL로 데이터 조회</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="150.0" x="198.0" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="273.0" y="32.2">조회 결과 관찰</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="150.0" x="372.0" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="447.0" y="24.85">Python으로 그림</text><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="447.0" y="39.55">실행</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="150.0" x="546.0" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="621.0" y="32.2">산출물 확인·전달</text><path class="ref-edge" d="M174 32.2 H193" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-30)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M348 32.2 H367" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-30)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M522 32.2 H541" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-30)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M621 51.8 V65.8 H99 V56" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-30)" stroke="var(--color-grey-600)" stroke-dasharray="5 4" stroke-width="1.5"></path></svg></div><figcaption>원서 그림 10-4를 참고했다. 뒤 코드의 입력은 앞 도구가 반환한 실제 데이터다.</figcaption></figure>
+<ul>
+<li>코드에는 실행과 테스트라는 피드백 경로가 있다. 이 성질은 배치된 에이전트의 오류 수정에도, 기반 모델의 학습 보상에도 쓰인다. 다만 테스트 통과가 요구 사항 전체의 충족을 자동 증명하지는 않는다.</li>
+</ul></div></div><div class="concept" id="chapter-10-concept-2"><span class="concept-num">02</span><h3>환경에 연결하는 도구</h3><div class="explanation"><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">도구</th>
+<th scope="col">수행하는 일</th>
+<th scope="col">필요한 문맥</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>파일 읽기·검색·편집</td>
+<td>관련 구현 탐색과 변경</td>
+<td>저장소 구조·코드의 의도</td>
+</tr>
+<tr>
+<td>코드 인터프리터</td>
+<td>제한된 환경에서 프로그램 실행</td>
+<td>파일·라이브러리·자원 조건</td>
+</tr>
+<tr>
+<td>명령줄</td>
+<td>설치·환경 구성·시험 실행</td>
+<td>작업 경로·권한·환경 상태</td>
+</tr>
+<tr>
+<td>화면 조작</td>
+<td>실제 앱의 UI 확인·조작</td>
+<td>화면 이미지와 현재 상태</td>
+</tr>
+<tr>
+<td>SQL</td>
+<td>스키마 확인과 데이터 조회</td>
+<td>열의 의미·관계·사용자 용어</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>샌드박스는 허용 파일·명령·네트워크·자원을 제한할 수 있다. 새 세션의 초기 상태와 데이터 분리를 관리하기 쉽다. 자유로운 명령줄은 더 많은 작업을 가능하게 하지만 잘못된 행동의 영향 범위도 넓힌다. 필요한 접근 범위는 하네스 설계에서 정해야 한다.</li>
+<li>코드 검색은 문자열뿐 아니라 구문 구조나 의미 임베딩을 쓸 수 있다. SQL도 테이블 이름만 안다고 충분하지 않다. 사용자의 표현이 실제 범주와 다르면 의미를 연결할 지식이 필요하다. 도구의 기능과 올바른 사용에 필요한 문맥을 함께 제공해야 한다.</li>
+<li>사람이 명령을 승인하는 구조는 검토할 내용을 이해할 수 있을 때 유효하다. 비개발자에게 모든 명령의 안전 판단을 넘기는 것만으로 실행 환경 설계를 대신할 수 없다.</li>
+</ul></div></div><div class="concept" id="chapter-10-concept-3"><span class="concept-num">03</span><h3>캐시·저장소 지도·압축</h3><div class="explanation"><ul>
+<li>코딩 작업의 입력에는 고정 지시·도구 설명·저장소 구조와 계속 늘어나는 실행 이력이 함께 들어간다. 동일한 접두사를 재사용하는 캐시는 이전 입력에 대한 계산을 절약한다. 같은 앞부분을 유지하고 새 행동과 결과를 끝에 추가하는 구조가 유리하다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-31"><h4>변경 빈도별 문맥과 캐시 유지</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-31-title" class="ref-svg" role="img" viewbox="0 0 720 218.4"><title id="ref-illustrated-ai-agents-31-title">변경 빈도별 문맥과 캐시 유지</title><defs><marker id="ref-arrow-illustrated-ai-agents-31" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="start" x="14" y="34.3">고정</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="240" x="110" y="11.2"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="230.0" y="30.8">지시·도구·기본 규칙</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="250" x="450" y="11.2"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="575.0" y="30.8">같은 접두사 유지</text><path class="ref-edge" d="M350 30.8 H400 V30.8 H445" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-31)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="start" x="14" y="91.7">준고정</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="240" x="110" y="68.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="230.0" y="88.2">목표·계획·저장소 지도</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="250" x="450" y="68.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="575.0" y="88.2">필요할 때 갱신</text><path class="ref-edge" d="M350 88.2 H400 V88.2 H445" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-31)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="start" x="14" y="149.1">동적</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="240" x="110" y="126"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="230.0" y="145.6">행동·관찰·현재 상태</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="250" x="450" y="126"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="575.0" y="145.6">추가 / 압축</text><path class="ref-edge" d="M350 145.6 H400 V145.6 H445" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-31)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="middle" x="360" y="204.4">앞부분이 같을수록 재사용 · 새 정보는 뒤에 추가</text></svg></div><figcaption>원서 그림 10-13을 참고했다. 고정·준고정·동적 구역은 변경 주기가 다르다.</figcaption></figure>
+<ul>
+<li>앞부분을 수정하면 그 지점 뒤의 캐시를 그대로 재사용하기 어려워진다. 변하지 않는 규칙, 가끔 바뀌는 계획, 매 단계 바뀌는 관찰을 나눠 배치한다. 압축 때는 동적인 이력을 줄이되 고정 구역을 안정적으로 유지한다. 캐시 재사용과 필요한 정보의 갱신을 함께 고려하는 설계다.</li>
+<li>저장소 지도는 파일 구조와 주요 클래스·함수 시그니처를 압축해 보여 준다. 먼저 위치를 찾고 필요한 파일을 자세히 읽게 한다. 요약 지도만으로 전체 구현을 이해했다고 판단해서는 안 된다. 문맥 압축에는 현재 목표·검증 상태·환경·코드 규칙·미완료 작업을 남겨야 후속 실행을 이어 갈 수 있다.</li>
+</ul></div></div><div class="concept" id="chapter-10-concept-4"><span class="concept-num">04</span><h3>저장소 작업과 고정 워크플로</h3><div class="explanation"><ul>
+<li>함수 하나를 만드는 문제와 GitHub 이슈를 해결하는 문제는 다르다. 저장소 수준에서는 재현, 영향 범위 탐색, 환경 준비, 여러 파일 변경, 회귀 시험이 필요할 수 있다. 계획에는 아직 답을 모르는 조사 단계도 포함돼야 한다.</li>
+<li>Agentless는 관련 코드 찾기, 후보 패치 생성, 패치 선택의 세 단계를 고정한다. 여러 패치와 테스트를 생성해 후보별 통과 결과를 비교한다. 생성 테스트도 틀릴 수 있으므로 모두 통과라는 절대 기준보다 후보 순위를 정하는 신호로 사용할 수 있다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-32"><h4>후보 패치와 생성 테스트의 비교</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-32-title" class="ref-svg" role="img" viewbox="0 0 720 196"><title id="ref-illustrated-ai-agents-32-title">후보 패치와 생성 테스트의 비교</title><defs><marker id="ref-arrow-illustrated-ai-agents-32" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="204" x="12" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="114.0" y="32.2">이슈 + 관련 코드</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="204" x="258" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="360.0" y="32.2">후보 패치 여러 개</text><path class="ref-edge" d="M216 32.2 H237 V32.2 H253" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-32)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="204" x="12" y="105"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="114.0" y="124.6">이슈 → 생성 테스트</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="204" x="500" y="70"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="602.0" y="89.6">후보별 통과 비교</text><path class="ref-edge" d="M462 32.2 H481 V89.6 H495" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-32)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M216 124.6 H358 V89.6 H495" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-32)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-primary)" font-size="13" font-weight="400" text-anchor="middle" x="360" y="180.6">생성 테스트는 후보를 정렬하는 신호 · 자체 정답 보장은 아님</text></svg></div><figcaption>원서 그림 10-16을 참고한 새 구조. 후보 생성 경로와 평가 자료 생성 경로를 나눴다.</figcaption></figure>
+<ul>
+<li>적합한 절차가 알려진 작업이라면 고정 워크플로가 관리하기 쉬울 수 있다. 자율 에이전트는 실행 도중 새 정보에 따라 경로를 바꿔야 할 때 의미가 있다. 자유도 자체를 목표로 삼지 말고 과제의 불확실성에 맞춰 선택해야 한다.</li>
+</ul></div></div><div class="concept" id="chapter-10-concept-5"><span class="concept-num">05</span><h3>TinyAgent와 코딩 모델의 학습</h3><div class="explanation"><ul>
+<li>TinyAgent에 파일 목록·읽기·쓰기·Python 실행 도구를 연결하면 기본 코딩 에이전트가 된다. 화면에는 판단·행동·관찰·최종 답을 구분해 보여 준다. 실행 결과와 오류가 다음 입력으로 돌아가는 구조는 앞 장의 ReAct와 같다.</li>
+<li>코딩 모델에는 많은 코드뿐 아니라 도구 사용, 여러 단계의 디버깅, 테스트와 코드의 쌍, 이슈와 변경 diff 같은 자료가 필요하다. 코드를 이어 쓰는 능력과 저장소에서 문제를 조사·수정하는 능력의 학습 재료가 다르다.</li>
+</ul>
+<figure class="diagram-art" data-diagram-design="reference-v2" id="diagram-illustrated-ai-agents-33"><h4>코딩 모델의 자료와 검증 신호</h4><div aria-label="가로로 이동해 도식 읽기" class="ref-canvas" role="region" tabindex="0"><svg aria-labelledby="ref-illustrated-ai-agents-33-title" class="ref-svg" role="img" viewbox="0 0 720 78.4"><title id="ref-illustrated-ai-agents-33-title">코딩 모델의 자료와 검증 신호</title><defs><marker id="ref-arrow-illustrated-ai-agents-33" markerheight="6" markerwidth="6" orient="auto" refx="9" refy="5" viewbox="0 0 10 10"><path d="M0 0 L10 5 L0 10Z" fill="var(--color-grey-600)"></path></marker></defs><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="208.0" x="24.0" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="128.0" y="32.2">코드·긴 문맥의 기반</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-grey-300)" stroke-width="1.5" width="208.0" x="256.0" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="360.0" y="32.2">해결 경로·도구 SFT</text><rect fill="var(--color-bg)" height="39.2" rx="6" stroke="var(--color-primary)" stroke-width="1.5" width="208.0" x="488.0" y="12.6"></rect><text dominant-baseline="central" fill="var(--color-text-primary)" font-size="13" font-weight="600" text-anchor="middle" x="592.0" y="32.2">실행·테스트 보상 RL</text><path class="ref-edge" d="M232 32.2 H251" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-33)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><path class="ref-edge" d="M464 32.2 H483" fill="none" marker-end="url(#ref-arrow-illustrated-ai-agents-33)" stroke="var(--color-grey-600)" stroke-width="1.5"></path><text fill="var(--color-text-tertiary)" font-size="13" font-weight="400" text-anchor="middle" x="360" y="65.8">추론·다단계 도구·검증 능력을 함께 학습</text></svg></div><figcaption>원서 그림 10-19를 참고했다. 코드 예측·해결 경로·실행 피드백은 서로 다른 학습 재료다.</figcaption></figure>
+<ul>
+<li>사전·중간 학습에서 코드와 긴 문맥의 기반을 만들고, SFT에서 해결 경로와 도구 행동을 익히고, 검증 가능한 보상으로 실제 동작을 조정할 수 있다. 기존 모델로 합성 예시를 생성하고 선별해 다음 학습에 사용하는 순환도 있다. 많이 생성하는 것보다 실행·검증·선별이 신뢰할 수 있는지가 중요하다.</li>
+</ul></div></div></div><section class="review recap" id="chapter-10-recap"><h3>한눈에 정리</h3><div aria-label="비교 표" class="table-wrap" role="region" tabindex="0"><table class="table">
+<thead>
+<tr>
+<th scope="col">설계 대상</th>
+<th scope="col">연결해야 할 것</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>실행</td>
+<td>코드 → 도구 → 실제 결과·오류 → 다음 수정</td>
+</tr>
+<tr>
+<td>문맥</td>
+<td>저장소 지도 → 필요한 구현 → 목표와 검증 상태</td>
+</tr>
+<tr>
+<td>효율</td>
+<td>안정된 접두사 캐시 + 필요한 동적 이력</td>
+</tr>
+<tr>
+<td>학습</td>
+<td>코드·경로·도구 예시 + 검증 가능한 피드백</td>
+</tr>
+</tbody>
+</table></div></section><section class="review quiz" id="chapter-10-quiz"><h3>Quiz</h3><div class="quiz-item"><span class="quiz-num">01</span><details class="quiz-question"><summary>그래프를 만드는 코드를 출력했다. 사용자 요청은 완료됐는가?</summary><p>실제 그래프가 목표였다면 아직 아니다. 데이터 조회와 실행 결과를 확인하고 생성한 그림을 전달해야 한다.</p></details></div><div class="quiz-item"><span class="quiz-num">02</span><details class="quiz-question"><summary>매 호출의 앞부분에 현재 시각을 새로 넣으면 접두사 캐시에 어떤 영향이 있는가?</summary><p>그 위치에서 입력이 달라진다. 뒤쪽까지 동일한 접두사로 재사용하기 어려워지므로 자주 바뀌는 정보의 위치를 고려해야 한다.</p></details></div><div class="quiz-item"><span class="quiz-num">03</span><details class="quiz-question"><summary>Agentless가 생성한 테스트를 모두 통과하지 않아도 후보를 고를 수 있는 이유는?</summary><p>생성 테스트 자체도 틀릴 수 있어 절대적 정답 기준으로 확신하기 어렵기 때문이다. 여러 후보를 비교하는 순위 신호로 활용한다.</p></details></div></section><a class="back-top" href="#overview">목차 위로</a></section><footer class="end">2026.11.14 · An Illustrated Guide to AI Agents 학습 정리</footer></main><script defer="" src="./assets/js/muse-light.js"></script><script defer="" src="./assets/js/muse-chart.js"></script><script defer="" src="./assets/js/learning.js"></script></body></html>
